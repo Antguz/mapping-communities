@@ -1,9 +1,9 @@
 #'------------------------------------------------------------------------------
-#' @title Raster substraction
+#' @title Raster subtraction
 #'------------------------------------------------------------------------------
 
-#' @description Substract pixels from rasters in tiles and a vector file
-#' @return Croping rasters with names according the vector file
+#' @description Subtract pixels from Geotiffs in titles index and a vector file
+#' @return Geotif with names according the vector file
 
 #'------------------------------------------------------------------------------
 #' Library
@@ -24,10 +24,10 @@ library(data.table)
 #' @example 
 
 title <- vect("data/title_clipped.gpkg")
-root_path <- "F:/move_here/BAP/home/cavender/shared/oak-wilt/level3_BAP"
+root_path <- "/media/antonio/antonio_ssd/mapping_species/level3_BAP"
 base_name <- "20210715_LEVEL3_SEN2L_BAP.tif"
 fsi <- vect("data/FSI.gpkg")
-out_path <- "C:/Users\guzman\Documents\Goal_2\GIS\MN_forest_inventory\Modify"
+out_path <- "/media/antonio/antonio_ssd/mapping_species/level3_crop"
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -35,9 +35,7 @@ out_path <- "C:/Users\guzman\Documents\Goal_2\GIS\MN_forest_inventory\Modify"
 rast_subst <- function(title, root_path, base_name, fsi, out_path) {
   
   #Check projection
-  if(all.equal(crs(title), crs(fsi))) {
-    fsi <- project(fsi, title)
-  }
+  fsi <- project(fsi, title)
   
   #See interception of layers
   title_fsi <- intersect(fsi, title)
@@ -50,6 +48,10 @@ rast_subst <- function(title, root_path, base_name, fsi, out_path) {
   
   #Merge to frame
   fsi_frame <- merge(fsi_frame, n_titles, by = "STAND_KEY", all.x = TRUE)
+  
+  #Set progress bar
+  pb <- txtProgressBar(min = 0, max = length(unique(fsi$STAND_KEY)), style = 3)
+  n <- 1
   
   #Do vectors that fall in a unique title first---------------------------------
   
@@ -77,6 +79,10 @@ rast_subst <- function(title, root_path, base_name, fsi, out_path) {
     #Loop over vectors
     for(ii in 1:length(stand)) {
       
+      # Update progress bar
+      setTxtProgressBar(pb, n)
+      n <- n + 1
+      
       #Select plot
       plot <- subset(fsi, fsi$STAND_KEY == stand[ii])
       
@@ -87,14 +93,89 @@ rast_subst <- function(title, root_path, base_name, fsi, out_path) {
       name_export <- paste0(out_path, "/", 
                             n_titles[i], "_", 
                             stand[ii], "_",
-                            plot$MN_SPP, "tif")
+                            plot$MN_SPP, ".tif")
+      
+      #Export
+      writeRaster(raster_crop, 
+                  name_export, 
+                  overwrite = TRUE,
+                  names = names(raster_crop))
+      
+      rm(list = c("plot", "raster_crop", "name_export"))
       
     }
     
+    rm(list = c("rast_name", "raster", "vector", "stand"))
+    
   }
-  
   
   #Do vectors that fall in several tiles ---------------------------------------
   
+  #Two or more intercepts
+  tom_intercept <- subset(fsi_frame, count > 1)
   
+  #N stands to read
+  stands <- unique(tom_intercept$STAND_KEY)
+  
+  for(i in 1:length(stands)) {
+    
+    #Subset stands
+    sub_stand <- subset(tom_intercept, STAND_KEY == stands[i])
+    
+    #N of tiles
+    titles <- unique(sub_stand$Tile_ID)
+    
+    #Empty raster
+    raster <- NA
+    
+    for(ii in 1:length(titles)) {
+      
+      if(ii == 1) {
+        
+        # Name of rast to read
+        sub_raster_name <- paste0(root_path, "/", titles[ii], "/", base_name)
+        
+        #Read raster
+        raster <- rast(sub_raster_name)
+        
+      } else {
+      
+      # Name of rast to read
+      sub_raster_name <- paste0(root_path, "/", titles[ii], "/", base_name)
+      
+      #Read raster
+      sub_raster <- rast(sub_raster_name)
+      
+      #Mosaic
+      raster <- terra::mosaic(raster, sub_raster)
+      
+      }
+    }
+    
+    # Update progress bar
+    setTxtProgressBar(pb, n)
+    n <- n + 1
+    
+    #Select plot
+    plot <- subset(fsi, fsi$STAND_KEY == stands[i])
+    
+    #Crop raster
+    raster_crop <- crop(raster, plot, snap = "in", mask = TRUE)
+    
+    #Name to export
+    name_export <- paste0(out_path, "/", 
+                          titles[1], "_", 
+                          stand[i], "_",
+                          plot$MN_SPP, ".tif")
+    
+    #Export
+    writeRaster(raster_crop, 
+                name_export, 
+                overwrite = TRUE,
+                names = names(raster_crop))
+    
+    rm(list = c("plot", "raster_crop", "name_export", 
+                "sub_stand", "titles", "raster"))
+    
+  }
 }
