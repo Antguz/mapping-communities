@@ -11,24 +11,20 @@
 
 library(terra)
 library(data.table)
-library(Rcpp)
-
-#'------------------------------------------------------------------------------
-#' Load source code
-
-sourceCpp("src/euclidean_distance.cpp")
+library(RcppHNSW)
 
 #'------------------------------------------------------------------------------
 #' Arguments
-#' @param root_path 
-#' @param out_path
-#' 
+#' @param root_path Root path of the cropped rasters
+#' @param out_path Path to export the outputs
+#' @param n_pixels Number of pixels to extract
+#' @param NDVI_threshold Threshold of NDVI to mask
 
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "F:/mapping_species/level3_crop"
-base_name <- "20210715_LEVEL3_SEN2L_BAP.tif"
+root_path <- "/media/antonio/antonio_ssd/mapping_species/level3_crop"
+out_path <- "/media/antonio/antonio_ssd/mapping_species/level4_pixel-selection"
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -56,36 +52,52 @@ pixel_subst <- function(root_path, out_path, n_pixels = 10, NDVI_threshold = 0.5
   
   frame$mn_sp <-  mn_sp$V1
   
+  #For data export
+  results <- data.table()
+  
+  #Progress bar
+  pb <- txtProgressBar(min = 1, max = nrow(frame), style = 3)
+  
   #Function on each raster
   for(i in 1:nrow(frame)) {
+    
+    #Progress
+    setTxtProgressBar(pb, i)
     
     #Read file
     raster <- rast(paste0(root_path, "/", files[i]))
     
     #Transform to frame
-    frame <- as.data.frame(raster, 
-                           xy = TRUE,
-                           cells = TRUE,
-                           na.rm = TRUE)
+    rast_frame <- as.data.frame(raster, 
+                                xy = TRUE,
+                                cells = TRUE,
+                                na.rm = TRUE)
     
     #Get NDVI and apply threshold
-    NDVI <- (frame$NIR-frame$RED) / (frame$NIR + frame$RED)
+    NDVI <- (rast_frame$NIR-rast_frame$RED) / (rast_frame$NIR + rast_frame$RED)
     
     #Subsample frame
-    frame <- frame[NDVI >= NDVI_threshold, ]
+    rast_frame <- rast_frame[NDVI >= NDVI_threshold, ]
+    
+    #Minimun number of pixels
+    if(nrow(rast_frame) <= n_pixels) {
+      next
+    }
     
     #Frame for PCA
-    frame_pca <- frame[, 4:13]
+    frame_pca <- rast_frame[, 4:13]
     
     #Apply PCA
     apply_pca <- prcomp(frame_pca, center = TRUE, scale. = FALSE)
     apply_pca <- apply_pca$x
     
+    #Get center points of density
     density_points <- NA
     
+    #Find the pick of density
     for(ii in 1:ncol(apply_pca)) {
       
-      den <- density(apply_pca[, ii])
+      den <- stats::density(apply_pca[, ii], adjust = 1)
       max_y <- which.max(den$y)
       max_x <- den$x[max_y]
       
@@ -93,22 +105,42 @@ pixel_subst <- function(root_path, out_path, n_pixels = 10, NDVI_threshold = 0.5
       
     }
     
-    apply_pca <- as.data.table(apply_pca)
+    #Transform to matrix
+    density_points <- matrix(density_points, ncol = ncol(apply_pca))
     
-    #Estimate distances
-    distances <- euclidean_distance(density_points, as.matrix(apply_pca))
-    distances <- order(distances)
-  
+    #Nearest neighbor index
+    to_search <- hnsw_build(apply_pca)
+    pixels_nn <- hnsw_search(density_points, to_search, n_pixels)
+    pixels_nn <- pixels_nn$idx[1,]
     
     #Get pixels
-    pixels <- frame[(distances <= n_pixels) == TRUE,]
+    pixels <- as.data.table(rast_frame[pixels_nn,])
+    
+    #Merge information
+    pixels <- cbind(frame[i, ], pixels)
+    
+    #Export
+    name_export <- paste0(out_path, "/",
+                          frame$x_title[i], "_",
+                          frame$y_title[i], "_",
+                          frame$stand_key[i], "_",
+                          frame$mn_sp[i], ".txt")
+    fwrite(pixels, name_export, sep = "\t")
+    
+    #Merge results
+    results <- rbind(results, pixels)
     
   }
   
+  #Close progress
+  close(pb)
+
+  #Return
+  return(results)
   
 }
 
-plot(apply_pca$PC1, apply_pca$PC2)
-points(density_points[1], density_points[2], col = "red")
-pca <- apply_pca[(distances <= n_pixels) == TRUE,]
-points(pca$PC1, pca$PC2, col = "blue", cex = 2)
+results <- pixel_subst(root_path, out_path)
+fwrite(results, paste0(out_path, "/results.txt"), sep = "\t")
+
+
