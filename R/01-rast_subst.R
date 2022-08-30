@@ -37,6 +37,13 @@ out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4"
 #out_path <- "/media/antonio/antonio_ssd/mapping_species/level4"
 #threads <- 24
 
+tile <- vect("data/title_clipped.gpkg")
+fsi <- vect("data/fsi_clean.gpkg")
+root_path <- "E:/mapping_species/level3"
+base_name <- "2021-2021_001-365_HL_TSA_SEN2L_"
+out_path <- "E:/mapping_species/level4"
+threads <- 24
+
 #'------------------------------------------------------------------------------
 #' Function
 rast_subst <- function(tile, fsi, root_path, base_name, out_path, threads = 24) {
@@ -56,6 +63,9 @@ rast_subst <- function(tile, fsi, root_path, base_name, out_path, threads = 24) 
   nstands <- unique(tile_fsi$STAND_KEY)
   ids <- data.table(ID = 1:length(nstands),
                     STAND_KEY = nstands)
+  
+  #Order tile
+  tile <- tile[order(tile)]
   
   # Set up cluster
   #cl <- makeCluster(threads, type = "FORK")
