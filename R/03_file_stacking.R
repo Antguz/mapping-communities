@@ -24,7 +24,6 @@ out_path <- "/media/antonio/antonio_ssd/mapping_species/level5"
 input_path <- "E:/mapping_species/level5"
 path_name <- "E:/mapping_species/FD.txt"
 
-
 #'------------------------------------------------------------------------------
 #' Function
 file_stacking <- function(input_path, path_name) {

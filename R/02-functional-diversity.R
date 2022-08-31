@@ -39,6 +39,7 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
                       all.files = TRUE,
                       full.names = FALSE, 
                       recursive = TRUE)
+  files <- files[order(files)]
   
   #Arrange files frame
   frame <- data.table(matrix(unlist(strsplit(files, "-")), 
@@ -50,6 +51,9 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
   
   #Unique values
   unique_stands <- unique(frame$stand)
+  
+  #No memory
+  options(fundiversity.memoise = TRUE)
   
   # Set up cluster
   cl <- makeCluster(threads) #, type = "FORK"
@@ -144,6 +148,12 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
                             FDiv_all <- fd_fdiv(sub_date[, c(4:6)])[1, 2]
                             
                             #Functional Evenness
+                            FEve_CCI <- fd_feve(sub_date[, c(4)])[1, 2]
+                            FEve_CRE <- fd_feve(sub_date[, c(5)])[1, 2]
+                            FEve_NDW <- fd_feve(sub_date[, c(6)])[1, 2]
+                            FEve_all <- fd_feve(sub_date[, c(4:6)])[1, 2]
+                            
+                            #Functional Dispersion
                             FDis_CCI <- fd_fdis(sub_date[, c(4)])[1, 2]
                             FDis_CRE <- fd_fdis(sub_date[, c(5)])[1, 2]
                             FDis_NDW <- fd_fdis(sub_date[, c(6)])[1, 2]
@@ -178,6 +188,10 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
                                                       FDiv_CRE = FDiv_CRE,
                                                       FDiv_NDW = FDiv_NDW,
                                                       FDiv_all = FDiv_all,
+                                                      FEve_CCI = FEve_CCI,
+                                                      FEve_CRE = FEve_CRE,
+                                                      FEve_NDW = FEve_NDW,
+                                                      FEve_all = FEve_all,
                                                       FDis_CCI = FDis_CCI,
                                                       FDis_CRE = FDis_CRE,
                                                       FDis_NDW = FDis_NDW,
@@ -189,6 +203,16 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
                                                       Rao_all = Rao_all)
                             
                             results <- rbind(results, sub_results)
+                            
+                            rm(list = c("sub_date", "date", "npixels",
+                                        "mean_KND", "mean_CCI", "mean_CRE", "mean_NDW",
+                                        "sd_KND", "sd_CCI", "sd_CRE", "sd_NDW",
+                                        "FRic_CCI", "FRic_CRE", "FRic_NDW", "FRic_all",
+                                        "FDiv_CCI", "FDiv_CRE", "FDiv_NDW", "FDiv_all",
+                                        "FEve_CCI", "FEve_CRE", "FEve_NDW", "FEve_all",
+                                        "FDis_CCI", "FDis_CRE", "FDis_NDW", "FDis_all",
+                                        "Pmd_CCI", "Pmd_CRE", "Pmd_NDW", "Pmd_all",
+                                        "Rao_all", "sub_results"))
                             
                           }
                           
@@ -205,14 +229,7 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
                           
                           #Remove residuals
                           rm(list = c("sub_stand", "plot", "mature", "unique_date", 
-                                      "sub_date", "date", "npixels",
-                                      "mean_KND", "mean_CCI", "mean_CRE", "mean_NDW",
-                                      "sd_KND", "sd_CCI", "sd_CRE", "sd_NDW",
-                                      "FRic_CCI", "FRic_CRE", "FRic_NDW", "FRic_all",
-                                      "FDiv_CCI", "FDiv_CRE", "FDiv_NDW", "FDiv_all",
-                                      "FDis_CCI", "FDis_CRE", "FDis_NDW", "FDis_all",
-                                      "Pmd_CCI", "Pmd_CRE", "Pmd_NDW", "Pmd_all",
-                                      "Rao_all", "sub_results", "name_export", "results"))
+                                      "name_export", "results"))
                           gc()
                           
                         }
@@ -223,6 +240,7 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
   
 }
 
+functional_diversity(input_path, out_path, threads = 7)
 
 
 
