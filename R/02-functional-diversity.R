@@ -22,12 +22,19 @@ library(doParallel)
 #'------------------------------------------------------------------------------
 #' @example 
 
-input_path <- "/media/antonio/antonio_ssd/mapping_species/level4"
-out_path <- "/media/antonio/antonio_ssd/mapping_species/level5"
+#input_path <- "/media/antonio/antonio_ssd/mapping_species/level4"
+#out_path <- "/media/antonio/antonio_ssd/mapping_species/level5"
+#input_path <- "E:/mapping_species/level4"
+#out_path <- "E:/mapping_species/level5"
+#threads = 6
 
 input_path <- "E:/mapping_species/level4"
 out_path <- "E:/mapping_species/level5"
-threads = 6
+threads <- 100
+
+input_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4"
+out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level5"
+threads <- 100
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -49,6 +56,8 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
   frame[, stand := strsplit(stand, ".txt")[[1]][1], 
         by = seq_along(1:nrow(frame))]
   
+  frame <- subset(frame, stand != "NA")
+  
   #Unique values
   unique_stands <- unique(frame$stand)
   
@@ -56,7 +65,7 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
   options(fundiversity.memoise = TRUE)
   
   # Set up cluster
-  cl <- makeCluster(threads) #, type = "FORK"
+  cl <- makeCluster(threads, type = "FORK")
   registerDoParallel(cl)
   
   # Loop over tiles ------------------------------------------------------------
@@ -240,7 +249,4 @@ functional_diversity <- function(input_path, out_path, threads = 24) {
   
 }
 
-functional_diversity(input_path, out_path, threads = 7)
-
-
-
+functional_diversity(input_path, out_path, threads)
