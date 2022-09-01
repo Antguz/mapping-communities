@@ -16,11 +16,11 @@ library(data.table)
 #' @param gis
 #' @param fd
 
-fsi <- vect("data/fsi_clean.gpkg")
-fd <- fread("E:/mapping_species/FD.txt")
-
 #'------------------------------------------------------------------------------
 #' @example 
+
+fsi <- vect("data/fsi_clean.gpkg")
+fd <- fread("E:/mapping_species/FD.txt")
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -150,12 +150,25 @@ fd_meta <- function(fsi, fd) {
                             "TOTAL_MBF", "SITE_INDEX", "SI_SPECIES", "MGMT1", "OG1_ID", 
                             "SHAPE_Area", "CUR_AGE")]
   final_frame <- merge(to_merge, SPP, by = "STAND_KEY", all.x = TRUE, all.y = TRUE)
+  final_frame[UOM == "1", UOM := "Cords"]
+  final_frame[UOM == "2", UOM := "MBF"]
+  final_frame[UOM == "3", UOM := "Stems"]
   
   final_frame <- final_frame[order(STAND_KEY, SPP_RANK)]
   
   #N species
   final_frame[, N_SPP := max(SPP_RANK), by = "STAND_KEY"]
   
+  #Functional diversity by volumen
+  final_frame[, fd_fric(VOL), by = "STAND_KEY"]
+  
   fwrite(final_frame, "final_frame.txt", sep = "\t")
+  
+  #Merge all
+  frame_master <- merge(final_frame, fd, by = "STAND_KEY", all.x = TRUE, allow.cartesian=TRUE)
+  na_date <- is.na(frame_master$date)
+  frame_master <- frame_master[na_date == FALSE]
+  
+  fwrite(frame_master, "frame_master.txt", sep = "\t")
   
 }

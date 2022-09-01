@@ -22,14 +22,14 @@ library(doParallel)
 #'------------------------------------------------------------------------------
 #' @example 
 
-#input_path <- "E:/mapping_species/level4"
-#out_path <- "E:/mapping_species/level5"
-#threads <- 100
+input_path <- "E:/mapping_species/level4"
+out_path <- "E:/mapping_species/level5"
+threads <- 100
 
-input_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4"
-out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level5"
-chuck <- 1000
-threads <- 110
+#input_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4"
+#out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level5"
+#chuck <- 1000
+#threads <- 110
 
 #input_path <- "/media/antonio/Work/mapping_species/level4"
 #out_path <- "/media/antonio/Work/mapping_species/level5"
