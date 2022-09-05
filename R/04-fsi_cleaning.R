@@ -10,14 +10,18 @@
 
 library(terra)
 library(data.table)
+library(foreach)
+library(doParallel)
 
 #'------------------------------------------------------------------------------
 #' Arguments
-#' @param gis
-#' @param fd
+#' @param fsi
+#' @param out_path
+#' @param threads 
 
 fsi <- vect("data/fsi_clean.gpkg")
-fd <- fread("E:/mapping_species/FD.txt")
+out_path <- "/media/antonio/antonio_ssd/mapping_species/results"
+threads <- 30
 
 #'------------------------------------------------------------------------------
 #' @example 
@@ -25,7 +29,7 @@ fd <- fread("E:/mapping_species/FD.txt")
 #'------------------------------------------------------------------------------
 #' Function
 
-fd_meta <- function(fsi, fd) {
+fsi_cleaning <- function(fsi, out_path, threads) {
   
   #Deep cleanning of the FSI file ----------------------------------------------
   #Remove by Main Cover Type
@@ -99,9 +103,9 @@ fd_meta <- function(fsi, fd) {
   fsi <- subset(fsi, fsi$SHAPE_Area <= 500000) #50 hec
   
   #Export
-  writeVector(fsi, "fsi_final.gpkg", filetype = "GPKG")
+  writeVector(fsi, paste0(out_path, "/fsi_final.gpkg"), filetype = "GPKG", overwrite= TRUE)
   
-  #Reframe for data analysis
+  #Reframe for data analysis----------------------------------------------------
   frame_fsi <- as.data.table(fsi)
   
   sp1 <- frame_fsi[, c("STAND_KEY", "MN_SPP", "MN_SPP_DBH", "MN_SPP_VOL", "MN_SPP_UOM", "MN_SPP_DAM")]
@@ -143,19 +147,93 @@ fd_meta <- function(fsi, fd) {
   SPP <- subset(SPP, SP != 0)
   SPP <- SPP[, c("STAND_KEY", "SPP_RANK", "SP", "DBH", "VOL", "UOM", "DST", "DAM")]
   
+  #Rename UOM and units conversion
+  SPP[UOM == "1", UOM := "Cords"]
+  SPP[UOM == "2", UOM := "MBF"]
+  
+  SPP[UOM == "MBF", VOL_cord := VOL*0.6510416667]
+  SPP[UOM == "Cords", VOL_cord := VOL]
+  SPP <- SPP[order(STAND_KEY, SPP_RANK)]
+  
+  plots <- unique(SPP$STAND_KEY)
+  
+  # Set up cluster
+  cl <- makeCluster(threads, type = "FORK")
+  registerDoParallel(cl)
+  
+  # Loop over STAND_KEY---------------------------------------------------------
+  stand <- foreach(i = 1:length(plots),
+                        .combine = rbind,
+                        .packages = c("data.table"),
+                        .inorder = F) %dopar% {
+                          
+                          sub_plot <- subset(SPP, STAND_KEY == plots[i])
+                          sub_plot$Unique_UOM <- "Stems"
+                          
+                          #Type of measurement
+                          if(any(sub_plot$UOM == "Stems")) {
+                            sub_plot$Unique_UOM <- "Stems"
+                            
+                          } else {
+                            
+                            if(length(unique(sub_plot$UOM)) == 2) {
+                              sub_plot$Unique_UOM <- "Both"
+                              
+                            } else if(length(unique(sub_plot$UOM)) == 1) {
+                              
+                              if(unique(sub_plot$UOM) == "Cords") {
+                                sub_plot$Unique_UOM <- "Cords"
+                              
+                              } else if(unique(sub_plot$UOM) == "MBF") {
+                                sub_plot$Unique_UOM <- "MBF"
+                              
+                              }
+                            }
+                          }
+                            
+                          #Sum vol by species
+                          new_plot <- sub_plot[, .(DBH = weighted.mean(DBH, w = VOL_cord), 
+                                                   VOL = sum(VOL_cord)), 
+                                                 by = c("STAND_KEY", "SP", "Unique_UOM")]
+                            
+                          new_plot <- new_plot[order(-VOL)]
+                          new_plot$N_SPP <- nrow(new_plot)
+                          new_plot$Rank_SPP <- 1:nrow(new_plot)
+                          new_plot$TOTAL_VOL <- sum(new_plot$VOL, na.rm = TRUE)
+                          new_plot$DBH_flag <- ifelse(any(sub_plot$DBH == 0) | any(is.na(sub_plot$DBH) == TRUE)
+                                                                                   , 0, 1)
+                          new_plot$VOL_flag <- ifelse(any(sub_plot$VOL == 0) | any(is.na(sub_plot$VOL) == TRUE)
+                                                      , 0, 1)
+                          
+                          return(new_plot)
+                          
+                        }
+  
+  #Stop cluster
+  stopCluster(cl)
+  gc()
+  
+  stand <- stand[, c("STAND_KEY", "N_SPP", "Rank_SPP", "SP", "DBH", "VOL", 
+                     "TOTAL_VOL", "Unique_UOM", "DBH_flag", "VOL_flag")] 
+                          
   to_merge <- frame_fsi[, c("STAND_KEY", "ADMIN1", "MN_CTYPE", "MN_SIZE", "MN_DENS", 
                             "UTYPE", "USIZE", "UDENSE", "SURVEY_DT", "SURVEY_YR", 
                             "STAND_AGE", "TOTAL_ACRE", "TMBR_STAT", "DEV_STAT", "TOPO",
                             "PHYS", "COND", "ORIGIN", "RECON", "BASAL_AREA", "TOTAL_CORD",
                             "TOTAL_MBF", "SITE_INDEX", "SI_SPECIES", "MGMT1", "OG1_ID", 
                             "SHAPE_Area", "CUR_AGE")]
-  final_frame <- merge(to_merge, SPP, by = "STAND_KEY", all.x = TRUE, all.y = TRUE)
   
-  final_frame <- final_frame[order(STAND_KEY, SPP_RANK)]
+  final_frame <- merge(to_merge, stand, by = "STAND_KEY", all.x = TRUE, all.y = TRUE)
   
-  #N species
-  final_frame[, N_SPP := max(SPP_RANK), by = "STAND_KEY"]
+  final_frame <- final_frame[order(STAND_KEY, Rank_SPP)]
   
-  fwrite(final_frame, "final_frame.txt", sep = "\t")
+  fwrite(final_frame, paste0(out_path, "/master_clean.txt"), sep = "\t")
   
 }
+
+fsi_cleaning(fsi, out_path, threads)
+
+#Stems 4109
+#Cords 12528
+#MBF 21
+#Both 3136
