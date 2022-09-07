@@ -54,6 +54,7 @@ rast_subst <- function(tile, fsi, root_path, base_name, out_path, threads = 24) 
   
   #See interception of layers
   tile_fsi <- intersect(fsi, tile)
+  
   #tile_fsi <- subset(tile_fsi, tile_fsi$Tile_ID == "X0015_Y0019" |
   #                               tile_fsi$Tile_ID == "X0015_Y0022" |
   #                               tile_fsi$Tile_ID == "X0015_Y0023" )
