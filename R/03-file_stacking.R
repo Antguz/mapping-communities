@@ -9,6 +9,8 @@
 #' Library
 
 library(data.table)
+library(foreach)
+library(doParallel)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -26,7 +28,7 @@ path_name <- "E:/mapping_species/FD.txt"
 
 #'------------------------------------------------------------------------------
 #' Function
-file_stacking <- function(input_path, path_name) {
+file_stacking <- function(input_path, path_name, threads = 14) {
   
   #Search for paths
   files <- list.files(path = input_path, 
@@ -35,16 +37,28 @@ file_stacking <- function(input_path, path_name) {
                       full.names = TRUE, 
                       recursive = TRUE)
   
-  result <- data.table()
+  # Set up cluster
+  cl <- makeCluster(threads)
+  registerDoParallel(cl)
   
-  for(i in 1:length(files)) {
+  # Loop over files ------------------------------------------------------------
+  results <- foreach(i = 1:length(files),
+                     .combine = rbind,
+                     .packages = c("data.table"),
+                     .inorder = F) %dopar% {
+                       
+                       stand <- fread(files[i])
+                       
+                       return(stand)
     
-    stand <- fread(files[i])
-    
-    result <- rbind(result, stand)
-    
-  }
+                     }
   
-  fwrite(result, path_name, sep = "\t")
+  #Stop cluster
+  stopCluster(cl)
+  gc()
+  
+  results <- results[order(STAND_KEY)]
+
+  fwrite(results, path_name, sep = "\t")
 
 }  

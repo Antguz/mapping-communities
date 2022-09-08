@@ -11,6 +11,7 @@
 library(data.table)
 library(fundiversity)
 library(doParallel)
+library(terra)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -22,56 +23,49 @@ library(doParallel)
 #'------------------------------------------------------------------------------
 #' @example 
 
-#input_path <- "E:/mapping_species/level4"
-#out_path <- "E:/mapping_species/level5"
-#threads <- 100
+input_path <- "E:/mapping_species/level4"
+out_path <- "E:/mapping_species/level5"
+threads <- 100
 
 #input_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4"
 #out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level5"
 #chuck <- 1000
 #threads <- 110
 
-input_path <- "/media/antonio/Work/mapping_species/level4"
-out_path <- "/media/antonio/Work/mapping_species/level5"
+tile <- vect("data/title_clipped.gpkg")
+fsi <- fread("data/FIA_SPCD.csv")
+input_path <- "/media/antonio/antonio_ssd/mapping_species/level4"
+out_path <- "/media/antonio/antonio_ssd/mapping_species/level5"
 chuck <- 100
 threads <- 30
 
 #'------------------------------------------------------------------------------
 #' Function
-functional_diversity <- function(input_path, out_path, chuck = 40, threads = 30) {
+functional_diversity <- function(tile, input_path, out_path, chuck = 40, threads = 30) {
   
-  #Search for paths
-  files <- list.files(path = input_path, 
-                      pattern = ".txt", 
-                      all.files = TRUE,
-                      full.names = FALSE, 
-                      recursive = TRUE)
+  #Clean fsi
+  fsi <- subset(fsi, STATECD == 27 | STATECD == 55)
+  fsi <- subset(fsi, SUBP == 1)
   
-  size <- file.size(paste0(input_path, "/", files))
+  #Make a vect
+  fsi <- vect(fsi, geom=c("LON", "LAT"), crs= "+proj=longlat +datum=WGS84")
+  fsi <- project(fsi, tile)
+  fsi <- buffer(fsi, width = 100)
+  tile_fsi <- intersect(fsi, tile)
+  frame <- as.data.table(as.data.frame(tile_fsi))
+  frame <- frame[, c(1, 29:31)]
+  frame <- frame[order(Tile_ID)]
   
-  #Arrange files frame
-  frame <- data.table(matrix(unlist(strsplit(files, "-")), 
-                             nrow= length(files), 
-                             byrow=TRUE), stringsAsFactors=FALSE)
-  colnames(frame) <- c("tile", "stand")
-  frame[, stand := strsplit(stand, ".txt")[[1]][1], 
-        by = seq_along(1:nrow(frame))]
-  
-  frame$size <- size
-  frame <- subset(frame, stand != "NA")
-  frame <- subset(frame, size <= quantile(frame$size, 0.99))
-  
-  #Order
-  frame <- frame[order(size)]
-  
-  #Unique values
-  unique_stands <- unique(frame$stand)
+  #Unique tiles
+  tile <- unique(frame$Tile_ID)
   
   #No memory
   options(fundiversity.memoise = TRUE)
   
   # Loop over tiles ------------------------------------------------------------
   extraction <- function(i, unique_stands, frame) {
+    
+    
     
     sub_stand <- subset(frame, stand == unique_stands[i])
     

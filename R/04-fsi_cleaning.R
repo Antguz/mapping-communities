@@ -19,12 +19,18 @@ library(doParallel)
 #' @param out_path
 #' @param threads 
 
+<<<<<<< HEAD:R/04-fsi_cleaning.R
 fsi <- vect("data/fsi_clean.gpkg")
 out_path <- "/media/antonio/antonio_ssd/mapping_species/results"
 threads <- 30
 
+=======
+>>>>>>> 1265339feb6c6d0dc2137209e2a4081c88505fc1:R/04-fd-meta.R
 #'------------------------------------------------------------------------------
 #' @example 
+
+fsi <- vect("data/fsi_clean.gpkg")
+fd <- fread("E:/mapping_species/FD.txt")
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -222,12 +228,33 @@ fsi_cleaning <- function(fsi, out_path, threads) {
                             "PHYS", "COND", "ORIGIN", "RECON", "BASAL_AREA", "TOTAL_CORD",
                             "TOTAL_MBF", "SITE_INDEX", "SI_SPECIES", "MGMT1", "OG1_ID", 
                             "SHAPE_Area", "CUR_AGE")]
+<<<<<<< HEAD:R/04-fsi_cleaning.R
+=======
+  final_frame <- merge(to_merge, SPP, by = "STAND_KEY", all.x = TRUE, all.y = TRUE)
+  final_frame[UOM == "1", UOM := "Cords"]
+  final_frame[UOM == "2", UOM := "MBF"]
+  final_frame[UOM == "3", UOM := "Stems"]
+>>>>>>> 1265339feb6c6d0dc2137209e2a4081c88505fc1:R/04-fd-meta.R
   
   final_frame <- merge(to_merge, stand, by = "STAND_KEY", all.x = TRUE, all.y = TRUE)
   
   final_frame <- final_frame[order(STAND_KEY, Rank_SPP)]
   
+<<<<<<< HEAD:R/04-fsi_cleaning.R
   fwrite(final_frame, paste0(out_path, "/master_clean.txt"), sep = "\t")
+=======
+  #Functional diversity by volumen
+  final_frame[, fd_fric(VOL), by = "STAND_KEY"]
+  
+  fwrite(final_frame, "final_frame.txt", sep = "\t")
+>>>>>>> 1265339feb6c6d0dc2137209e2a4081c88505fc1:R/04-fd-meta.R
+  
+  #Merge all
+  frame_master <- merge(final_frame, fd, by = "STAND_KEY", all.x = TRUE, allow.cartesian=TRUE)
+  na_date <- is.na(frame_master$date)
+  frame_master <- frame_master[na_date == FALSE]
+  
+  fwrite(frame_master, "frame_master.txt", sep = "\t")
   
 }
 
