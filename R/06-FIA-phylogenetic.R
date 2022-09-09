@@ -53,6 +53,9 @@ phylogenetic_diversity <- function(master, threads) {
                          TOTALBIOMASS = sum(TOTALBIOMASS, na.rm = TRUE)), 
                      by = c("PLOTID", "SPCD")]
   
+  #No species flag
+  fia_summary
+  
   #Merge fia and species
   fia_summary <- merge(fia_summary, ID_species[, c(1:3)], by = "SPCD", all.x = TRUE, all.y = FALSE)
   
@@ -72,7 +75,7 @@ phylogenetic_diversity <- function(master, threads) {
   taxonomy$SPP[12] <- "Populus_X_deltoides"
   
   #Makes phylogenetic hypotheses
-  sppPhylo <- taxonomy[, c(2, 3, 5)]
+  sppPhylo <- taxonomy[, c(1, 3, 2)]
   hypotheses <- phylo.maker(sppPhylo, scenarios = "S3")
   
   phylo <- multi2di(hypotheses$scenario.3)
