@@ -64,7 +64,6 @@ phylogenetic_diversity <- function(master, threads) {
   spp_check <- TPL(ID_species, infra = TRUE, corr = TRUE)
   
   taxonomy <- spp_check %>% 
-    drop_na(New.Genus, New.Species) %>% 
     select(Taxon, Family, New.Genus, New.Species) #, Tax_res
   
   taxonomy$SP <- ID_species$id #Provide the ID
@@ -75,7 +74,7 @@ phylogenetic_diversity <- function(master, threads) {
   taxonomy$SPP[12] <- "Populus_X_deltoides"
   
   #Makes phylogenetic hypotheses
-  sppPhylo <- taxonomy[, c(1, 3, 2)]
+  sppPhylo <- taxonomy[, c(1, 2, 3)]
   hypotheses <- phylo.maker(sppPhylo, scenarios = "S3")
   
   phylo <- multi2di(hypotheses$scenario.3)

@@ -15,7 +15,7 @@ library(doParallel)
 
 #'------------------------------------------------------------------------------
 #' Arguments
-#' @param master
+#' @param fia
 #' @param out_path
 #' @param threads
 
@@ -38,6 +38,8 @@ fia_diversity <- function(fia, out_path, threads) {
   #FIA cordinates
   fia_coordinates <- fia[, .(LAT = mean(LAT, na.rm = TRUE), LON = mean(LON, na.rm = TRUE)), by = c("PLOTID", "SUBP")]
   fia_coordinates <- fia_coordinates[SUBP == "1"]
+  fia_coordinates <- fia_coordinates[order(PLOTID)]
+  fia_coordinates$ID <- 1:nrow(fia_coordinates)
   
   #Summarize
   fia_summary <- fia[, .(BA = sum(BA, na.rm = TRUE), 
@@ -47,9 +49,10 @@ fia_diversity <- function(fia, out_path, threads) {
                          TREETALLY = sum(TREETALLY, na.rm = TRUE), 
                          TOTALBIOMASS = sum(TOTALBIOMASS, na.rm = TRUE)), 
                      by = c("PLOTID", "SPCD")]
+  fia_summary <- fia_summary[order(PLOTID)]
   
   #Unique stands
-  plots <- unique(fia_summary$PLOTID)
+  plots <- unique(fia_coordinates$PLOTID)
   
   #No memory
   options(fundiversity.memoise = TRUE)
@@ -72,9 +75,12 @@ fia_diversity <- function(fia, out_path, threads) {
                    .packages = c("data.table", "fundiversity"),
                    .inorder = F) %dopar% {
                      
-                     sub_plot <- subset(fia_summary, PLOTID == plots[i])
+                     sub_plot <- subset(fia_summary, PLOTID == fia_coordinates$PLOTID[i])
                      
-                     final <- data.table(PLOTID = plots[i],
+                     final <- data.table(PLOTID = fia_coordinates$PLOTID[i],
+                                         ID = fia_coordinates$ID[i],
+                                         LAT = fia_coordinates$LAT[i],
+                                         LON = fia_coordinates$LON[i],
                                          nsp = nrow(sub_plot),
                                          TBA = sum(sub_plot$BA),
                                          TPA = sum(sub_plot$TPA),
@@ -95,7 +101,11 @@ fia_diversity <- function(fia, out_path, threads) {
                                          FDiv_BA = fd_fdiv(sub_plot$BA)[1, 2],
                                          FEve_BA = fd_feve(sub_plot$BA)[1, 2],
                                          FDis_BA = fd_fdis(sub_plot$BA)[1, 2],
-                                         Rao_BA  = fd_raoq(sub_plot$BA)[1, 2])
+                                         Rao_BA  = fd_raoq(sub_plot$BA)[1, 2],
+                                         flag_sp = any(sub_plot$SPCD == 299) |  any(sub_plot$SPCD == 998) | any(sub_plot$SPCD == 999),
+                                         flag_ba = any(is.na(sub_plot$BA) == TRUE),
+                                         flag_tpa = any(is.na(sub_plot$tpa) == TRUE),
+                                         flag_tb = any(is.na(sub_plot$tb) == TRUE))
                      
                      return(final)
                      
@@ -104,10 +114,7 @@ fia_diversity <- function(fia, out_path, threads) {
   #Stop cluster
   stopCluster(cl)
   gc()
-  
-  #Add coordinates
-  stand <- merge(stand, fia_coordinates[, c(1, 3:4)], by = "PLOTID", all.x = TRUE, all.y = FALSE)
-  
+
   #Export
   fwrite(stand, paste0(out_path, "/master_FIA-diversity.txt"), sep = "\t")
   

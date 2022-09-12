@@ -12,6 +12,7 @@ library(data.table)
 library(fundiversity)
 library(doParallel)
 library(bit64)
+library(foreach)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -23,31 +24,30 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' @example 
 
-#fsi <- fread("data/FIA_SPCD.csv")
+#fia <- fread("data/FIA_SPCD.csv")
 #input_path <- "E:/mapping_species/level4"
 #out_path <- "E:/mapping_species/level5"
 #chuck <- 4
 #threads <- 4
 
-fsi <- fread("/panfs/jay/groups/17/cavender/shared/oak-wilt/misc/FIA/FIA_SPCD.csv")
-input_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4"
-out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level5"
-chuck <- 100
-threads <- 100
+#fia <- fread("/panfs/jay/groups/17/cavender/shared/oak-wilt/misc/FIA/FIA_SPCD.csv")
+#input_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level4_rast"
+#out_path <- "/panfs/jay/groups/17/cavender/shared/oak-wilt/level5"
+#chuck <- 100
+#threads <- 100
 
-#tile <- vect("data/title_clipped.gpkg")
-#fsi <- fread("data/FIA_SPCD.csv")
-#input_path <- "/media/antonio/antonio_ssd/mapping_species/level4"
-#out_path <- "/media/antonio/antonio_ssd/mapping_species/level5"
-#chuck <- 4
-#threads <- 4
+fia <- fread("data/FIA_SPCD.csv")
+input_path <- "/media/antonio/antonio_ssd/mapping_species/level4"
+out_path <- "/media/antonio/antonio_ssd/mapping_species/level5"
+chuck <- 500
+threads <- 30
 
 #In case
 options("scipen"=100, "digits"=6)
 
 #'------------------------------------------------------------------------------
 #' Function
-functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads = 100) {
+functional_diversity <- function(fia, input_path, out_path, chuck = 100, threads = 100) {
   
   #Search for the tiles -------------------------------------------------------- 
   tiles <- list.files(path = input_path, 
@@ -69,6 +69,8 @@ functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads
 
   # Functional diversity function ----------------------------------------------
   extraction <- function(i, tiles, unique_dates, input_path, out_path) {
+    
+    print(tiles[i])
     
     #Read tile
     pixels <- fread(paste0(input_path, "/", tiles[i]))
@@ -210,8 +212,7 @@ functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads
     
     #Remove residuals
     rm(list = c("pixels", "plotid", "k"))
-    gc()
-    
+
   }
   
   # Loop for chucks ------------------------------------------------------------
@@ -220,7 +221,9 @@ functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads
   n_times <- ceiling(x_max/chuck)
   
   #n_files <- c(14, 15, 16, 28)
-  for(j in 1:n_times) {
+  for(j in 5:n_times) {
+    
+    print(j)
     
     #n_files <- c(14, 15, 16, 28)
     if((j*chuck) <= x_max) {
@@ -230,7 +233,7 @@ functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads
     }
     
     # Set up cluster
-    cl <- makeCluster(threads) #, type="FORK"
+    cl <- makeCluster(threads, type="FORK") #
     registerDoParallel(cl)
     clusterEvalQ(cl , c(library(data.table), library(fundiversity)))
     
@@ -257,26 +260,16 @@ functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads
                       all.files = TRUE,
                       full.names = TRUE, 
                       recursive = TRUE)
-  
-  # Set up cluster
-  cl <- makeCluster(threads) #, type="FORK"
-  registerDoParallel(cl)
-  
+
   # Loop over files ------------------------------------------------------------
-  results <- foreach(i = 1:length(files),
-                     .combine = rbind,
-                     .packages = c("data.table"),
-                     .inorder = F) %dopar% {
-                       
-                       stand <- fread(files[i])
-                       
-                       return(stand)
-                       
-                     }
+  results <- data.table()
   
-  #Stop cluster
-  stopCluster(cl)
-  gc()
+  for(i in 1:length(files)) {
+    
+    stand <- fread(files[i])
+    results <- rbind(results, stand)
+    
+  }
   
   results <- results[order(PLOTID, date)]
   
@@ -284,4 +277,4 @@ functional_diversity <- function(fsi, input_path, out_path, chuck = 100, threads
   
 }
 
-functional_diversity(fsi, input_path, out_path, chuck = 100, threads = 100)
+functional_diversity(fia, input_path, out_path, chuck = 90, threads = 28)
