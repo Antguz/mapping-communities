@@ -14,11 +14,13 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Arguments
 #' @param fia
+#' @param stand
+#' @param spectra
 #' @param out_path
-#' @param threads
 
 root_path <- "E:/DESIS"
-root_path <- "/media/antonio/Extreme SSD/DESIS"
+#root_path <- "/media/antonio/Extreme SSD/DESIS"
+fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 stand <- fread(paste0(root_path, "/03_reshape/ntrees_reshape.csv"))
 spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra.csv"), header = TRUE)
 out_path <- paste0(root_path, "/04_match_spectra-stand")
@@ -98,16 +100,32 @@ match_datasets <- function(stand, spectra, out_path) {
   #------------------------------------
   # Matching files
   
+  #Stands
   sub_stands <- stand[unique_plots$ID, ]
-  sub_stands <- sub_stands[, c(4:81)]
+  sub_stands <- sub_stands[, c(2, 4:81)]
   
+  species_number <- colSums(sub_stands[, 2:79])
+  species_number <- species_number[species_number >= 1]
+  species_number <- c("PLT_CN", names(species_number))
+  sub_stands <- sub_stands[, ..species_number]
+  
+  #Spectra
   sub_spectra <- spectra[unique_plots$spectra, ]
-  sub_spectra <- sub_spectra[, c(14:248)]
+  sub_spectra <- sub_spectra[, c(3, 14:248)]
+  colnames(sub_spectra)[1] <- "PLT_CN"
   
+  #Unique plots
   unique_plots <- unique_plots[, c(1, 2, 5)]
+  unique_plots <- merge(unique_plots, fia[, c(1, 13, 14)], by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   
+  #-------------------------------------
+  # Second step mergin (just in case)
+  sub_stands <- merge(unique_plots, sub_stands, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  sub_spectra <- merge(unique_plots, sub_spectra, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  
+  #Export
   fwrite(unique_plots, paste0(out_path, "/plots.csv"))
-  fwrite(sub_stands, paste0(out_path, "/species.csv"))
-  fwrite(sub_spectra, paste0(out_path, "/spectra.csv"))
+  fwrite(sub_stands[, c(1, 6:72)], paste0(out_path, "/species.csv"))
+  fwrite(sub_spectra[, c(1, 4:5, 6:240)], paste0(out_path, "/spectra.csv"))
 
 }
