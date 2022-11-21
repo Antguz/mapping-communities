@@ -9,6 +9,7 @@
 #' Library
 
 library(data.table)
+options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -19,6 +20,8 @@ library(data.table)
 #' @example 
 
 root_path <- "E:/DESIS"
+root_path <- "/media/antonio/Extreme SSD/DESIS"
+
 in_path <- paste0(root_path, "/01_pixel-subtraction")
 out_name_path <- paste0(root_path, "/02_compile-files/02-spectra.csv")
 

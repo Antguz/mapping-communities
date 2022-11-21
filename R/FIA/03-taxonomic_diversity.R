@@ -20,6 +20,7 @@ library(doParallel)
 #' @param threads
 
 root_path <- "E:/DESIS"
+root_path <- "/media/antonio/Extreme SSD/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
 out_path <- paste0(root_path, "/03_diversity")
 threads <- 8

@@ -10,6 +10,7 @@
 
 library(terra)
 library(data.table)
+options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -21,6 +22,9 @@ library(data.table)
 #' @example 
 
 root_path <- "E:/DESIS"
+root_path <- "/media/antonio/Extreme SSD/DESIS"
+
+
 in_path <- paste0(root_path, "/00_imagery")
 frame_plot <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 frame_plot <- frame_plot[, c("PLT_CN", "LAT", "LON")]
