@@ -20,8 +20,8 @@ options(scipen = 100)
 
 root_path <- "E:/DESIS"
 #root_path <- "/media/antonio/Extreme SSD/DESIS"
-fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
-stand <- fread(paste0(root_path, "/03_reshape/ntrees_reshape.csv"))
+fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102_reproject.csv"))
+stand <- fread(paste0(root_path, "/03_reshape/DRYBIO_AG_reshape.csv"))
 spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra.csv"), header = TRUE)
 out_path <- paste0(root_path, "/04_match_spectra-stand")
 
@@ -37,9 +37,9 @@ match_datasets <- function(stand, spectra, out_path) {
   #Clean stand
   
   #Remove stands with unknown trees
-  stand[REMOVE1 >= 1, REMOVE1 := NA]
-  stand[REMOVE2 >= 1, REMOVE1 := NA]
-  stand[REMOVE3 >= 1, REMOVE1 := NA]
+  stand[REMOVE1 > 0, REMOVE1 := NA]
+  stand[REMOVE2 > 0, REMOVE1 := NA]
+  stand[REMOVE3 > 0, REMOVE1 := NA]
   stand <- na.exclude(stand)
 
   #------------------------------------
@@ -116,7 +116,7 @@ match_datasets <- function(stand, spectra, out_path) {
   
   #Unique plots
   unique_plots <- unique_plots[, c(1, 2, 5)]
-  unique_plots <- merge(unique_plots, fia[, c(1, 13, 14)], by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  unique_plots <- merge(unique_plots, fia[, c(2, 19, 20)], by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   
   #-------------------------------------
   # Second step mergin (just in case)
@@ -125,7 +125,7 @@ match_datasets <- function(stand, spectra, out_path) {
   
   #Export
   fwrite(unique_plots, paste0(out_path, "/plots.csv"))
-  fwrite(sub_stands[, c(1, 6:72)], paste0(out_path, "/species.csv"))
+  fwrite(sub_stands[, c(1, 6:56)], paste0(out_path, "/species.csv"))
   fwrite(sub_spectra[, c(1, 4:5, 6:240)], paste0(out_path, "/spectra.csv"))
 
 }

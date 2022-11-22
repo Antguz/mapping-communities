@@ -36,27 +36,54 @@ library(PMA)
 
 set.seed(22)
 
-perm.out <- CCA.permute(x= p, 
-                        z= r,
+p <- as.matrix(spectra[, c(4:229)])
+r <- as.matrix(stand[, c(2:52)])
+
+perm.out <- CCA.permute(x= r, 
+                        z= p,
                         typex = "standard",
                         typez = "standard",
+                        niter = 10,
                         nperms = 10,
-                        penaltyx = seq(.2,.9,len=100),
-                        penaltyz = seq(.2,.9,len=100))
+                        upos = TRUE,
+                        vpos = TRUE,
+                        penaltyx = seq(0.1,.9,len= 25),
+                        penaltyz = seq(0.1,.9,len= 25))
 
-out <- CCA(x = r,
-           z = p,
+plot(perm.out)
+
+out <- CCA(x = p,
+           z = r,
            typex="standard",
            typez="standard",
+           niter = 100,
            K = ncol(r),
            penaltyx = perm.out$bestpenaltyx,
            penaltyz = perm.out$bestpenaltyz,
            v = perm.out$v.init)
 
+v <- out$v
+u <- out$u
+uc <- p %*% u
+vc <- r %*% v
+
+plot(vc[,1], uc[,1])
+
+
+plot(vc[,1], uc[,1])
+
+plot(uc[,1], uc[,2])
+
+plot(v[,1], u[,1])
+
+
+cgi <- c
 
 ## We run CCA using all gene exp. data, but CGH data on chrom 1 only.
 print(perm.out)
-plot(perm.out)
+plot(out)
+
+
 out <- CCA(x=rna,
            z=dna[,chrom==1], 
            typex="standard", 
