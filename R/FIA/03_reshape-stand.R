@@ -73,22 +73,22 @@ reshape_stands <- function(fia, SPCD, out_path) {
   DRYBIO_AG <- setnafill(DRYBIO_AG, fill = 0)
   
   #Relative abundance
-  ntrees_sum <- rowSums(ntrees[, 4:81])
-  BA_sum <- rowSums(BA[, 4:81])
-  AG_sum <- rowSums(DRYBIO_AG[, 4:81])
+  #ntrees_sum <- rowSums(ntrees[, 4:81])
+  #BA_sum <- rowSums(BA[, 4:81])
+  #AG_sum <- rowSums(DRYBIO_AG[, 4:81])
   
-  rntrees <- ntrees[, 4:81]/ntrees_sum
-  rBA <- BA[, 4:81]/BA_sum
-  rDRYBIO_AG <- DRYBIO_AG[, 4:81]/AG_sum
+  #rntrees <- ntrees[, 4:81]/ntrees_sum
+  #rBA <- BA[, 4:81]/BA_sum
+  #rDRYBIO_AG <- DRYBIO_AG[, 4:81]/AG_sum
   
   #Final to export
-  rntrees <- cbind(ntrees[, 1:3], rntrees)
-  rBA <- cbind(BA[, 1:3], rBA)
-  rDRYBIO_AG <- cbind(DRYBIO_AG[, 1:3], rDRYBIO_AG)
+  #rntrees <- cbind(ntrees[, 1:3], rntrees)
+  #rBA <- cbind(BA[, 1:3], rBA)
+  #rDRYBIO_AG <- cbind(DRYBIO_AG[, 1:3], rDRYBIO_AG)
   
   #Export
-  fwrite(rntrees, paste0(out_path, "/ntrees_reshape.csv"))
-  fwrite(rBA, paste0(out_path, "/BA_reshape.csv"))
-  fwrite(rDRYBIO_AG, paste0(out_path, "/DRYBIO_AG_reshape.csv"))
+  fwrite(ntrees, paste0(out_path, "/ntrees_reshape.csv"))
+  fwrite(BA, paste0(out_path, "/BA_reshape.csv"))
+  fwrite(DRYBIO_AG, paste0(out_path, "/DRYBIO_AG_reshape.csv"))
   
 }

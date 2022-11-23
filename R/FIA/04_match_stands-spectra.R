@@ -19,7 +19,7 @@ options(scipen = 100)
 #' @param out_path
 
 root_path <- "E:/DESIS"
-#root_path <- "/media/antonio/Extreme SSD/DESIS"
+root_path <- "/media/antonio/Extreme SSD/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102_reproject.csv"))
 stand <- fread(paste0(root_path, "/03_reshape/DRYBIO_AG_reshape.csv"))
 spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra.csv"), header = TRUE)
@@ -31,7 +31,7 @@ out_path <- paste0(root_path, "/04_match_spectra-stand")
 #'------------------------------------------------------------------------------
 #' Script
 
-match_datasets <- function(stand, spectra, out_path) {
+match_datasets <- function(fia, stand, spectra, out_path) {
   
   #------------------------------------
   #Clean stand
@@ -125,7 +125,7 @@ match_datasets <- function(stand, spectra, out_path) {
   
   #Export
   fwrite(unique_plots, paste0(out_path, "/plots.csv"))
-  fwrite(sub_stands[, c(1, 6:56)], paste0(out_path, "/species.csv"))
-  fwrite(sub_spectra[, c(1, 4:5, 6:240)], paste0(out_path, "/spectra.csv"))
+  fwrite(sub_stands, paste0(out_path, "/species.csv"))
+  fwrite(sub_spectra, paste0(out_path, "/spectra.csv"))
 
 }
