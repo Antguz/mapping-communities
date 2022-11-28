@@ -16,7 +16,7 @@ library(data.table)
 #' @param out_path
 #' @param threads
 
-root_path <- "E:/DESIS"
+#root_path <- "E:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
