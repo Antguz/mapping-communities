@@ -14,6 +14,9 @@ library(doSNOW)
 library(foreach)
 library(ecodist)
 library(bigmds)
+library(ape)
+library(ggplot2)
+library(ggrepel)
 #library(BiodiversityR)
 options(scipen = 100)
 
@@ -23,21 +26,21 @@ options(scipen = 100)
 #' @param out_path
 
 root_path <- "E:/DESIS/04_match_spectra-stand"
-root_path <- "/media/antonio/Extreme SSD/DESIS/04_match_spectra-stand"
-stand <- fread(paste0(root_path, "/species.csv"))
-out_path <- paste0(root_path, "/04_match_spectra-stand")
+root_path <- "/media/antonio/Extreme SSD/DESIS"
+stand <- fread(paste0(root_path, "/04_match_spectra-stand/species.csv"))
+out_path <- paste0(root_path, "/05_NMDS")
 
 #'------------------------------------------------------------------------------
 #' @analysis  
 
 #Metadata
 meta <- stand[,1:5]
-
-#Data for ordination
 data <- stand[, .SD, .SDcols=c(6:ncol(stand))]
-a <- rowSums(data)
-data <- setnafill(data, fill = 0) #In case    
-data <- data[a != 0]
+
+#Remove plots without species and less than 5 species
+nsp <- apply(data, 1, function(x) sum(x > 0))
+meta <- meta[nsp != 0]
+data <- data[nsp != 0]
 
 #Remove rare species (presence <10 in plots)
 presence <- colSums( data != 0)
@@ -56,36 +59,128 @@ for(i in 1:nrow(data)) {
   
 }
 
-data <- data[remove == FALSE]
+data <- data[isFALSE(remove) == FALSE]
+meta <- meta[isFALSE(remove) == FALSE]
 data <- data[, !..presence]
 
 #Transform
-data_log <- log(data+1)
+data_transfrom <- sqrt(data)
+data_dist <- vegdist(data_transfrom, "bray")
+PCOA <- pcoa(data_dist, correction = "lingoes", rn = meta$PLT_CN)
+saveRDS(PCOA, "PCoA.rds")
+PCOA <- readRDS("PCoA.rds")
 
-NMDS <- metaMDS(data_log, 
-                distance = "bray", 
-                k = 3, 
-                autotransform = FALSE,
-                try = 5, 
-                trymax = 5,
-                parallel = 8)
+biplot(PCOA, Y = data_transfrom, plot.axes = c(1,2))
 
-saveRDS(NMDS, "data/NMDS.rds")
+plots_fia <- as.data.table(PCOA$vectors)
+species <- wascores(x = PCOA$vectors, w = data_transfrom)
+SPCD <- rownames(species)
+species <- as.data.table(species)
+
+plots_fia <- cbind(meta, plots_fia)
+species <- cbind(data.table(species = SPCD), species)
+
+#Export
+fwrite(species, paste0(out_path, "/PCoA_species.csv"))
+fwrite(plots_fia, paste0(out_path, "/PCoA_plots.csv"))
+
+species <- fread(paste0(out_path, "/PCoA_species.csv"), header = TRUE)
+plots_fia <- fread(paste0(out_path, "/PCoA_plots.csv"), header = TRUE)
+
+plot(plots_fia$Axis.1, plots_fia$Axis.2)
+points(species$Axis.20, species$Axis.10, col = "red")
+
+ggplot() +
+  geom_point(data = plots_fia, aes(plots_fia$Axis.1, plots_fia$Axis.2), shape = 18, colour = "grey", alpha = 0.5) +
+  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) +
+  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  scale_fill_continuous(low="lavenderblush", high="red") +
+  #geom_jitter(alpha=0.5, size = 1.1) +
+  geom_point(data = species, aes(species$Axis.1, species$Axis.2), colour = "white", fill = "black", shape = 21) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-.7, .7)) +
+  scale_y_continuous(limits = c(-.7, .7)) +
+  geom_text_repel(data = species, aes(species$Axis.1, species$Axis.2),
+    label= SPCD, 
+    direction = "both", 
+    box.padding = 0.5) + xlab("PCoA1") + ylab("PCoA2")
+
+ggplot() +
+  geom_point(data = plots_fia, aes(plots_fia$Axis.1, plots_fia$Axis.3), shape = 18, colour = "grey", alpha = 0.5) +
+  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
+  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.3, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  scale_fill_continuous(low="lavenderblush", high="red") +
+  #geom_jitter(alpha=0.5, size = 1.1) +
+  geom_point(data = species, aes(species$Axis.1, species$Axis.3), colour = "white", fill = "black", shape = 21) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-.7, .7)) +
+  scale_y_continuous(limits = c(-.7, .7)) +
+  geom_text_repel(data = species, aes(species$Axis.1, species$Axis.3),
+            label= SPCD, 
+            nudge_x = 0.03, nudge_y = 0.001, 
+            check_overlap = T) + xlab("PCoA1") + ylab("PCoA3")
+
+ggplot() +
+  geom_point(data = plots_fia, aes(plots_fia$Axis.2, plots_fia$Axis.3), shape = 18, colour = "grey", alpha = 0.5) +
+  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
+  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.2, y = plots_fia$Axis.3, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  scale_fill_continuous(low="lavenderblush", high="red") +
+  #geom_jitter(alpha=0.5, size = 1.1) +
+  geom_point(data = species, aes(species$Axis.2, species$Axis.3), colour = "white", fill = "black", shape = 21) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-.7, .7)) +
+  scale_y_continuous(limits = c(-.7, .7)) +
+  geom_text_repel(data = species, aes(species$Axis.2, species$Axis.3),
+                  label= SPCD, 
+                  nudge_x = 0.03, nudge_y = 0.001, 
+                  check_overlap = T) + xlab("PCoA2") + ylab("PCoA3")
+
+ggplot() +
+  geom_point(data = plots_fia, aes(plots_fia$Axis.1, plots_fia$Axis.5), shape = 18, colour = "grey", alpha = 0.5) +
+  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
+  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.5, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  scale_fill_continuous(low="lavenderblush", high="red") +
+  #geom_jitter(alpha=0.5, size = 1.1) +
+  geom_point(data = species, aes(species$Axis.1, species$Axis.5), colour = "white", fill = "black", shape = 21) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-.7, .7)) +
+  scale_y_continuous(limits = c(-.7, .7)) +
+  geom_text_repel(data = species, aes(species$Axis.1, species$Axis.5),
+                  label= SPCD, 
+                  nudge_x = 0.03, nudge_y = 0.001, 
+                  check_overlap = T) + xlab("PCoA2") + ylab("PCoA3")
+
+ggplot() +
+  geom_point(data = plots_fia, aes(plots_fia$Axis.2, plots_fia$Axis.5), shape = 18, colour = "grey", alpha = 0.5) +
+  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
+  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.2, y = plots_fia$Axis.5, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  scale_fill_continuous(low="lavenderblush", high="red") +
+  #geom_jitter(alpha=0.5, size = 1.1) +
+  geom_point(data = species, aes(species$Axis.2, species$Axis.5), colour = "white", fill = "black", shape = 21) +
+  theme_bw() +
+  scale_x_continuous(limits = c(-.7, .7)) +
+  scale_y_continuous(limits = c(-.7, .7)) +
+  geom_text_repel(data = species, aes(species$Axis.2, species$Axis.5),
+                  label= SPCD, 
+                  nudge_x = 0.03, nudge_y = 0.001, 
+                  check_overlap = T) + xlab("PCoA2") + ylab("PCoA3")
 
 
-NMDS_new <- metaMDS(test, 
-                    distance = "bray", 
-                    k = 3, 
-                    autotransform = FALSE,
-                    try = 5, 
-                    trymax = 5,
-                    previous.best = NMDS,
-                    parallel = 16)
 
 
 
 
 
+
+grasslands.spe <- read.delim ('http://www.davidzeleny.net/anadat-r/data-download/grasslands-spe.txt', row.names = 1)
+grasslands.env <- read.delim ('http://www.davidzeleny.net/anadat-r/data-download/grasslands-env.txt')
+grasslands.spe.log <- log1p (grasslands.spe)
+
+PCA <- rda (grasslands.spe.log)
+
+vegtype <- as.numeric (as.factor (grasslands.env$classification))
+ordiplot (PCA, display = 'sites', type = 'n')
+points (PCA, pch = vegtype, col = vegtype)
 
 
 
@@ -221,6 +316,10 @@ par(mfrow = c(1, 2))
 biplot.pcoa(PCOA)
 plot(PCA)
 
+PCOA <- readRDS("data/PCoA.rds")
+plot(PCOA$values$Relative_eig[1:45])
+
+wascores(PCOA$vectors, )
 
 
 
@@ -240,22 +339,16 @@ saveRDS(NMDS, file = "data/NMDS2.rds")
 #Data visualisation (THIS IS AN UPDATED VERSION OF THE SCRIPT, NOW USING GGPLOT)
 library("ggplot2")
 
-#Extract the axes scores
-datascores <- as.data.frame(scores(NMDS)$sites)  #extract the site scores
+NMDS <- readRDS("data/NMDS.rds")
 
-#Add/calculate spider diagram
-scores <- cbind(as.data.frame(datascores), Habitat = data_2$Habitat)
-centroids <- aggregate(cbind(NMDS1, NMDS2) ~ Habitat, data = scores, FUN = mean)
-seg <- merge(scores, setNames(centroids, c('Habitat','oNMDS1','oNMDS2')),
-             by = 'Habitat', sort = FALSE)
+#Extract the axes scores
+sites <- as.data.frame(scores(NMDS)$sites)  #extract the site scores
+species <- as.data.frame(scores(NMDS)$species)
 
 #plot
-ggplot(scores, aes(x = NMDS1, y = NMDS2, colour = Habitat)) +
-  geom_segment(data = seg,
-               mapping = aes(xend = oNMDS1, yend = oNMDS2)) + # add spiders
-  geom_point(data = centroids, size = 4) +                    # add centroids
-  geom_point() +                                              
-  coord_fixed()+                                              
+ggplot() +
+  geom_point(data = sites, aes(x = NMDS1, y = NMDS2)) +
+  coord_fixed(xlim = c(-0.1, 0.1), ylim = c(-0.1, 0.1))+                                              
   theme_bw()+ 
   theme(legend.position="right",legend.text=element_text(size=10),legend.direction='vertical')
 

@@ -1,10 +1,10 @@
-optimal_number <- function(meta, NDMS, spectra, split, int_ncomp = 50, repeated = 100, k = 10, threads = 6) {
+optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, repeated = 100, k = 10, threads = 16) {
   
   # Creates partition for training and testing
-  NDMS_training <- NDMS[split,]
+  ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
   meta_training <- meta[split,]
-  dimentions <- ncol(NDMS_training)
+  dimentions <- ncol(ordination_training)
   
   #Create spatial points
   spatial <- sf::st_as_sf(meta_training, coords = c("xcoord", "ycoord"))
@@ -14,11 +14,11 @@ optimal_number <- function(meta, NDMS, spectra, split, int_ncomp = 50, repeated 
   results <- data.table()
   
   #Progress bar
-  pb <- txtProgressBar(min = 1, max = repeated, style = 3) 
+  pb <- txtProgressBar(min = 1, max = repeated*dimentions, style = 3) 
   
   #Parallel 
   if(threads > 1 ) {
-    cl <- makeCluster(threads, type = "PSOCK")
+    cl <- makeCluster(threads)
     pls.options(parallel = cl)
   }
   
@@ -27,26 +27,29 @@ optimal_number <- function(meta, NDMS, spectra, split, int_ncomp = 50, repeated 
     
     setTxtProgressBar(pb, i)
     
-    #Loop over NDMS dimentions
+    #Loop over ordination dimentions
     for(q in 1:dimentions) {
+      
+      setTxtProgressBar(pb, i)
       
       #Create spatial bloks
       #cv <- CV_spatialBlock(spatial, k = 10)
       
       #Train set
-      train <- cbind(NDMS_training[, .SD, .SDcols = c(q)],
+      train <- cbind(ordination_training[, .SD, .SDcols = c(q)],
                      spectra_training)
-      colnames(train)[1] <- "NDMS"
+      colnames(train)[1] <- "ordination"
       
       #Training
-      pls_components <- plsr(NDMS ~ ., 
+      pls_components <- plsr(ordination ~ ., 
                              data= train, 
                              scale = FALSE,
                              center = TRUE,
                              ncomp= int_ncomp,
                              segments = 10,
-                             validation = "CV", 
-                             method = "oscorespls")
+                             validation = "CV",
+                             method = "oscorespls",
+                             na.action = na.omit)
       
       #Get optimal component
       component <- selectNcomp(pls_components, "onesigma")
@@ -54,7 +57,7 @@ optimal_number <- function(meta, NDMS, spectra, split, int_ncomp = 50, repeated 
       CV <- which.min(as.vector(RMSEP(pls_components)$val[1,,]))
       
       #Frame to collect
-      prediction <- data.table(NDMS = colnames(NDMS_training)[q],
+      prediction <- data.table(ordination = colnames(ordination_training)[q],
                                Repeated = i,
                                Onesigma = component,
                                PRESS = PRESS_min,
@@ -72,3 +75,4 @@ optimal_number <- function(meta, NDMS, spectra, split, int_ncomp = 50, repeated 
   return(results)
   
 }
+
