@@ -18,7 +18,7 @@ options(scipen = 100)
 #' @param spectra
 #' @param out_path
 
-root_path <- "E:/DESIS"
+root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102_reproject.csv"))
 stand <- fread(paste0(root_path, "/03_reshape/BA_reshape.csv"))

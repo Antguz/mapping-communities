@@ -25,7 +25,7 @@ options(scipen = 100)
 #' @param stand
 #' @param out_path
 
-root_path <- "E:/DESIS/04_match_spectra-stand"
+root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 stand <- fread(paste0(root_path, "/04_match_spectra-stand/species.csv"))
 out_path <- paste0(root_path, "/05_NMDS")
@@ -91,80 +91,52 @@ plot(plots_fia$Axis.1, plots_fia$Axis.2)
 points(species$Axis.20, species$Axis.10, col = "red")
 
 ggplot() +
-  geom_point(data = plots_fia, aes(plots_fia$Axis.1, plots_fia$Axis.2), shape = 18, colour = "grey", alpha = 0.5) +
-  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) +
-  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  geom_point(data = plots_fia, aes(x = Axis.1, y = Axis.2), shape = 18, colour = "grey", alpha = 0.5) +
+  stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = ..level..), alpha = 0.5, geom = "polygon", contour = TRUE) +
+  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = after_stat(level)), alpha = 0.2, geom = "polygon", contour = TRUE) +
   scale_fill_continuous(low="lavenderblush", high="red") +
   #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(species$Axis.1, species$Axis.2), colour = "white", fill = "black", shape = 21) +
+  geom_point(data = species, aes(Axis.1, Axis.2), colour = "white", fill = "black", shape = 21) +
   theme_bw() +
-  scale_x_continuous(limits = c(-.7, .7)) +
-  scale_y_continuous(limits = c(-.7, .7)) +
-  geom_text_repel(data = species, aes(species$Axis.1, species$Axis.2),
-    label= SPCD, 
+  scale_x_continuous(limits = c(-.5, .5)) +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  geom_text_repel(data = species, aes(x = Axis.1, y = Axis.2),
+    label= species$species, 
     direction = "both", 
-    box.padding = 0.5) + xlab("PCoA1") + ylab("PCoA2")
+    box.padding = 0.5) + xlab("PCoA1") + ylab("PCoA2") +
+  theme(legend.position="none")
 
 ggplot() +
-  geom_point(data = plots_fia, aes(plots_fia$Axis.1, plots_fia$Axis.3), shape = 18, colour = "grey", alpha = 0.5) +
-  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
-  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.3, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  geom_point(data = plots_fia, aes(x = Axis.1, y = Axis.3), shape = 18, colour = "grey", alpha = 0.5) +
+  stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.3, fill = ..level..), alpha = 0.5, geom = "polygon", contour = TRUE) +
+  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = after_stat(level)), alpha = 0.2, geom = "polygon", contour = TRUE) +
   scale_fill_continuous(low="lavenderblush", high="red") +
   #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(species$Axis.1, species$Axis.3), colour = "white", fill = "black", shape = 21) +
+  geom_point(data = species, aes(Axis.1, Axis.3), colour = "white", fill = "black", shape = 21) +
   theme_bw() +
-  scale_x_continuous(limits = c(-.7, .7)) +
-  scale_y_continuous(limits = c(-.7, .7)) +
-  geom_text_repel(data = species, aes(species$Axis.1, species$Axis.3),
-            label= SPCD, 
-            nudge_x = 0.03, nudge_y = 0.001, 
-            check_overlap = T) + xlab("PCoA1") + ylab("PCoA3")
+  scale_x_continuous(limits = c(-.5, .5)) +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  geom_text_repel(data = species, aes(x = Axis.1, y = Axis.3),
+                  label= species$species, 
+                  direction = "both", 
+                  box.padding = 0.5) + xlab("PCoA1") + ylab("PCoA3") +
+  theme(legend.position="none")
 
 ggplot() +
-  geom_point(data = plots_fia, aes(plots_fia$Axis.2, plots_fia$Axis.3), shape = 18, colour = "grey", alpha = 0.5) +
-  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
-  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.2, y = plots_fia$Axis.3, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
+  geom_point(data = plots_fia, aes(x = Axis.2, y = Axis.3), shape = 18, colour = "grey", alpha = 0.5) +
+  stat_density_2d(data = plots_fia, aes(x = Axis.2, y = Axis.3, fill = ..level..), alpha = 0.5, geom = "polygon", contour = TRUE) +
+  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = after_stat(level)), alpha = 0.2, geom = "polygon", contour = TRUE) +
   scale_fill_continuous(low="lavenderblush", high="red") +
   #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(species$Axis.2, species$Axis.3), colour = "white", fill = "black", shape = 21) +
+  geom_point(data = species, aes(Axis.2, Axis.3), colour = "white", fill = "black", shape = 21) +
   theme_bw() +
-  scale_x_continuous(limits = c(-.7, .7)) +
-  scale_y_continuous(limits = c(-.7, .7)) +
-  geom_text_repel(data = species, aes(species$Axis.2, species$Axis.3),
-                  label= SPCD, 
-                  nudge_x = 0.03, nudge_y = 0.001, 
-                  check_overlap = T) + xlab("PCoA2") + ylab("PCoA3")
-
-ggplot() +
-  geom_point(data = plots_fia, aes(plots_fia$Axis.1, plots_fia$Axis.5), shape = 18, colour = "grey", alpha = 0.5) +
-  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
-  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.5, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
-  scale_fill_continuous(low="lavenderblush", high="red") +
-  #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(species$Axis.1, species$Axis.5), colour = "white", fill = "black", shape = 21) +
-  theme_bw() +
-  scale_x_continuous(limits = c(-.7, .7)) +
-  scale_y_continuous(limits = c(-.7, .7)) +
-  geom_text_repel(data = species, aes(species$Axis.1, species$Axis.5),
-                  label= SPCD, 
-                  nudge_x = 0.03, nudge_y = 0.001, 
-                  check_overlap = T) + xlab("PCoA2") + ylab("PCoA3")
-
-ggplot() +
-  geom_point(data = plots_fia, aes(plots_fia$Axis.2, plots_fia$Axis.5), shape = 18, colour = "grey", alpha = 0.5) +
-  #stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.1, y = plots_fia$Axis.2, fill = after_stat(density)), geom = "polygon", contour = TRUE) 
-  stat_density_2d(data = plots_fia, aes(x = plots_fia$Axis.2, y = plots_fia$Axis.5, fill = ..level..), alpha = 0.2, geom = "polygon", contour = TRUE) +
-  scale_fill_continuous(low="lavenderblush", high="red") +
-  #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(species$Axis.2, species$Axis.5), colour = "white", fill = "black", shape = 21) +
-  theme_bw() +
-  scale_x_continuous(limits = c(-.7, .7)) +
-  scale_y_continuous(limits = c(-.7, .7)) +
-  geom_text_repel(data = species, aes(species$Axis.2, species$Axis.5),
-                  label= SPCD, 
-                  nudge_x = 0.03, nudge_y = 0.001, 
-                  check_overlap = T) + xlab("PCoA2") + ylab("PCoA3")
-
+  scale_x_continuous(limits = c(-.5, .5)) +
+  scale_y_continuous(limits = c(-.5, .5)) +
+  geom_text_repel(data = species, aes(x = Axis.2, y = Axis.3),
+                  label= species$species, 
+                  direction = "both", 
+                  box.padding = 0.5) + xlab("PCoA2") + ylab("PCoA3") +
+  theme(legend.position="none")
 
 
 
@@ -370,6 +342,8 @@ anova(betadisper(distances_data, data_2$Habitat))
 
 
 
+ggplot() +
+  geom_point(data = plots_fia, aes(x = Axis.1, y = Axis.2), shape = 18, colour = "grey", alpha = 0.5) 
 
 
 

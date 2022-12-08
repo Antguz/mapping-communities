@@ -10,20 +10,16 @@
 
 library(data.table)
 library(fundiversity)
-library(foreach)
-library(doParallel)
 
 #'------------------------------------------------------------------------------
 #' Arguments
 #' @param fia
 #' @param out_path
-#' @param threads
 
-root_path <- "E:/DESIS"
+root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
 out_path <- paste0(root_path, "/03_diversity")
-threads <- 8
 
 #'------------------------------------------------------------------------------
 #' @example 
@@ -44,7 +40,8 @@ fia_diversity <- function(fia, out_path, threads) {
   fia <- fia[is.na(STANDING_DEAD_CD)]
   
   #Summarize
-  fia_summary <- fia[, .(BA = sum(BA, na.rm = TRUE), 
+  fia_summary <- fia[, .(ntrees = .N,
+                         BA = sum(BA, na.rm = TRUE), 
                          HT = mean(HT, na.rm = TRUE), 
                          TPA_UNADJ = sum(TPA_UNADJ, na.rm = TRUE), 
                          DRYBIO_BG = sum(DRYBIO_BG, na.rm = TRUE),
@@ -58,6 +55,11 @@ fia_diversity <- function(fia, out_path, threads) {
   #Unique stands
   plots <- unique(fia$PLT_CN)
   
+  #Create new id for foreach
+  new_id <- data.table(PLT_CN = plots, ID = 1:length(plots))
+  fia <- merge(fia, new_id, all.x = TRUE, all.y = TRUE)
+  plots <- unique(new_id$ID)
+  
   #No memory
   options(fundiversity.memoise = TRUE)
   
@@ -68,20 +70,26 @@ fia_diversity <- function(fia, out_path, threads) {
     return(H)
   }
   
+  #Progress bar
+  pb <- txtProgressBar(min = 1, max = length(plots), style = 3) 
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress = progress)
+
   # Set up cluster
-  cl <- makeCluster(threads, type = "FORK")
-  registerDoParallel(cl)
+  cl <- makeCluster(threads)
+  doSNOW::registerDoSNOW(cl)
   
   # Loop over STAND_KEY---------------------------------------------------------
   stand <- foreach(i = 1:length(plots),
                    .combine = rbind,
                    .export = c("shannon"),
-                   .packages = c("data.table", "fundiversity"),
-                   .inorder = F) %dopar% {
+                   .packages = c('data.table', 'fundiversity'),
+                   .inorder = F,
+                   .options.snow = opts) %dopar% {
                      
-                     sub_plot <- subset(fia, PLT_CN == plots[i])
+                     sub_plot <- subset(fia, ID == plots[i])
                      
-                     final <- data.table(PLT_CN = plots[i],
+                     final <- data.table(ID = plots[i],
                                          n_trees = nrow(sub_plot),
                                          n_sp = length(unique(sub_plot$SPCD)),
                                          T_BA = sum(sub_plot$BA),
@@ -109,6 +117,9 @@ fia_diversity <- function(fia, out_path, threads) {
   #Stop cluster
   stopCluster(cl)
   gc()
+  
+  #Add the PLT_CN
+  stand <- merge(new_id, stand, by = "ID", all.x = TRUE, all.y = TRUE)
 
   #Export
   fwrite(stand, paste0(out_path, "/master_FIA-diversity.txt"), sep = "\t")

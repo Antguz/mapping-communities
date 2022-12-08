@@ -25,6 +25,7 @@ options(scipen = 100)
 #' @param out_path
 
 #root_path <- "E:/DESIS"
+root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra.csv"))
 ordination <- fread(paste0(root_path, "/05_NMDS/PCoA_plots.csv"))
@@ -58,8 +59,6 @@ ordination <- ordination[keep$plot_row,]
 ordination <- ordination[, .SD, .SDcols = c(6:ncol(ordination))]
 
 #Create spectra and meta
-
-
 
 #------------------------------------------
 # Data-split

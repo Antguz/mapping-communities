@@ -27,10 +27,10 @@ source("https://raw.githubusercontent.com/jesusNPL/BiodiversityScience/master/Sp
 #' @param out_path
 #' @param threads
 
-root_path <- "E:/DESIS"
+root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 out_path <- paste0(root_path, "/03_diversity")
 threads <- 30
 
@@ -42,56 +42,68 @@ threads <- 30
 
 phylogenetic_diversity <- function(master, threads) {
   
+  #Prepare plots----------------------------------------------------------------
   #Clean FIA
   fia <- subset(fia, STATECD == 27 | STATECD == 55)
   fia <- fia[order(PLT_CN, SUBP)]
   
+  #Merge species code
+  fia <- merge(fia, SPCD[, c("SPCD", "PLANTS-Code", "Taxon2")], by = "SPCD", all.x = TRUE, all.y = TRUE)
+  
+  #Get Basal Area
+  fia$BA <- pi*(fia$DIA/2)^2
+  
   #Remove dead trees
   fia <- fia[is.na(STANDING_DEAD_CD)]
-
-  #Unique plots
-  plots <- unique(fia$PLT_CN)
-  plots <- data.table(PLT_CN = plots)
   
-  #Merge fia and species
-  #fia_summary <- merge(fia_summary, ID_species[, c(1:3)], by = "SPCD", all.x = TRUE, all.y = FALSE)
+  #Summarize
+  fia_summary <- fia[, .(ntrees = .N,
+                         BA = sum(BA, na.rm = TRUE), 
+                         HT = mean(HT, na.rm = TRUE), 
+                         TPA_UNADJ = sum(TPA_UNADJ, na.rm = TRUE), 
+                         DRYBIO_BG = sum(DRYBIO_BG, na.rm = TRUE),
+                         CARBON_AG = sum(CARBON_AG, na.rm = TRUE), 
+                         DRYBIO_AG = sum(DRYBIO_AG, na.rm = TRUE), 
+                         CARBON_BG = sum(CARBON_BG, na.rm = TRUE)), 
+                     by = c("PLT_CN", "PLANTS-Code", "Taxon2")]
+  fia_summary <- fia_summary[order(PLT_CN)]
   
   #Check taxonomic
-  ID_species <- paste0(SPCD$Genus, " ", SPCD$Species)
-  spp_check <- TPL(ID_species, infra = TRUE, corr = TRUE)
+  #ID_species <- paste0(SPCD$Genus, " ", SPCD$Species)
+  #ID_species <- ID_species[SPCD$FLAG != 1]
+  #spp_check <- TPL(ID_species, infra = TRUE, corr = TRUE)
   
-  taxonomy <- spp_check %>% 
-    select(Taxon, Family, New.Genus, New.Species) #, Tax_res
+  #taxonomy <- spp_check %>% 
+  #  select(Taxon, Family, New.Genus, New.Species) #, Tax_res
   
-  taxonomy$SP <- ID_species$id #Provide the ID
-  colnames(taxonomy) <- c("species", "family", "genus", "sp", "SP")
-  taxonomy <- taxonomy[, c("SP", "species", "genus", "sp", "family")]
-  taxonomy$SPP <- paste0(taxonomy$genus, "_", taxonomy$sp)
-  taxonomy$species[12] <- "Populus_X_deltoides"
-  taxonomy$SPP[12] <- "Populus_X_deltoides"
+  #taxonomy$SP <- ID_species #Provide the ID
+  #colnames(taxonomy) <- c("species", "family", "genus", "sp", "SP")
+  #taxonomy <- taxonomy[, c("SP", "species", "genus", "sp", "family")]
+  #taxonomy$SPP <- paste0(taxonomy$genus, "_", taxonomy$sp)
+  #taxonomy$species[12] <- "Populus_X_deltoides"
+  #taxonomy$SPP[12] <- "Populus_X_deltoides"
   
+  #Prepare phylo  --------------------------------------------------------------
   #Makes phylogenetic hypotheses
-  sppPhylo <- taxonomy[, c(1, 2, 3)]
+  sppPhylo <- data.table(species = SPCD$Taxon2, genus = SPCD$Genus, family = SPCD$Family)
+  sppPhylo <- na.exclude(sppPhylo)
   hypotheses <- phylo.maker(sppPhylo, scenarios = "S3")
   
+  #Resolve Multichotomies
   phylo <- multi2di(hypotheses$scenario.3)
-  is.binary.phylo(phylo)
-  is.ultrametric(phylo)
-  
-  #Merge databases
-  master <- merge(master, taxonomy, by = c("SP"), all.x = TRUE, all.y = TRUE)
-  #Missing 7 20 29 90
+  is.binary.phylo(phylo) #Test for Binary Tree
+  is.ultrametric(phylo) #Test if a Tree is Ultrametric
   
   #Create matrix
-  master_matrix <- sample2matrix(master[, c("STAND_KEY", "VOL", "SPP")])
-  master_matrix <- round(master_matrix, 1)
+  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "BA", "Taxon2")])
+  master_matrix <- round(master_matrix, 2)
   
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
   matched$phy
   matched$comm
   
   #Get Phylogenetic diversity
-  PD <- pd(matched$comm, matched$phy, include.root = FALSE) # Faith's PD
+  PD <- pd(matched$comm, matched$phy, include.root = TRUE) # Faith's PD
   
   #Get Mean pairwise distance (MPD) and mean nearest-pairwise distance (MNTD)
   MPD <- mpd(matched$comm, cophenetic(matched$phy)) # MPD

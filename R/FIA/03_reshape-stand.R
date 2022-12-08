@@ -18,6 +18,7 @@ library(data.table)
 
 #root_path <- "E:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
+root_path <- "F:/DESIS"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
 out_path <- paste0(root_path, "/03_reshape")

@@ -19,17 +19,18 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "E:/DESIS"
+root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 
 in_path <- paste0(root_path, "/01_pixel-subtraction")
+bands <- fread(paste0(root_path, "/00_imagery/DESIS_bands.csv"))
 out_name_path <- paste0(root_path, "/02_compile-files/02-spectra.csv")
 
 compile_files(in_path, out_path)
 
 #'------------------------------------------------------------------------------
 #' Function
-compile_files <- function(in_path, out_path) {
+compile_files <- function(in_path, bands, out_path) {
   
   #List files
   files <- list.files(path = in_path, 
@@ -58,6 +59,9 @@ compile_files <- function(in_path, out_path) {
   }
   
   compile <- compile[!is.na(ID)]
+  
+  #Add band names
+  colnames(compile)[14:248] <- bands$Wavelength
   
   fwrite(compile, out_name_path)
   
