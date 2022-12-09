@@ -120,6 +120,3 @@ fia_diversity <- function(fia, out_path, threads) {
   
 }
 
-#Cords 12484
-#MBF    20
-#Both  3093

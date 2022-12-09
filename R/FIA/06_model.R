@@ -83,10 +83,10 @@ ncomponents <- optimal_number(meta = meta,
 # Final Model of prediction
 
 model <- pls_ordination_model(meta = meta,
-                        ordination = ordination, 
-                        spectra = spectra, 
-                        split = split, 
-                        folds = 10,
-                        repeated = 4,
-                        opt_components = c(1, 1, 1),
-                        threads = 4)
+                              ordination = ordination, 
+                              spectra = spectra, 
+                              split = split, 
+                              folds = 10,
+                              repeated = 4,
+                              opt_components = c(1, 1, 1),
+                              threads = 4)

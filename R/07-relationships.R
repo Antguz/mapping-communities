@@ -1,4 +1,6 @@
+library(data.table)
 
+masters_path <- "E:mapping_species/results"
 masters_path <- "/media/antonio/antonio_ssd/mapping_species/results"
 
 structural <- fread(paste0(masters_path, "/", "master_FIA-stand.txt"))
@@ -33,7 +35,7 @@ for(i in 1:length(unique_date)) {
   plot <- ggcorrplot(corr, outline.col = "white", title = as.character(unique_date[i]))
   
   ggsave(
-    filename =name_file,
+    filename = name_file,
     plot = plot,
     width = 30,
     height = 30,
@@ -45,11 +47,34 @@ for(i in 1:length(unique_date)) {
 }
 
 plot(log10(cor_date$BIO4), log10(cor_date$FRic_all))
-plot(log10(cor_date$BIO5), log10(cor_date$FRic_all))
+
+
+plot(cor_date$BIO5, log10(cor_date$FRic_all)) #Max temp
+plot(cor_date$BIO6, log10(cor_date$FRic_all)) #Min temp
+plot(log10(cor_date$BIO7), log10(cor_date$FRic_all)) #Range of temperature
+plot(log10(cor_date$elevation), log10(cor_date$FRic_all))
+plot(cor_date$LAT, log10(cor_date$FRic_all))
+plot(cor_date$nsp, log10(cor_date$FRic_all))
+
+plot(cor_date$BIO5, log10(cor_date$FDiv_all)) #Max temp
+plot(cor_date$BIO6, log10(cor_date$FDiv_all)) #Min temp
+plot(log10(cor_date$BIO7), log10(cor_date$FDiv_all)) #Range of temperature
+plot(log10(cor_date$elevation), log10(cor_date$FDiv_all))
+plot(cor_date$LAT, log10(cor_date$FDiv_all))
+
+plot(log10(cor_date$BIO5), log10(cor_date$FEve_all)) #Max temp
+plot(cor_date$BIO6, log10(cor_date$FEve_all)) #Min temp
+plot(log10(cor_date$BIO7), cor_date$FEve_all) #Range of temperature
+plot(log10(cor_date$elevation), log10(cor_date$FEve_all))
+plot(cor_date$LAT, log10(cor_date$FEve_all))
+
+
 plot(log10(cor_date$BIO15), log10(cor_date$FRic_all))
 plot(log10(cor_date$elevation), log10(cor_date$FRic_all))
 plot(log10(cor_date$SR), log10(cor_date$FRic_all))
 plot(log10(cor_date$WVP), log10(cor_date$FRic_all))
+plot(cor_date$nsp, cor_date$FRic_all)
+
 
 plot(log10(cor_date$BIO4), log10(cor_date$FDiv_all))
 plot(log10(cor_date$BIO5), log10(cor_date$FDiv_all))
@@ -108,9 +133,7 @@ X <- data.table(Temp_max = log10(cor_date$BIO5),
  
 Y <- data.table(FRic = log10(cor_date$FRic_all),
                 FDiv = log10(cor_date$FDiv_all),
-                FEve = log10(cor_date$FEve_all),
-                FDis = log10(cor_date$FDis_all),
-                Rao = log10(cor_date$Rao_all))
+                FEve = log10(cor_date$FEve_all))
 
 cc_results <- cancor(X, Y)
 cc_results$cor
@@ -120,7 +143,7 @@ CC1_Y <- as.matrix(y) %*% cc_results$ycoef[, 1:5]
 
 plot(CC1_X[, 1], CC1_Y[, 2]) 
 
-spearman <- maxCorGrid(x, y, method = "kendall", consistent = TRUE)
+spearman <- maxCorGrid(X, Y, method = "kendall", consistent = TRUE)
 perm <- permTest(x, y, R = 100, method = "kendall", nCores = 26, seed = 2016)
 
 
@@ -133,9 +156,9 @@ plot(log10(cor_date$SR), log10(cor_date$FRic_all))
 plot(log10(cor_date$WVP), log10(cor_date$FRic_all))
 
 
-cormat <- matcor(x, y)
+cormat <- matcor(X, Y)
 img.matcor(cormat, type = 2)
-can_cor1 <- cc(x, y)
+can_cor1 <- cc(X, Y)
 
 
 if (require(corrplot)) {

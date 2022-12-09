@@ -1,14 +1,19 @@
-pls_ndms_model <- function(meta, NDMS, spectra, split = split, folds = 10, repeated = 10, opt_components, threads = 1) {
+pls_ordination_model <- function(meta, ordination, spectra, split, folds = 10, repeated = 10, opt_components, threads = 1) {
   
   # Creates partition for training and testing
-  NDMS_training <- NDMS[split,]
+  ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
   meta_training <- meta[split,]
-  dimentions <- ncol(NDMS_training)
+  dimentions <- ncol(ordination_training)
   
   #Create spatial points
   spatial <- sf::st_as_sf(meta_training, coords = c("xcoord", "ycoord"))
   st_crs(spatial) <- "ESRI:102004"
+  
+  #Names
+  performance_names <- c("ordination", "repeated", "fold", "N", "Rsq", "Bias", "RMSE", "RMSE_P")
+  coefficients_names <- c("ordination", "repeated", "fold", "intercept", colnames(spectra_training))
+  VIP_names <- c("ordination", "repeated", "fold", colnames(spectra_training))
   
   # Progress bar
   pb <- txtProgressBar(min = 1, max = repeated, style = 3) 
@@ -39,30 +44,30 @@ pls_ndms_model <- function(meta, NDMS, spectra, split = split, folds = 10, repea
       testSet <- unlist(sub_split$folds[[j]][2])
       
       # Creates partition for training and testing
-      NDMS_trainSet <- NDMS_training[trainSet,]
-      NDMS_testSet <- NDMS_training[testSet,]
+      ordination_trainSet <- ordination_training[trainSet,]
+      ordination_testSet <- ordination_training[testSet,]
       spectra_trainSet <- spectra_training[trainSet,]
       spectra_testSet <- spectra_training[testSet, ]
       
-      for(q in 1:dimentions) {
+      for(q in 1:10) {
         
         #Basic information
-        info <- data.table(NDMS = q,
+        info <- data.table(ordination = q,
                            repeated = i,
                            fold = j)
         
         #Train set
-        train <- cbind(NDMS_trainSet[, .SD, .SDcols = c(q)],
+        train <- cbind(ordination_trainSet[, .SD, .SDcols = c(q)],
                        spectra_trainSet)
-        colnames(train)[1] <- "NDMS"
+        colnames(train)[1] <- "ordination"
         
         #Testing set
-        test <- cbind(NDMS_testSet[, .SD, .SDcols = c(q)],
+        test <- cbind(ordination_testSet[, .SD, .SDcols = c(q)],
                       spectra_testSet)
-        colnames(test)[1] <- "NDMS"
+        colnames(test)[1] <- "ordination"
         
         #Training
-        pls_components <- plsr(NDMS ~ ., 
+        pls_components <- plsr(ordination ~ ., 
                                data= train, 
                                scale = FALSE,
                                center = TRUE,
@@ -75,9 +80,10 @@ pls_ndms_model <- function(meta, NDMS, spectra, split = split, folds = 10, repea
                                    test, 
                                    ncomp = opt_components[q], 
                                    type= "response")[,,1]
-        perf <- performance(test$NDMS, predict_testing)
+        perf <- performance(test$ordination, predict_testing)
         perf <- as.data.table(matrix(perf, nrow = 1))
         perf <- cbind(info, perf)
+        colnames(perf) <- performance_names
         
         #Coefficients
         coefficients <- as.vector(coef(pls_components, 
@@ -85,11 +91,13 @@ pls_ndms_model <- function(meta, NDMS, spectra, split = split, folds = 10, repea
                                        intercept=TRUE))
         coefficients <- as.data.table(matrix(coefficients, nrow = 1))
         coefficients <- cbind(info, coefficients)
+        colnames(coefficients) <- coefficients_names
         
         #VIP
         vip <- as.vector(VIP(pls_components, opt.comp = opt_components[q]))
         vip <- as.data.table(matrix(vip, nrow = 1))
         vip <- cbind(info, vip)
+        colnames(vip) <- VIP_names
         
         #Collect
         perf_export <- rbind(perf_export, perf)
@@ -103,8 +111,8 @@ pls_ndms_model <- function(meta, NDMS, spectra, split = split, folds = 10, repea
       }
       
       #Remove
-      rm(list = c("trainSet", "testSet", "NDMS_trainSet", 
-                  "NDMS_testSet", "spectra_trainSet", "spectra_testSet"))
+      rm(list = c("trainSet", "testSet", "ordination_trainSet", 
+                  "ordination_testSet", "spectra_trainSet", "spectra_testSet"))
       
     }
     
