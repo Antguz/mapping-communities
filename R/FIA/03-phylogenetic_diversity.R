@@ -102,6 +102,8 @@ phylogenetic_diversity <- function(master, threads) {
   matched$phy
   matched$comm
   
+  MDP <- comdist(matched$comm, cophenetic(matched$phy), abundance.weighted=TRUE)
+  
   #Get Phylogenetic diversity
   PD <- pd(matched$comm, matched$phy, include.root = TRUE) # Faith's PD
   

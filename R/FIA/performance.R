@@ -15,3 +15,5 @@ performance <- function(observed, predicted) {
   return(round(c(N = n, Rsq = Rsq, Bias = Bias, RMSE = RMSE, RMSE_P = RMSE_P), 6))
   
 }
+
+

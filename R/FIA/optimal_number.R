@@ -7,14 +7,14 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   dimentions <- ncol(ordination_training)
   
   #Create spatial points
-  spatial <- sf::st_as_sf(meta_training, coords = c("xcoord", "ycoord"))
-  st_crs(spatial) <- "ESRI:102004"
+  #spatial <- sf::st_as_sf(meta_training, coords = c("xcoord", "ycoord"))
+  #st_crs(spatial) <- "ESRI:102004"
   
   #Results collector
   results <- data.table()
   
   #Progress bar
-  pb <- txtProgressBar(min = 1, max = repeated*dimentions, style = 3) 
+  pb <- txtProgressBar(min = 1, max = repeated*10, style = 3) 
   
   #Parallel 
   if(threads > 1 ) {
@@ -28,7 +28,7 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
     setTxtProgressBar(pb, i)
     
     #Loop over ordination dimentions
-    for(q in 1:dimentions) {
+    for(q in 1:10) {
       
       setTxtProgressBar(pb, i)
       
@@ -75,4 +75,3 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   return(results)
   
 }
-
