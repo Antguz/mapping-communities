@@ -28,7 +28,7 @@ options(scipen = 100)
 root_path <- "F:/DESIS"
 root_path <- "/media/antonio/Extreme SSD/DESIS"
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra.csv"))
-ordination <- fread(paste0(root_path, "/05_NMDS/PCoA_plots.csv"))
+ordination <- fread(paste0(root_path, "/05_NMDS/PCoA_plots_PD.csv"))
 out_path <- paste0(root_path, "/06_model")
 
 #'------------------------------------------------------------------------------
@@ -56,15 +56,49 @@ spectra <- spectra[keep$spectra_row,]
 meta <- spectra[, c(1:5)]
 spectra <- spectra[, .SD, .SDcols = c(13:ncol(spectra))]
 ordination <- ordination[keep$plot_row,]
-ordination <- ordination[, .SD, .SDcols = c(6:ncol(ordination))]
+ordination <- ordination[, .SD, .SDcols = c(2:ncol(ordination))]
 
 #Create spectra and meta
+smooth <- as.data.frame(spectra)
+
+for(i in 1:nrow(smooth)) {
+  
+  sample <- as.numeric(smooth[i, ])
+  filter <- sgolayfilt(sample, p = 1, n = 5, m = 0, ts = 1)
+  smooth[i, ] <- filter
+  
+}
+
+smooth <- as.data.table(smooth)
+spectra <- smooth[, .SD, .SDcols = c(3:(ncol(smooth)-2))]
+smooth <- as.data.frame(spectra)
+plot(as.numeric(smooth[1,]))
+
+for(i in 1:nrow(smooth)) {
+  
+  sample <- as.numeric(smooth[i, ])
+  norm <- sqrt(sum(sample^2))
+  smooth[i, ] <- sample / norm
+  
+}
+
+for(i in 1:nrow(smooth)) {
+  
+  sample <- as.numeric(smooth[i, ])
+  sample_mean <- mean(sample)
+  sample_sd <- sd(sample)
+  smooth[i, ] <- (sample - sample_mean) / sample_sd
+  
+}
+
+spectra <- as.data.table(smooth)
+plot(as.numeric(spectra[1,]))
 
 #------------------------------------------
 # Data-split
 set.seed(1107)
 split <- createDataPartition(meta$PLT_CN, 
-                             p = 0.75,
+                             p = 0.6,
                              list = FALSE, 
                              times = 1)
 
@@ -74,7 +108,8 @@ split <- createDataPartition(meta$PLT_CN,
 ncomponents <- optimal_number(meta = meta,
                               ordination = ordination,
                               spectra = spectra,
-                              int_ncomp = 50, 
+                              split = split,
+                              int_ncomp = 20, 
                               repeated = 10, 
                               k = 10, 
                               threads = 1)
