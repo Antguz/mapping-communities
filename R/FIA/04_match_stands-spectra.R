@@ -18,20 +18,21 @@ options(scipen = 100)
 #' @param spectra
 #' @param out_path
 
-root_path <- "F:/DESIS"
-root_path <- "/media/antonio/Extreme SSD/DESIS"
-fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102_reproject.csv"))
-stand <- fread(paste0(root_path, "/03_reshape/BA_reshape.csv"))
-spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra.csv"), header = TRUE)
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
+stand <- fread(paste0(root_path, "/03_reshape/BA_TPA-reshape.csv"))
+spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra_SG.txt"), header = TRUE)
 out_path <- paste0(root_path, "/04_match_spectra-stand")
 
 #'------------------------------------------------------------------------------
 #' @example 
 
+match_datasets(fia, spectra, stand, out_path)
+
 #'------------------------------------------------------------------------------
 #' Script
 
-match_datasets <- function(fia, stand, spectra, out_path) {
+match_datasets <- function(fia, spectra, stand, out_path) {
   
   #------------------------------------
   #Clean stand
@@ -63,7 +64,7 @@ match_datasets <- function(fia, stand, spectra, out_path) {
   #Search for spectra
   for(i in 1:nrow(unique_plots)) {
     
-    sub_spectra <- subset(spectra, ID == unique_plots$PLT_CN[i])
+    sub_spectra <- subset(spectra, PLT_CN == unique_plots$PLT_CN[i])
     
     #If no observations
     if(nrow(sub_spectra) == 0) {
@@ -110,21 +111,20 @@ match_datasets <- function(fia, stand, spectra, out_path) {
   
   #Spectra
   sub_spectra <- spectra[unique_plots$spectra, ]
-  sub_spectra <- sub_spectra[, .SD, .SDcols=c(c(3, 14:248))]
-  colnames(sub_spectra)[1] <- "PLT_CN"
+  sub_spectra <- sub_spectra[, .SD, .SDcols=c(c(3, 14:(ncol(sub_spectra)-1)))]
   
   #Unique plots
   unique_plots <- unique_plots[, c(1, 2, 5)]
-  unique_plots <- merge(unique_plots, fia[, c(2, 19, 20)], by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  unique_plots <- merge(unique_plots, fia[, c(1, 13, 14, 15)], by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   
   #-------------------------------------
   # Second step mergin (just in case)
-  sub_stands <- merge(unique_plots, sub_stands, by = "PLT_CN", all.x = TRUE, all.y = TRUE)
+  sub_stands <- merge(unique_plots, sub_stands, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   sub_spectra <- merge(unique_plots, sub_spectra, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   
   #Export
   fwrite(unique_plots, paste0(out_path, "/plots.csv"))
   fwrite(sub_stands, paste0(out_path, "/species.csv"))
-  fwrite(sub_spectra, paste0(out_path, "/spectra.csv"))
+  fwrite(sub_spectra, paste0(out_path, "/spectra_SG.csv"))
 
 }

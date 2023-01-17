@@ -16,147 +16,271 @@ library(ecodist)
 library(bigmds)
 library(ape)
 library(ggplot2)
+library(bit64)
 library(ggrepel)
 #library(BiodiversityR)
 options(scipen = 100)
 library(viridis)
 library(ggpointdensity)
+library(ggpubr)
 
 #'------------------------------------------------------------------------------
 #' Arguments
 #' @param stand
 #' @param out_path
 
-root_path <- "F:/DESIS"
-root_path <- "/media/antonio/Extreme SSD/DESIS"
-stand <- fread(paste0(root_path, "/04_match_spectra-stand/species.csv"))
-out_path <- paste0(root_path, "/05_NMDS")
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+ic_MDP <- readRDS(paste0(root_path, "/03_diversity/MDP_distance.rds"))
+stand <- readRDS(paste0(root_path, "/03_diversity/master_community.rds"))
+out_path <- paste0(root_path, "/05_ordination")
 
 #'------------------------------------------------------------------------------
 #' @analysis  
 
-#Metadata
-meta <- stand[,1:5]
-data <- stand[, .SD, .SDcols=c(6:ncol(stand))]
+#-------------------------------------------------------------------------------
+# Run the NMDS on taxonomic
+dist <- vegdist(stand, method="bray")
+NMDS_taxonomic <- metaMDS(dist, model = "linear", autotransform = FALSE, k = 3, try = 10, 
+                          trymax = 30, trace = 1, plot = FALSE, engine = "monoMDS", 
+                          maxit = 99, pc = TRUE, parallel = 10)
 
-#Remove plots without species and less than 5 species
-nsp <- apply(data, 1, function(x) sum(x > 0))
-meta <- meta[nsp != 0]
-data <- data[nsp != 0]
+saveRDS(NMDS_taxonomic, paste0(out_path, "/NMDS_taxonomy.rds"))
 
-#Remove rare species (presence <10 in plots)
-presence <- colSums( data != 0)
-presence <- names(presence[presence < 5])
-remove <- NA
+# Run the NMDS on phylogenetic
+NMDS_phylogenetic <- metaMDS(ic_MDP, model = "linear", autotransform = FALSE, k = 3, try = 10, 
+                             trymax = 30, trace = 1, plot = FALSE, engine = "monoMDS", 
+                             maxit = 50, pc = TRUE, parallel = 5)
 
-for(i in 1:nrow(data)) {
-  
-  value <- sum(data[i, ..presence])
-  
-  if(value > 0) {
-    remove[i] <- TRUE
-  } else {
-    remove[i] <- FALSE
-  }
-  
-}
+saveRDS(NMDS_phylogenetic, paste0(out_path, "/NMDS_phylogenetic.rds"))
 
-data <- data[isFALSE(remove) == FALSE]
-meta <- meta[isFALSE(remove) == FALSE]
-data <- data[, !..presence]
+#-------------------------------------------------------------------------------
+# Read and inspect
+NMDS_taxonomic <- readRDS(paste0(out_path, "/NMDS_taxonomy.rds"))
+NMDS_phylogenetic <- readRDS(paste0(out_path, "/NMDS_phylogenetic.rds"))
 
-#Transform
-data_transfrom <- sqrt(data)
-data_dist <- vegdist(data_transfrom, "bray")
-data_dist <- readRDS("MPS.rds")
-labels <- as.matrix(data_dist)
-PCOA <- pcoa(data_dist, rn = rownames(labels))
-saveRDS(PCOA, "PCoA_PD.rds")
-PCOA <- readRDS("PCoA_PD.rds")
+# Plot for inspection
+plot(NMDS_taxonomic, choices = c(1, 2))
+plot(NMDS_taxonomic, choices = c(1, 3))
+plot(NMDS_taxonomic, choices = c(2, 3))
 
-biplot(PCOA, plot.axes = c(1,2))
+# Plot for inspection
+plot(NMDS_phylogenetic, choices = c(1, 2))
+plot(NMDS_phylogenetic, choices = c(1, 3))
+plot(NMDS_phylogenetic, choices = c(2, 3))
 
-frame <- as.data.frame(matched$comm)
-frame$PLOT_CN <- rownames(frame)
+#-------------------------------------------------------------------------------
+# Get goodness
+god_phylogenetic <- goodness(NMDS_phylogenetic)
+saveRDS(god_phylogenetic, paste0(out_path, "/goodness_phylogenetic.rds"))
 
+god_taxonomic <- goodness(NMDS_taxonomic)
+saveRDS(god_taxonomic, paste0(out_path, "/goodness_taxonomic.rds"))
 
+#-------------------------------------------------------------------------------
+# Get stress plot
+stressplot(NMDS_phylogenetic)
+stressplot(NMDS_taxonomic)
 
-plots_fia <- as.data.table(PCOA$vectors)
-plots_fia$PLOT_CN <- rownames(PCOA$vectors)
+#-------------------------------------------------------------------------------
+# Get weighted averages scores of species
+species_scores_taxonomic <- wascores(NMDS_taxonomic$points, stand, expand = FALSE)
+species_names_taxonomic <- rownames(species_scores_taxonomic)
+species_scores_taxonomic <- cbind(Taxon2 = species_names_taxonomic, as.data.table(species_scores_taxonomic))
+saveRDS(species_scores_taxonomic, paste0(out_path, "/species_scores_taxonomic.rds"))
 
-species <- wascores(x = PCOA$vectors, w = data_transfrom)
-SPCD <- rownames(species)
-species <- as.data.table(species)
+species_scores_phylogenetic <- wascores(NMDS_phylogenetic$points, stand, expand = FALSE)
+species_names_phylogenetic <- rownames(species_scores_phylogenetic)
+species_scores_phylogenetic <- cbind(Taxon2 = species_names_phylogenetic, as.data.table(species_scores_phylogenetic))
+saveRDS(species_scores_phylogenetic, paste0(out_path, "/species_scores_phylogenetic.rds"))
 
-plots_fia <- cbind(meta, plots_fia)
-species <- cbind(data.table(species = SPCD), species)
+#-------------------------------------------------------------------------------
+# Get dimensions
+plot_names_taxonomic <- as.integer64(rownames(NMDS_taxonomic$points))
+dimensions_plots_taxonomic <- as.data.table(NMDS_taxonomic$points)
+dimensions_plots_taxonomic$PLT_CN = plot_names_taxonomic
+saveRDS(dimensions_plots_taxonomic, paste0(out_path, "/dimensions_plots_taxonomic.rds"))
 
-#Export
-fwrite(species, paste0(out_path, "/PCoA_species.csv"))
-fwrite(plots_fia, paste0(out_path, "/PCoA_plots.csv"))
+plot_names_phylogenetic <- as.integer64(rownames(NMDS_phylogenetic$points))
+dimensions_plots_phylogenetic <- as.data.table(NMDS_phylogenetic$points)
+dimensions_plots_phylogenetic$PLT_CN = plot_names_phylogenetic
+saveRDS(dimensions_plots_phylogenetic, paste0(out_path, "/dimensions_plots_phylogenetic.rds"))
 
-species <- fread(paste0(out_path, "/PCoA_species_PD.csv"), header = TRUE)
-SPCD <- fread("/media/antonio/Extreme SSD/DESIS/00_FIA/SPCD.csv")
-species <- merge(species, SPCD, by.x = "species", by.y = "Taxon2", all.x = TRUE)
+### Create plots ---------------------------------------------------------------
 
-plots_fia <- fread(paste0(out_path, "/PCoA_plots_PD.csv"), header = TRUE)
-plots <- fread("/media/antonio/Extreme SSD/DESIS/00_FIA/plots_WI_MN_20221102.csv")
-plots_fia <- merge(plots_fia, plots, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
-proportions <- fread("/media/antonio/antonio4/Github/mapping-species/proportions.csv")
-plots_fia <- merge(plots_fia, proportions, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+species_scores <- species_scores_taxonomic
+dimensions_plots <- dimensions_plots_taxonomic
 
-plot(plots_fia$Axis.1, plots_fia$Axis.2)
-points(species$Axis.20, species$Axis.10, col = "red")
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
+proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
 
-jpeg("MPS_PCoA_2-3.jpg", width = 210, height = 150, units = "mm", res = 300)
-ggplot() +
-  geom_point(data = plots_fia, aes(x = Axis.2, y = Axis.3, fill = AM_to_T), shape = 21, colour = "grey", size = 2) +
-  #geom_pointdensity(data = plots_fia, aes(x = Axis.1, y = Axis.2), shape = 19, alpha = 0.9, adjust = 40) +
-  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = ..level..), alpha = 0.5, geom = "polygon", contour = TRUE) +
-  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = after_stat(level)), alpha = 0.2, geom = "polygon", contour = TRUE) +
-  #scale_fill_continuous(low="lavenderblush", high="red") +
-  #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(Axis.2, Axis.3), colour = "white", fill = "black", shape = 21, size = 3) +
-  theme_bw() +
-  #coord_fixed(xlim = c(-420, 420), ylim = c(-150, 150)) +
-  scale_x_continuous(limits = c(-420, 420)) +
-  scale_y_continuous(limits = c(-150, 150)) +
-  geom_text_repel(data = species, aes(x = Axis.2, y = Axis.3),
+species <- merge(species_scores, SPCD, by = "Taxon2", all.x = TRUE, all.y = FALSE)
+plots_fia <- merge(proportions, dimensions_plots, by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+
+th <- theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+tam <- 12
+col <- "black"
+
+### Angiosperms
+
+NMDS1 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1) + geom_vline(xintercept= 0, linewidth = 0.1) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS2), colour = "white", fill = col, shape = 21, size = 2) +
+  theme_bw(base_size = tam) + th +
+  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
     label= species$`PLANTS-Code`, 
     direction = "both", 
+    colour = col,
     box.padding = 0.5,
-    max.overlaps = 40) + xlab("PCoA2") + ylab("PCoA3") +
-  #theme(legend.position="none") +
-  #scale_color_viridis(option= "mako", direction = -1)
+    max.overlaps = 20,
+    size = 3) + 
+  xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
-  #scale_fill_viridis("Proportion of Angiosperms", option = "mako")
-dev.off()
-
-
-jpeg("MPS_PCoA_1-2_AM.jpg", width = 210, height = 150, units = "mm", res = 300)
-ggplot() +
-  geom_point(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = AM_to_T), shape = 21, colour = "grey", size = 2) +
-  #geom_pointdensity(data = plots_fia, aes(x = Axis.1, y = Axis.2), shape = 19, alpha = 0.9, adjust = 40) +
-  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = ..level..), alpha = 0.5, geom = "polygon", contour = TRUE) +
-  #stat_density_2d(data = plots_fia, aes(x = Axis.1, y = Axis.2, fill = after_stat(level)), alpha = 0.2, geom = "polygon", contour = TRUE) +
-  #scale_fill_continuous(low="lavenderblush", high="red") +
-  #geom_jitter(alpha=0.5, size = 1.1) +
-  geom_point(data = species, aes(Axis.1, Axis.2), colour = "white", fill = "black", shape = 21, size = 3) +
-  theme_bw() +
-  #coord_fixed(xlim = c(-420, 420), ylim = c(-150, 150)) +
-  scale_x_continuous(limits = c(-420, 420)) +
-  scale_y_continuous(limits = c(-150, 150)) +
-  geom_text_repel(data = species, aes(x = Axis.1, y = Axis.2),
+  
+NMDS2 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1) + geom_vline(xintercept= 0, linewidth = 0.1) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  theme_bw(base_size = tam) + th +
+  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
+                  colour = col,
                   box.padding = 0.5,
-                  max.overlaps = 40) + xlab("PCoA1") + ylab("PCoA2") +
-  #theme(legend.position="none") +
-  #scale_color_viridis(option= "mako", direction = -1)
+                  max.overlaps = 20,
+                  size = 3) + 
+  xlab("NMDS1") + ylab("NMDS3") +
+  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+
+NMDS3 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1) + geom_vline(xintercept= 0, linewidth = 0.1) +
+  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
+  geom_point(data = species, aes(MDS2, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  theme_bw(base_size = tam) + th +
+  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
+                  label= species$`PLANTS-Code`, 
+                  direction = "both", 
+                  colour = col,
+                  box.padding = 0.5,
+                  max.overlaps = 20,
+                  size = 3) + 
+  xlab("NMDS2") + ylab("NMDS3") +
+  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+
+
+jpeg("figures/NMDS_angiosperm_taxonomic.jpg", width = 280, height = 210, units = "mm", res = 300)
+ggarrange(NMDS1, NMDS2, NMDS3, 
+          labels = c("a", "b", "c"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "right")
+dev.off()
+
+### Micorrizal
+
+NMDS1 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1) + geom_vline(xintercept= 0, linewidth = 0.1) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS2), colour = "white", fill = col, shape = 21, size = 2) +
+  theme_bw(base_size = tam) + th +
+  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
+                  label= species$`PLANTS-Code`, 
+                  direction = "both", 
+                  colour = col,
+                  box.padding = 0.5,
+                  max.overlaps = 20,
+                  size = 3) + 
+  xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
-#scale_fill_viridis("Proportion of Angiosperms", option = "mako")
+
+NMDS2 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1) + geom_vline(xintercept= 0, linewidth = 0.1) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  theme_bw(base_size = tam) + th +
+  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
+                  label= species$`PLANTS-Code`, 
+                  direction = "both", 
+                  colour = col,
+                  box.padding = 0.5,
+                  max.overlaps = 20,
+                  size = 3) + 
+  xlab("NMDS1") + ylab("NMDS3") +
+  scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
+
+NMDS3 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1) + geom_vline(xintercept= 0, linewidth = 0.1) +
+  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
+  geom_point(data = species, aes(MDS2, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  theme_bw(base_size = tam) + th +
+  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
+                  label= species$`PLANTS-Code`, 
+                  direction = "both", 
+                  colour = col,
+                  box.padding = 0.5,
+                  max.overlaps = 20,
+                  size = 3) + 
+  xlab("NMDS2") + ylab("NMDS3") +
+  scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
+
+jpeg("figures/NMDS_mycorrhizal.jpg", width = 210, height = 210, units = "mm", res = 300)
+ggarrange(NMDS1, NMDS2, NMDS3, 
+          labels = c("a", "b", "c"),
+          ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom")
 dev.off()
 
 
 
 
+
+install.packages("plot3D")
+library(plot3D)
+library(plot3Drgl)
+
+scatter3D(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, clab = c("Proportion of", "Angiosperms"),
+          col.var = plots_fia$A_to_T)
+
+with(plots_fia, scatter3D(MDS1, MDS2, MDS3, 
+                          labels = c("NMDS1", "NMDS2", "NMDS3"),
+                          colvar = A_to_T,
+                          col = brewer.pal(10, "BrBG") ,
+                          clab = c("Proportion of", "Angiosperms"),
+                          pch = 20,
+                          cex = 1,
+                          xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3"),
+     points3D(species$MDS1, species$MDS2, species$MDS3, add = TRUE, col = "red"))
+
+plotrgl()
+rgl.snapshot(filename="figures/3dplot.png")
+
+with(plots_fia, scatter3D(MDS1, MDS2, MDS3, 
+                          labels = c("NMDS1", "NMDS2", "NMDS3"),
+                          colvar = AM_to_T,
+                          col = viridis(100, option = "magma", direction = 1),
+                          clab = c("Proportion of", "trees with AM"),
+                          pch = 20))
+
+
+
+
+scatter3D(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
+          labels = c("NMDS1", "NMDS2", "NMDS3"),
+          colvar = plots_fia$A_to_T,
+          col = viridis(100, option = "mako", direction = 1),
+          clab = c("Proportion of", "Angiosperms"),
+          pch = 20)
+text3D(species$MDS1, species$MDS2, species$MDS3, labels = species$`PLANTS-Code`, add = TRUE, col = "#990000")
+points3D(species$MDS1, species$MDS2, species$MDS3, add = TRUE, col = "red")
+plotrgl()
