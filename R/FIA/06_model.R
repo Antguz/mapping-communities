@@ -27,8 +27,9 @@ options(scipen = 100)
 
 #root_path <- "E:/DESIS"
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic.rds"))
+meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
+ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_phylogenetic.rds"))
+spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
 out_path <- paste0(root_path, "/06_model")
 
 #'------------------------------------------------------------------------------
@@ -42,22 +43,29 @@ source("R/FIA/performance.R")
 #' @Analysis  
 
 #Meta file
-meta <- spectra[, .SD, .SDcols = c(1:6)]
+meta <- meta[, c("PLT_CN", "INVYR", "STATECD", "COUNTYCD", "LAT", "LON", "ELEV")]
 
-#Match files
-ordination <- merge(ordination, 
+#Merge meta with ordination
+ordination <- merge(meta, 
+                    ordination,
+                    by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+
+#Merge ordination with spectra 
+data <- merge(ordination, 
               spectra[, .SD, .SDcols = c(1, 7:ncol(spectra))],
               by = "PLT_CN", all.x = FALSE, all.y = TRUE)
-ordination <- ordination[, 1:4]
 
-spectra <- spectra[, .SD, .SDcols = c(7:ncol(spectra))]
+#New frames
+meta <- data[, .SD, .SDcols = 1:7]
+ordination <- data[, .SD, .SDcols = 8:10]
+spectra <- data[, .SD, .SDcols = 11:ncol(data)]
 
-all.equal(meta$PLT_CN, ordination$PLT_CN)
+a <- plsr(as.matrix(ordination) ~ as.matrix(spectra), scale = FALSE, center = TRUE)
 
 #------------------------------------------
 # Data-split
 set.seed(1107)
-split <- createDataPartition(meta$PLT_CN, 
+split <- createDataPartition(meta$COUNTYCD, 
                              p = 0.70,
                              list = FALSE, 
                              times = 1)

@@ -21,7 +21,7 @@ options(scipen = 100)
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 stand <- fread(paste0(root_path, "/03_reshape/BA_TPA-reshape.csv"))
-spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra_SG.txt"), header = TRUE)
+spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra_SW.txt"), header = TRUE)
 out_path <- paste0(root_path, "/04_match_spectra-stand")
 
 #'------------------------------------------------------------------------------
@@ -125,6 +125,6 @@ match_datasets <- function(fia, spectra, stand, out_path) {
   #Export
   fwrite(unique_plots, paste0(out_path, "/plots.csv"))
   fwrite(sub_stands, paste0(out_path, "/species.csv"))
-  fwrite(sub_spectra, paste0(out_path, "/spectra_SG.csv"))
+  fwrite(sub_spectra, paste0(out_path, "/spectra_SW.csv"))
 
 }

@@ -44,7 +44,7 @@ threads <- 30
 phylogenetic_diversity <- function(master, threads) {
   
   ### Prepare plots ------------------------------------------------------------
-  #Clean FIA
+  #Clean FIAs
   fia <- subset(fia, STATECD == 27 | STATECD == 55)
   fia <- fia[order(PLT_CN, SUBP)]
   
@@ -60,6 +60,7 @@ phylogenetic_diversity <- function(master, threads) {
   
   #Basal area multiplied by TPA
   fia$BA_TPA <- fia$BA*fia$TPA_UNADJ
+  fia$DRYBIO_AG_TPA <- fia$DRYBIO_AG*fia$TPA_UNADJ
   
   #Remove dead trees
   fia <- fia[STATUSCD == 1]
@@ -78,7 +79,8 @@ phylogenetic_diversity <- function(master, threads) {
   #Summarize
   fia_summary <- fia[, .(ntrees = .N,
                          HT = mean(HT, na.rm = TRUE), 
-                         BA_TPA = sum(BA, na.rm = TRUE)), 
+                         BA_TPA = sum(BA, na.rm = TRUE), 
+                         DRYBIO_AG_TPA = sum(DRYBIO_AG_TPA, na.rm = TRUE)),
                      by = c("PLT_CN", "PLANTS-Code", "Taxon2")]
   fia_summary <- fia_summary[order(PLT_CN)]
   
@@ -98,7 +100,7 @@ phylogenetic_diversity <- function(master, threads) {
   ### Community matrix ---------------------------------------------------------
   
   #dcast
-  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "BA_TPA", "Taxon2")])
+  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "DRYBIO_AG_TPA", "Taxon2")])
   
   # Remove plots without species
   nsp <- apply(master_matrix, 1, function(x) sum(x > 0))
@@ -110,7 +112,7 @@ phylogenetic_diversity <- function(master, threads) {
   ### Get phylogenetic indices -------------------------------------------------
   
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
-  saveRDS(matched$comm, paste0(out_path, "/master_community.rds"))
+  saveRDS(matched$comm, paste0(out_path, "/master_community_DRYBIO.rds"))
  
   #Calculates inter-community mean pairwise distance
   # this function uses the Rcpp modification
@@ -118,7 +120,7 @@ phylogenetic_diversity <- function(master, threads) {
                          cophenetic(matched$phy), 
                          abundance.weighted = TRUE, 
                          threads = 28)
-  saveRDS(ic_MDP, paste0(out_path, "/MDP_distance.rds")) #Export beta distance
+  saveRDS(ic_MDP, paste0(out_path, "/MDP_distance_DRYBIO.rds")) #Export beta distance
   
   #Phylogenetic diversity in a community - Faith's PD
   CPD <- ses.pd(matched$comm, matched$phy, runs = 99)
@@ -179,6 +181,6 @@ phylogenetic_diversity <- function(master, threads) {
               q = 2)
   CPD$qDP <- rqDp
   
-  fwrite(CPD, paste0(out_path, "/master_phylogenetic-diversity.txt"), sep = "\t")
+  fwrite(CPD, paste0(out_path, "/master_phylogenetic-diversity_DRYBIO.txt"), sep = "\t")
   
 }

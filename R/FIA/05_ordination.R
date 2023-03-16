@@ -30,8 +30,8 @@ library(ggpubr)
 #' @param out_path
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-ic_MDP <- readRDS(paste0(root_path, "/03_diversity/MDP_distance.rds"))
-stand <- readRDS(paste0(root_path, "/03_diversity/master_community.rds"))
+ic_MDP <- readRDS(paste0(root_path, "/03_diversity/MDP_distance_DRYBIO.rds"))
+stand <- readRDS(paste0(root_path, "/03_diversity/master_community_DRYBIO.rds"))
 out_path <- paste0(root_path, "/05_ordination")
 
 #'------------------------------------------------------------------------------
@@ -44,19 +44,19 @@ NMDS_taxonomic <- metaMDS(dist, model = "linear", autotransform = FALSE, k = 3, 
                           trymax = 30, trace = 1, plot = FALSE, engine = "monoMDS", 
                           maxit = 99, pc = TRUE, parallel = 10)
 
-saveRDS(NMDS_taxonomic, paste0(out_path, "/NMDS_taxonomy.rds"))
+saveRDS(NMDS_taxonomic, paste0(out_path, "/NMDS_taxonomy_DRYBIO.rds"))
 
 # Run the NMDS on phylogenetic
 NMDS_phylogenetic <- metaMDS(ic_MDP, model = "linear", autotransform = FALSE, k = 3, try = 10, 
                              trymax = 30, trace = 1, plot = FALSE, engine = "monoMDS", 
                              maxit = 50, pc = TRUE, parallel = 5)
 
-saveRDS(NMDS_phylogenetic, paste0(out_path, "/NMDS_phylogenetic.rds"))
+saveRDS(NMDS_phylogenetic, paste0(out_path, "/NMDS_phylogenetic_DRYBIO.rds"))
 
 #-------------------------------------------------------------------------------
 # Read and inspect
-NMDS_taxonomic <- readRDS(paste0(out_path, "/NMDS_taxonomy.rds"))
-NMDS_phylogenetic <- readRDS(paste0(out_path, "/NMDS_phylogenetic.rds"))
+NMDS_taxonomic <- readRDS(paste0(out_path, "/NMDS_taxonomy_DRYBIO.rds"))
+NMDS_phylogenetic <- readRDS(paste0(out_path, "/NMDS_phylogenetic_DRYBIO.rds"))
 
 # Plot for inspection
 plot(NMDS_taxonomic, choices = c(1, 2))
@@ -69,41 +69,41 @@ plot(NMDS_phylogenetic, choices = c(1, 3))
 plot(NMDS_phylogenetic, choices = c(2, 3))
 
 #-------------------------------------------------------------------------------
-# Get goodness
-god_phylogenetic <- goodness(NMDS_phylogenetic)
-saveRDS(god_phylogenetic, paste0(out_path, "/goodness_phylogenetic.rds"))
-
-god_taxonomic <- goodness(NMDS_taxonomic)
-saveRDS(god_taxonomic, paste0(out_path, "/goodness_taxonomic.rds"))
-
-#-------------------------------------------------------------------------------
 # Get stress plot
-stressplot(NMDS_phylogenetic)
-stressplot(NMDS_taxonomic)
+#stressplot(NMDS_phylogenetic)
+#stressplot(NMDS_taxonomic)
 
 #-------------------------------------------------------------------------------
 # Get weighted averages scores of species
 species_scores_taxonomic <- wascores(NMDS_taxonomic$points, stand, expand = FALSE)
 species_names_taxonomic <- rownames(species_scores_taxonomic)
 species_scores_taxonomic <- cbind(Taxon2 = species_names_taxonomic, as.data.table(species_scores_taxonomic))
-saveRDS(species_scores_taxonomic, paste0(out_path, "/species_scores_taxonomic.rds"))
+saveRDS(species_scores_taxonomic, paste0(out_path, "/species_scores_taxonomic_DRYBIO.rds"))
 
 species_scores_phylogenetic <- wascores(NMDS_phylogenetic$points, stand, expand = FALSE)
 species_names_phylogenetic <- rownames(species_scores_phylogenetic)
 species_scores_phylogenetic <- cbind(Taxon2 = species_names_phylogenetic, as.data.table(species_scores_phylogenetic))
-saveRDS(species_scores_phylogenetic, paste0(out_path, "/species_scores_phylogenetic.rds"))
+saveRDS(species_scores_phylogenetic, paste0(out_path, "/species_scores_phylogenetic_DRYBIO.rds"))
 
 #-------------------------------------------------------------------------------
 # Get dimensions
 plot_names_taxonomic <- as.integer64(rownames(NMDS_taxonomic$points))
 dimensions_plots_taxonomic <- as.data.table(NMDS_taxonomic$points)
 dimensions_plots_taxonomic$PLT_CN = plot_names_taxonomic
-saveRDS(dimensions_plots_taxonomic, paste0(out_path, "/dimensions_plots_taxonomic.rds"))
+saveRDS(dimensions_plots_taxonomic, paste0(out_path, "/dimensions_plots_taxonomic_DRYBIO.rds"))
 
 plot_names_phylogenetic <- as.integer64(rownames(NMDS_phylogenetic$points))
 dimensions_plots_phylogenetic <- as.data.table(NMDS_phylogenetic$points)
 dimensions_plots_phylogenetic$PLT_CN = plot_names_phylogenetic
-saveRDS(dimensions_plots_phylogenetic, paste0(out_path, "/dimensions_plots_phylogenetic.rds"))
+saveRDS(dimensions_plots_phylogenetic, paste0(out_path, "/dimensions_plots_phylogenetic_DRYBIO.rds"))
+
+#-------------------------------------------------------------------------------
+# Get goodness
+god_phylogenetic <- goodness(NMDS_phylogenetic)
+saveRDS(god_phylogenetic, paste0(out_path, "/goodness_phylogenetic_DRYBIO.rds"))
+
+god_taxonomic <- goodness(NMDS_taxonomic)
+saveRDS(god_taxonomic, paste0(out_path, "/goodness_taxonomic_DRYBIO.rds"))
 
 ### Create plots ---------------------------------------------------------------
 
