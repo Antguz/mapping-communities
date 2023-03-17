@@ -70,8 +70,8 @@ plot(NMDS_phylogenetic, choices = c(2, 3))
 
 #-------------------------------------------------------------------------------
 # Get stress plot
-#stressplot(NMDS_phylogenetic)
-#stressplot(NMDS_taxonomic)
+stressplot(NMDS_phylogenetic)
+stressplot(NMDS_taxonomic)
 
 #-------------------------------------------------------------------------------
 # Get weighted averages scores of species
@@ -127,8 +127,8 @@ NMDS1 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
   geom_point(data = species, aes(MDS1, MDS2), colour = "white", fill = col, shape = 21, size = 2) +
   theme_bw(base_size = tam) + th +
-  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
     label= species$`PLANTS-Code`, 
     direction = "both", 
@@ -144,8 +144,8 @@ NMDS2 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
   geom_point(data = species, aes(MDS1, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
   theme_bw(base_size = tam) + th +
-  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
@@ -161,8 +161,8 @@ NMDS3 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
   geom_point(data = species, aes(MDS2, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
   theme_bw(base_size = tam) + th +
-  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
@@ -188,8 +188,8 @@ NMDS1 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
   geom_point(data = species, aes(MDS1, MDS2), colour = "white", fill = col, shape = 21, size = 2) +
   theme_bw(base_size = tam) + th +
-  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
@@ -205,8 +205,8 @@ NMDS2 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
   geom_point(data = species, aes(MDS1, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
   theme_bw(base_size = tam) + th +
-  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
@@ -222,8 +222,8 @@ NMDS3 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
   geom_point(data = species, aes(MDS2, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
   theme_bw(base_size = tam) + th +
-  scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 

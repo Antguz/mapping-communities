@@ -17,6 +17,7 @@ library(sf)
 library(parallel)
 library(doSNOW)
 library(metrica)
+library(CAST)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -25,11 +26,12 @@ options(scipen = 100)
 #' @param ordination
 #' @param out_path
 
-#root_path <- "E:/DESIS"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_phylogenetic.rds"))
+ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_phylogenetic_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
+PD <- fread(paste0(root_path, "/03_diversity/master_phylogenetic-diversity.txt"))
 out_path <- paste0(root_path, "/06_model")
 
 #'------------------------------------------------------------------------------
@@ -45,8 +47,14 @@ source("R/FIA/performance.R")
 #Meta file
 meta <- meta[, c("PLT_CN", "INVYR", "STATECD", "COUNTYCD", "LAT", "LON", "ELEV")]
 
+#Merge phylogenetic diversity
+PD <- PD[, c("PLT_CN", "ntaxa", "pd.obs", "PSR")]
+PD <- merge(meta, 
+            PD,
+            by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+
 #Merge meta with ordination
-ordination <- merge(meta, 
+ordination <- merge(PD, 
                     ordination,
                     by = "PLT_CN", all.x = FALSE, all.y = TRUE)
 
@@ -56,11 +64,14 @@ data <- merge(ordination,
               by = "PLT_CN", all.x = FALSE, all.y = TRUE)
 
 #New frames
-meta <- data[, .SD, .SDcols = 1:7]
-ordination <- data[, .SD, .SDcols = 8:10]
-spectra <- data[, .SD, .SDcols = 11:ncol(data)]
+meta <- data[, .SD, .SDcols = 1:10]
+ordination <- data[, .SD, .SDcols = 11:13]
+spectra <- data[, .SD, .SDcols = 14:ncol(data)]
 
-a <- plsr(as.matrix(ordination) ~ as.matrix(spectra), scale = FALSE, center = TRUE)
+a <- plsr(as.matrix(ordination) ~ as.matrix(spectra), 
+          scale = FALSE, center = TRUE,
+          validation = "CV",
+          weights = (1/meta$ntaxa))
 
 #------------------------------------------
 # Data-split
@@ -78,14 +89,22 @@ ncomponents <- optimal_number(meta = meta,
                               spectra = spectra,
                               split = split,
                               int_ncomp = 60, 
-                              repeated = 50, 
+                              repeated = 100, 
                               threads = 28)
 
 saveRDS(ncomponents, paste0(root_path, "/06_model/ncomponents_cwt.rds"))
 
 hist(ncomponents[ordination == "MDS1"]$CV)
-hist(ncomponents[ordination == "MDS3"]$Onesigma)
+hist(ncomponents[ordination == "MDS1"]$Onesigma)
 hist(ncomponents[ordination == "MDS1"]$PRESS)
+
+hist(ncomponents[ordination == "MDS2"]$CV)
+hist(ncomponents[ordination == "MDS2"]$Onesigma)
+hist(ncomponents[ordination == "MDS2"]$PRESS)
+
+hist(ncomponents[ordination == "MDS3"]$CV)
+hist(ncomponents[ordination == "MDS3"]$Onesigma)
+hist(ncomponents[ordination == "MDS3"]$PRESS)
 
 
 getmode <- function(v) {

@@ -1,16 +1,44 @@
-optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 100, repeated = 10, k = 10, threads = 16) {
+optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, repeated = 10, k = 10, threads = 16) {
   
-  # Creates partition for training and testing
+  # Creates partition for training and testing-------------
   ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
   meta_training <- meta[split,]
-  dimentions <- ncol(ordination_training) - 1
+  dimentions <- ncol(ordination_training)
 
   #Results collector
   results <- data.table()
   
   #Progress bar
   pb <- txtProgressBar(min = 1, max = repeated*dimentions, style = 3) 
+  
+  #Create partitions and folds--3---------------------------
+  #Model collectors
+  data_split <- list()
+  data_folds <- list()
+  
+  for(i in 1:repeated) {
+    
+    #Split
+    split <- createDataPartition(meta_training$COUNTYCD, 
+                                 p = 0.80,
+                                 list = FALSE, 
+                                 times = 1)
+    
+    #Folds
+    folds <- CreateSpacetimeFolds(x = meta_training[split[,1],], 
+                                  spacevar = "COUNTYCD",
+                                  seed = sample(1:10000, 1))
+    folds <- folds$index
+    
+    #Collect
+    data_split[[i]] <- split
+    data_folds[[i]] <- folds
+    
+    #Residuals
+    rm(list = c("split", "folds"))
+    
+  }
   
   #Parallel 
   if(threads > 1 ) {
@@ -22,44 +50,34 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 100, re
   for(q in 1:dimentions) {
     
     #Train set
-    train_master <- cbind(ordination_training[, .SD, .SDcols = c(q+1)],
-                   spectra_training)
+    train_master <- cbind(ordination_training[, .SD, .SDcols = c(1)],
+                          spectra_training)
     colnames(train_master)[1] <- "MDS"
     
-    #Loop over ordination dimentions
+    #Loop over ordination dimensions
     for(i in 1:repeated) {
-      
-      setTxtProgressBar(pb, i)
-      
-      #Freedman-Diaconis rule
-      bw <- 2 * IQR(train_master$MDS) / length(train_master$MDS)^(1/3)
-      bw <- floor(bw)
-      
-      #Select by gradient
-      select <- break_continous(train_master$MDS, n = 5)
-      train <- train_master[select,]
-      
-      print(paste0("Dimension:", q, "; repeated", i, "; samples", nrow(train)))
       
       #Training
       pls_components <- plsr(MDS ~ ., 
-                             data= train, 
+                             data= train_master[data_split[[i]],], 
                              scale = FALSE,
                              center = TRUE,
                              ncomp= int_ncomp,
-                             validation = "LOO",
+                             validation = "CV",
                              method = "oscorespls",
+                             segments = data_folds[[i]],
+                             #length.seg = length(data_folds[[i]]),
                              na.action = na.omit)
       
       #Get optimal component
       component <- selectNcomp(pls_components, "onesigma")
       PRESS_min <- which.min(as.vector(pls_components$validation$PRESS))
       CV <- which.min(as.vector(RMSEP(pls_components)$val[1,,]))
-      #plot(as.vector(pls_components$validation$PRESS))
-      #plot(pls_components, ncomp = CV)
+      plot(as.vector(pls_components$validation$PRESS))
+      plot(pls_components, ncomp = CV)
       
       #Frame to collect
-      prediction <- data.table(ordination = colnames(ordination_training)[q+1],
+      prediction <- data.table(ordination = colnames(ordination_training)[q],
                                Repeated = i,
                                Onesigma = component,
                                PRESS = PRESS_min,
