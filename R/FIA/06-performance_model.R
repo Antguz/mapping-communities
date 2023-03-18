@@ -6,9 +6,8 @@ model_performance <- function(meta, ordination, spectra, split, model) {
   meta_testing <- meta[!split,]
   
   #Names
-  predictions_names <- c("MDS", "observed", paste0("rep_", 1:100))
+  predictions_names <- c("MDS", "observed", paste0("rep_", 1:(nrow(model$Performance)/3)))
   metrics <- c("R2","RSS", "RMSE", "RRMSE", "MAE", "RMAE", "RSE", "MBE", "B1", "B0")
-  
   
   #Coefficients
   coefficients <- model$Coefficients
@@ -39,7 +38,7 @@ model_performance <- function(meta, ordination, spectra, split, model) {
       value <- rowSums(value)
       value <- value + mds_coef$intercept
       
-      pred <- c(q, as.numeric(ordination_testing[i, .SD, .SDcols = c(q+1)]), value)
+      pred <- c(q, as.numeric(ordination_testing[i, .SD, .SDcols = c(q)]), value)
       predictions <- rbind(predictions, as.data.table(matrix(pred, nrow = 1)))
       
     }

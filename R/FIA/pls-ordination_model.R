@@ -4,7 +4,7 @@ pls_ordination_model <- function(meta, ordination, spectra, split, repeated = 10
   ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
   meta_training <- meta[split,]
-  dimentions <- ncol(ordination_training) - 1
+  dimentions <- ncol(ordination_training)
   
   #Names
   performance_names <- c("MDS", "repeated", "Model", "N", "Rsq", "Bias", "RMSE", "RMSE_P")
@@ -19,6 +19,34 @@ pls_ordination_model <- function(meta, ordination, spectra, split, repeated = 10
   coeff_export <- data.table()
   perf_export <- data.table()
   
+  #Create partitions and folds----------------------------------
+  #Model collectors
+  data_split <- list()
+  data_folds <- list()
+  
+  for(i in 1:repeated) {
+    
+    #Split
+    split <- createDataPartition(meta_training$COUNTYCD, 
+                                 p = 0.80,
+                                 list = FALSE, 
+                                 times = 1)
+    
+    #Folds
+    folds <- CreateSpacetimeFolds(x = meta_training[split[,1],], 
+                                  spacevar = "COUNTYCD",
+                                  seed = sample(1:10000, 1))
+    folds <- folds$index
+    
+    #Collect
+    data_split[[i]] <- split[,1]
+    data_folds[[i]] <- folds
+    
+    #Residuals
+    rm(list = c("split", "folds"))
+    
+  }
+  
   # Parallel
   if(threads > 1) {
     cl <- makeCluster(threads)
@@ -28,36 +56,33 @@ pls_ordination_model <- function(meta, ordination, spectra, split, repeated = 10
   #Loop of repeated
   for(q in 1:dimentions) {
     
-    #Train set
-    train_master <- cbind(ordination_training[, .SD, .SDcols = c(q+1)],
+    # Train set
+    train_master <- cbind(ordination_training[, .SD, .SDcols = c(q)],
                           spectra_training)
     colnames(train_master)[1] <- "MDS"
     
-    #Loop over ordination dimentions
+    # Progress bar
+    pb <- txtProgressBar(min = 1, max = repeated, style = 3) 
+    
+    #Loop over ordination dimensions
     for(i in 1:repeated) {
       
-      setTxtProgressBar(pb, i*q)
+      setTxtProgressBar(pb, i)
       
       #Basic information
       info <- data.table(MDS = q,
-                         repeate = 1)
-      
-      #Freedman-Diaconis rule
-      bw <- 2 * IQR(train_master$MDS) / length(train_master$MDS)^(1/3)
-      bw <- floor(bw)
-      
-      #Select by gradient
-      select <- break_continous(train_master$MDS, n = 10)
-      train <- train_master[select,]
+                         repeate = i)
       
       #Training
       pls_components <- plsr(MDS ~ ., 
-                             data= train, 
+                             data= train_master[data_split[[i]],], 
                              scale = FALSE,
                              center = TRUE,
                              ncomp= opt_components[q],
-                             validation = "none", 
-                             method = "oscorespls")
+                             validation = "CV",
+                             method = "oscorespls",
+                             segments = data_folds[[i]],
+                             na.action = na.omit)
       #Performance
       predict_training <- predict(pls_components, 
                                   train_master[, 2:ncol(train_master)], 
@@ -102,31 +127,3 @@ pls_ordination_model <- function(meta, ordination, spectra, split, repeated = 10
               Performance = perf_export))
     
 }
-
-#Break contium-----------------------------------
-break_continous <- function(axis, n = 20) {
-  
-  range_axis <- range(axis)
-  breaks <- seq((range_axis[1]-0.001), (range_axis[2]+0.001), length.out = n + 1)
-  axis_cut <- cut(axis, breaks)
-  frame_cut <- data.table(cut = axis_cut, row = 1:length(axis))
-  
-  cut_categories <- unique(axis_cut)
-  nmin <- min(table(axis_cut))
-  
-  vector_rows <- NA
-  
-  for(i in 1:length(cut_categories)) {
-    
-    sub_frame <- subset(frame_cut, cut == cut_categories[i])
-    sample_row <- sample(sub_frame$row, nmin)
-    vector_rows <- c(vector_rows, sample_row)
-    
-  }
-  
-  vector_rows <- vector_rows[!is.na(vector_rows)]
-  
-  return(vector_rows)
-  
-}
-

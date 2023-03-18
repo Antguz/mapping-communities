@@ -14,29 +14,20 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   
   #Create partitions and folds--3---------------------------
   #Model collectors
-  data_split <- list()
   data_folds <- list()
   
   for(i in 1:repeated) {
     
-    #Split
-    split <- createDataPartition(meta_training$COUNTYCD, 
-                                 p = 0.80,
-                                 list = FALSE, 
-                                 times = 1)
-    
     #Folds
-    folds <- CreateSpacetimeFolds(x = meta_training[split[,1],], 
+    folds <- CreateSpacetimeFolds(x = meta_training, 
                                   spacevar = "COUNTYCD",
                                   seed = sample(1:10000, 1))
     folds <- folds$index
     
-    #Collect
-    data_split[[i]] <- split
     data_folds[[i]] <- folds
     
     #Residuals
-    rm(list = c("split", "folds"))
+    rm(list = c("folds"))
     
   }
   
@@ -66,7 +57,6 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
                              validation = "CV",
                              method = "oscorespls",
                              segments = data_folds[[i]],
-                             #length.seg = length(data_folds[[i]]),
                              na.action = na.omit)
       
       #Get optimal component
@@ -94,31 +84,5 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   }
   
   return(results)
-  
-}
-
-break_continous <- function(axis, n = 20) {
-  
-  range_axis <- range(axis)
-  breaks <- seq((range_axis[1]-0.001), (range_axis[2]+0.001), length.out = n + 1)
-  axis_cut <- cut(axis, breaks)
-  frame_cut <- data.table(cut = axis_cut, row = 1:length(axis))
-  
-  cut_categories <- unique(axis_cut)
-  nmin <- min(table(axis_cut))
-  
-  vector_rows <- NA
-  
-  for(i in 1:length(cut_categories)) {
-    
-    sub_frame <- subset(frame_cut, cut == cut_categories[i])
-    sample_row <- sample(sub_frame$row, nmin)
-    vector_rows <- c(vector_rows, sample_row)
-  
-  }
-  
-  vector_rows <- vector_rows[!is.na(vector_rows)]
-  
-  return(vector_rows)
   
 }

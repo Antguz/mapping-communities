@@ -12,12 +12,13 @@ library(data.table)
 library(caret)
 library(pls)
 library(plsVarSel)
-library(blockCV)
 library(sf)
 library(parallel)
 library(doSNOW)
 library(metrica)
 library(CAST)
+library(viridis)
+library(ggplot2)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -26,10 +27,11 @@ options(scipen = 100)
 #' @param ordination
 #' @param out_path
 
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_phylogenetic_DRYBIO.rds"))
+ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
 PD <- fread(paste0(root_path, "/03_diversity/master_phylogenetic-diversity.txt"))
 out_path <- paste0(root_path, "/06_model")
@@ -68,11 +70,6 @@ meta <- data[, .SD, .SDcols = 1:10]
 ordination <- data[, .SD, .SDcols = 11:13]
 spectra <- data[, .SD, .SDcols = 14:ncol(data)]
 
-a <- plsr(as.matrix(ordination) ~ as.matrix(spectra), 
-          scale = FALSE, center = TRUE,
-          validation = "CV",
-          weights = (1/meta$ntaxa))
-
 #------------------------------------------
 # Data-split
 set.seed(1107)
@@ -88,9 +85,9 @@ ncomponents <- optimal_number(meta = meta,
                               ordination = ordination,
                               spectra = spectra,
                               split = split,
-                              int_ncomp = 60, 
-                              repeated = 100, 
-                              threads = 28)
+                              int_ncomp = 50, 
+                              repeated = 4, 
+                              threads = 4)
 
 saveRDS(ncomponents, paste0(root_path, "/06_model/ncomponents_cwt.rds"))
 
@@ -122,8 +119,8 @@ model <- pls_ordination_model(meta = meta,
                               ordination = ordination, 
                               spectra = spectra, 
                               split = split, 
-                              repeated = 100,
-                              opt_components = c(33, 9, 7),
+                              repeated = 5,
+                              opt_components = c(13, 5, 2),
                               threads = 28)
 
 model$Performance
@@ -147,7 +144,7 @@ model <- readRDS(paste0(root_path, "/06_model/model_cwt.rds"))
 evaluation <- model_performance(meta, ordination, spectra, split, model)
 saveRDS(evaluation, paste0(root_path, "/06_model/evaluation_cwt.rds"))
 
-ggplot(evaluation$Performance, aes(x= factor(MDS), y= as.numeric(RMSE), fill = factor(MDS))) +
+ggplot(evaluation$Performance, aes(x= factor(MDS), y= as.numeric(R2), fill = factor(MDS))) +
   geom_violin(width=1.4) +
   geom_boxplot(width=0.1, color="grey", alpha=0.2) +
   scale_fill_viridis(discrete = TRUE) +
