@@ -28,8 +28,8 @@ source("R/FIA/comdist_rcpp.R")
 #' @param out_path
 #' @param threads
 
-root_path <- "F:/DESIS"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 out_path <- paste0(root_path, "/03_diversity")
@@ -107,12 +107,12 @@ phylogenetic_diversity <- function(master, threads) {
   master_matrix <- master_matrix[nsp != 0, ]
   
   #Log transform 
-  master_matrix <- log10(master_matrix + 1)
+  master_matrix <- decostand(master_matrix, method = "hellinger") #Standarization
   
   ### Get phylogenetic indices -------------------------------------------------
   
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
-  saveRDS(matched$comm, paste0(out_path, "/master_community_DRYBIO.rds"))
+  saveRDS(matched$comm, paste0(out_path, "/master_taxonomy_DRYBIO.rds"))
  
   #Calculates inter-community mean pairwise distance
   # this function uses the Rcpp modification
