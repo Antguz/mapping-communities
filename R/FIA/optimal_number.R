@@ -41,7 +41,7 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   for(q in 1:dimentions) {
     
     #Train set
-    train_master <- cbind(ordination_training[, .SD, .SDcols = c(1)],
+    train_master <- cbind(ordination_training[, .SD, .SDcols = c(q)],
                           spectra_training)
     colnames(train_master)[1] <- "MDS"
     

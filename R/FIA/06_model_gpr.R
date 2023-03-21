@@ -12,10 +12,9 @@ library(data.table)
 library(caret)
 library(pls)
 library(plsVarSel)
-library(blockCV)
+library(CAST)
 library(sf)
-library(parallel)
-library(doSNOW)
+library(doParallel)
 library(metrica)
 options(scipen = 100)
 
@@ -25,12 +24,20 @@ options(scipen = 100)
 #' @param ordination
 #' @param out_path
 
-#root_path <- "E:/DESIS"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic.rds"))
+ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
+PD <- fread(paste0(root_path, "/03_diversity/master_phylogenetic-diversity.txt"))
 out_path <- paste0(root_path, "/06_model")
+
+#'------------------------------------------------------------------------------
+#' Load source code
+
+source("R/FIA/optimal_sigma.R") 
+source("R/FIA/gausspr_build.R")
+source("R/FIA/performance.R")
 
 #'------------------------------------------------------------------------------
 #' @Analysis  
@@ -38,8 +45,14 @@ out_path <- paste0(root_path, "/06_model")
 #Meta file
 meta <- meta[, c("PLT_CN", "INVYR", "STATECD", "COUNTYCD", "LAT", "LON", "ELEV")]
 
+#Merge phylogenetic diversity
+PD <- PD[, c("PLT_CN", "ntaxa", "pd.obs", "PSR")]
+PD <- merge(meta, 
+            PD,
+            by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+
 #Merge meta with ordination
-ordination <- merge(meta, 
+ordination <- merge(PD, 
                     ordination,
                     by = "PLT_CN", all.x = FALSE, all.y = TRUE)
 
@@ -49,9 +62,9 @@ data <- merge(ordination,
               by = "PLT_CN", all.x = FALSE, all.y = TRUE)
 
 #New frames
-meta <- data[, .SD, .SDcols = 1:7]
-ordination <- data[, .SD, .SDcols = 8:10]
-spectra <- data[, .SD, .SDcols = 11:ncol(data)]
+meta <- data[, .SD, .SDcols = 1:10]
+ordination <- data[, .SD, .SDcols = 11:13]
+spectra <- data[, .SD, .SDcols = 14:ncol(data)]
 
 #------------------------------------------
 # Data-split
@@ -61,108 +74,53 @@ split <- createDataPartition(meta$PLT_CN,
                              list = FALSE, 
                              times = 1)
 
-#Create folds and split -----------------------
-#Model collectors
-data_split <- list()
-data_folds <- list()
+#------------------------------------------
+# Sigma estimation model
 
-#N of iterations
-repeated <- 100
+model <- optimal_sigma(meta = meta,
+                       ordination = ordination, 
+                       spectra = spectra, 
+                       split = split, 
+                       threads = 28)
 
-#Proportion of data split
-prop <- 0.8
-
-for(i in 1:100) {
-  
-  #Split
-  split <- datasplit_tile(meta[split,], prop)
-  
-  #Folds
-  folds <- CreateSpacetimeFolds(x = condition_training[split],
-                                spacevar = "tile", 
-                                k = 8,
-                                seed = sample(1:10000, 1))
-  
-  #Collect
-  data_split[[i]] <- split
-  data_folds[[i]] <- folds
-  
-  #Residuals
-  rm(list = c("split", "folds"))
-  
-}
-
-ctrl <- trainControl(method = "cv", repeats = 3)
-
-model_train <- train(Class ~ .,
-                     data = training,
-                     method = "gaussprLinear",
-                     preProc = c("center", "scale"),
-                     trControl = ctrl)
-
-ncomponents <- optimal_number(meta = meta,
-                              ordination = ordination,
-                              spectra = spectra,
-                              split = split,
-                              int_ncomp = 60, 
-                              repeated = 50, 
-                              threads = 28)
-
-saveRDS(ncomponents, paste0(root_path, "/06_model/ncomponents_cwt.rds"))
-
-hist(ncomponents[ordination == "MDS1"]$CV)
-hist(ncomponents[ordination == "MDS3"]$Onesigma)
-hist(ncomponents[ordination == "MDS1"]$PRESS)
-
-
-getmode <- function(v) {
-  uniqv <- unique(v)
-  uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-
-ncomponents[, getmode(PRESS), by = "ordination"]
-ncomponents[, mean(PRESS), by = "ordination"]
+saveRDS(model, paste0(root_path, "/06_model/model_sigma.rds"))
 
 #------------------------------------------
 # Final Model of prediction
 
-model <- pls_ordination_model(meta = meta,
-                              ordination = ordination, 
-                              spectra = spectra, 
-                              split = split, 
-                              repeated = 100,
-                              opt_components = c(33, 9, 7),
-                              threads = 28)
+model <- gausspr_build(meta = meta,
+                       ordination = ordination, 
+                       spectra = spectra, 
+                       split = split, 
+                       sigma_components = c(0.01107595, 0.01359494, 0.01863291),
+                       repeated = 100,
+                       threads = 28)
 
-model$Performance
-
-ggplot(model$Performance, aes(x= factor(MDS), y= as.numeric(Rsq), fill = factor(MDS))) +
-  geom_violin(width=1.4) +
-  geom_boxplot(width=0.1, color="grey", alpha=0.2) +
-  scale_fill_viridis(discrete = TRUE) +
-  theme_bw() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) 
-
-saveRDS(model, paste0(root_path, "/06_model/model_cwt.rds"))
-model <- readRDS(paste0(root_path, "/06_model/model_cwt.rds"))
+saveRDS(model, paste0(root_path, "/06_model/model_final.rds"))
 
 #------------------------------------------
-# Final Model of prediction
+# Performance
 
-evaluation <- model_performance(meta, ordination, spectra, split, model)
-saveRDS(evaluation, paste0(root_path, "/06_model/evaluation_cwt.rds"))
+training <- model_performance(meta = meta[split[,1],],
+                              ordination = ordination[split[,1],], 
+                              spectra = spectra[split[,1],],
+                              models = model)
 
-ggplot(evaluation$Performance, aes(x= factor(MDS), y= as.numeric(RMSE), fill = factor(MDS))) +
-  geom_violin(width=1.4) +
-  geom_boxplot(width=0.1, color="grey", alpha=0.2) +
-  scale_fill_viridis(discrete = TRUE) +
-  theme_bw() +
-  theme(
-    legend.position="none",
-    plot.title = element_text(size=11)
-  ) 
+testing <- model_performance(meta = meta[!split[,1],],
+                             ordination = ordination[!split[,1],], 
+                             spectra = spectra[!split[,1],],
+                             models = model)
 
+performance_training <- training$performance
+performance_training$type <- "Training"
+performance_testing <- testing$performance
+performance_testing$type <- "Testing"
+performance <- rbind(performance_training, performance_testing)
+fwrite(performance, paste0(root_path, "/06_model/performance.csv"))
 
+predicted_training <- training$predicted
+predicted_training$type <- "Training"
+predicted_testing <- testing$predicted
+predicted_testing$type <- "Testing"
+fwrite(predicted_training, paste0(root_path, "/06_model/predicted_training.csv"))
+fwrite(predicted_testing, paste0(root_path, "/06_model/predicted_testing.csv"))

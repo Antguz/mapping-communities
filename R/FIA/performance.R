@@ -1,61 +1,8 @@
-################################################################################
-##### 07 - Model testing
-################################################################################
-
-#' @description Batch for prediction of the models using the LSP scenes.
-
-#-------------------------------------------------------------------------------
-# Libraries
-
-library(data.table)
-library(caret)
-library(parallel)
-library(metrica)
-
-#-------------------------------------------------------------------------------
-# Root path
-root_path <- "E:/Projects/DESIS_mapping"
-meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic.rds"))
-spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
-models <- readRDS(paste0(root_path, "/06_model/model_final.rds"))
-out_path <- paste0(root_path, "/06_model")
-
-#'------------------------------------------------------------------------------
-#' @Analysis  
-
-#Meta file
-meta <- meta[, c("PLT_CN", "INVYR", "STATECD", "COUNTYCD", "LAT", "LON", "ELEV")]
-
-#Merge meta with ordination
-ordination <- merge(meta, 
-                    ordination,
-                    by = "PLT_CN", all.x = FALSE, all.y = TRUE)
-
-#Merge ordination with spectra 
-data <- merge(ordination, 
-              spectra[, .SD, .SDcols = c(1, 7:ncol(spectra))],
-              by = "PLT_CN", all.x = FALSE, all.y = TRUE)
-
-#New frames
-meta <- data[, .SD, .SDcols = 1:7]
-ordination <- data[, .SD, .SDcols = 8:10]
-spectra <- data[, .SD, .SDcols = 11:ncol(data)]
-
-#------------------------------------------
-# Data-split
-set.seed(1107)
-split <- createDataPartition(meta$PLT_CN, 
-                             p = 0.70,
-                             list = FALSE, 
-                             times = 1)
-
 #-------------------------------------------------------------------------------
 # Model Predict Function
 model_performance <- function(meta = meta,
                               ordination = ordination, 
                               spectra = spectra,
-                              type = "Teesting",
                               models = models) {
   
   #Performance descriptors
@@ -117,9 +64,3 @@ model_performance <- function(meta = meta,
               predicted = final_predicted))
   
 }
-
-testing <- model_performance(meta = meta[!split[,1]],
-                             ordination = ordination[!split[,1]], 
-                             spectra = spectra[!split[,1]],
-                             type = "Testing",
-                             models = models)

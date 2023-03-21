@@ -40,16 +40,16 @@ out_path <- paste0(root_path, "/05_ordination")
 #-------------------------------------------------------------------------------
 # Run the NMDS on taxonomic
 dist <- vegdist(stand, method="bray")
-NMDS_taxonomic <- metaMDS(dist, model = "linear", autotransform = FALSE, k = 3, try = 10, 
-                          trymax = 30, trace = 1, plot = FALSE, engine = "monoMDS", 
-                          maxit = 99, pc = TRUE, parallel = 10)
+NMDS_taxonomic <- metaMDS(dist, model = "linear", autotransform = FALSE, k = 10, try = 10, 
+                          trymax = 30, trace = 3, plot = FALSE, engine = "monoMDS", 
+                          maxit = 25, pc = TRUE, parallel = 10, center = TRUE)
 
 saveRDS(NMDS_taxonomic, paste0(out_path, "/NMDS_taxonomy_DRYBIO.rds"))
 
-# Run the NMDS on phylogenetic
+# Run the NMDS on phylogeny
 NMDS_phylogenetic <- metaMDS(ic_MDP, model = "linear", autotransform = FALSE, k = 3, try = 10, 
-                             trymax = 30, trace = 1, plot = FALSE, engine = "monoMDS", 
-                             maxit = 50, pc = TRUE, parallel = 5)
+                             trymax = 30, trace = 3, plot = FALSE, engine = "monoMDS", 
+                             maxit = 25, pc = TRUE, parallel = 5, center = TRUE)
 
 saveRDS(NMDS_phylogenetic, paste0(out_path, "/NMDS_phylogenetic_DRYBIO.rds"))
 
@@ -73,7 +73,7 @@ plot(NMDS_phylogenetic, choices = c(2, 3))
 stressplot(NMDS_phylogenetic)
 stressplot(NMDS_taxonomic)
 
-#-------------------------------------------------------------------------------
+  #-------------------------------------------------------------------------------
 # Get weighted averages scores of species
 species_scores_taxonomic <- wascores(NMDS_taxonomic$points, stand, expand = FALSE)
 species_names_taxonomic <- rownames(species_scores_taxonomic)
