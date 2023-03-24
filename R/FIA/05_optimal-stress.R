@@ -15,7 +15,7 @@ library(vegan)
 #' Arguments
 
 root_path <- "E:/Projects/DESIS_mapping/05_ordination"
-folder <- "taxonomy"
+folder <- "phylogenetic"
 files_path <- paste0(root_path, "/", folder)
 files <- dir(files_path)
 #Get stress
@@ -33,3 +33,10 @@ for(i in 1:length(files)) {
   stress[i] <- NDS$stress
   
 }
+
+
+frame <- data.table(type = "taxonomic", k = 1:25, stress = stress)
+framep <- data.table(type = "phylogenetic", k = 1:27, stress = stress)
+
+frame <- rbind(frame, framep)
+fwrite(frame, paste0(root_path, "/strees_optimal.csv"))
