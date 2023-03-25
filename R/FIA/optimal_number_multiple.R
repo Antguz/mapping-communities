@@ -1,16 +1,23 @@
-optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, repeated = 10, k = 10, threads = 16) {
+optimal_number <- function(meta, 
+                           ordination, 
+                           spectra, 
+                           weigths,
+                           split, 
+                           int_ncomp = 50, 
+                           repeated = 10,
+                           threads = 4) {
   
   # Creates partition for training and testing-------------
   ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
   meta_training <- meta[split,]
-  dimentions <- ncol(ordination_training)
-
+  weights_training <- weigths[split]
+  
   #Results collector
   results <- data.table()
   
   #Progress bar
-  pb <- txtProgressBar(min = 1, max = repeated*dimentions, style = 3) 
+  pb <- txtProgressBar(min = 1, max = repeated, style = 3) 
   
   #Create partitions and folds--3---------------------------
   #Model collectors
@@ -19,10 +26,7 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   for(i in 1:repeated) {
     
     #Folds
-    folds <- CreateSpacetimeFolds(x = meta_training, 
-                                  spacevar = "COUNTYCD",
-                                  seed = sample(1:10000, 1))
-    folds <- folds$index
+    folds <- grid_selection(ordination_training, steps = 30)
     
     data_folds[[i]] <- folds
     
@@ -34,19 +38,19 @@ optimal_number <- function(meta, ordination, spectra, split, int_ncomp = 50, rep
   #Loop over ordination dimensions
   for(i in 1:repeated) {
     
-    train <- data.frame(MDS = I(as.data.frame(ordination_training[data_split,][[i]])),
-                        spectra = I(as.data.frame(spectra_training[data_split,][[i]])))
+    MDS <- ordination_training[data_folds[[i]],]
+    bands <- spectra_training[data_folds[[i]],]
+    we <- weights_training[data_folds[[i]]]
     
     #Training
-    pls_components <- plsr(as.matrix(ordination_training) ~ as.matrix(spectra_training), 
-                           data= train,
+    pls_components <- plsr(as.matrix(MDS) ~ as.matrix(bands), 
                            scale = FALSE,
                            center = TRUE,
                            ncomp= int_ncomp,
                            validation = "CV",
                            method = "oscorespls",
-                           #segments = data_folds[[i]],
-                           na.action = na.omit)
+                           na.action = na.omit,
+                           maxit = 1000)
     
     #Get optimal component
     press <- data.table(MDS = paste0("MDS", 1:ncol(ordination_training)),

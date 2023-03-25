@@ -27,13 +27,13 @@ options(scipen = 100)
 #' @param ordination
 #' @param out_path
 
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
-PD <- readRDS(paste0(root_path, "/03_diversity/master_taxonomic_DRYBIO.rds"))
+PD <- fread(paste0(root_path, "/03_diversity/master_phylogenetic-diversity_DRYBIO.txt"))
 out_path <- paste0(root_path, "/06_model")
 
 #'------------------------------------------------------------------------------
@@ -66,9 +66,10 @@ data <- merge(ordination,
               by = "PLT_CN", all.x = FALSE, all.y = TRUE)
 
 #New frames
-meta <- data[, .SD, .SDcols = 1]
-ordination <- data[, .SD, .SDcols = 2:4]
-spectra <- data[, .SD, .SDcols = 6:ncol(data)]
+meta <- data[, .SD, .SDcols = 1:10]
+ordination <- data[, .SD, .SDcols = 11:13]
+spectra <- data[, .SD, .SDcols = 15:ncol(data)]
+weigths <- data$goodness
 
 #------------------------------------------
 # Data-split
@@ -77,6 +78,7 @@ split <- createDataPartition(meta$COUNTYCD,
                              p = 0.70,
                              list = FALSE, 
                              times = 1)
+split <- split[,1]
 
 #------------------------------------------
 # Estimation of the optimal number of components
@@ -84,6 +86,7 @@ split <- createDataPartition(meta$COUNTYCD,
 ncomponents <- optimal_number(meta = meta,
                               ordination = ordination,
                               spectra = spectra,
+                              weigths = weigths,
                               split = split,
                               int_ncomp = 50, 
                               repeated = 4, 
