@@ -28,8 +28,8 @@ source("R/FIA/comdist_rcpp.R")
 #' @param out_path
 #' @param threads
 
-root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 out_path <- paste0(root_path, "/03_diversity")
@@ -106,8 +106,8 @@ phylogenetic_diversity <- function(master, threads) {
   nsp <- apply(master_matrix, 1, function(x) sum(x > 0))
   master_matrix <- master_matrix[nsp != 0, ]
   
-  #Log transform 
-  master_matrix <- decostand(master_matrix, method = "hellinger") #Standarization
+  #Standardization
+  master_matrix <- decostand(master_matrix, method = "hellinger") 
   
   ### Get phylogenetic indices -------------------------------------------------
   
@@ -116,8 +116,8 @@ phylogenetic_diversity <- function(master, threads) {
  
   #Calculates inter-community mean pairwise distance
   # this function uses the Rcpp modification
-  ic_MDP <- comdist_rcpp(matched$comm, 
-                         cophenetic(matched$phy), 
+  ic_MDP <- comdist_rcpp(comm = matched$comm, 
+                         dis = cophenetic(matched$phy), 
                          abundance.weighted = TRUE, 
                          threads = 28)
   saveRDS(ic_MDP, paste0(out_path, "/MDP_distance_DRYBIO.rds")) #Export beta distance

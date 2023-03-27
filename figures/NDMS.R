@@ -19,13 +19,15 @@ library(plot3Drgl)
 library(rgl)
 library(magick)
 library(RColorBrewer)
+library(scales)
 
 #'------------------------------------------------------------------------------
 #' Read information
 
-root_path <- "E:/Projects/DESIS_mapping"
-species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_taxonomic_DRYBIO.rds"))
-dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic_DRYBIO.rds"))
+root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_phylogenetic_DRYBIO.rds"))
+dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_phylogenetic_DRYBIO.rds"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
 proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
 
@@ -40,63 +42,106 @@ th <- theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank())
 tam <- 12
 col <- "black"
-
+sp_fill <- "darkred"
+sp_color <- "white"
+sp_size <- 3
+plot_range <- c(0.5, 3)
 
 ### Create plots ---------------------------------------------------------------
-
-### Angiosperms
+### Grey
 
 NMDS1 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
-  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
-  geom_point(data = species, aes(MDS1, MDS2), colour = "white", fill = col, shape = 21, size = 2) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS2), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_size(range = plot_range) + 
   geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
-                  colour = col,
+                  colour = sp_fill,
                   box.padding = 0.5,
                   max.overlaps = 20,
-                  size = 3) + 
+                  size = sp_size) + 
   xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
 NMDS2 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
-  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
-  geom_point(data = species, aes(MDS1, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_size(range = plot_range) + 
   geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
-                  colour = col,
+                  colour = sp_fill,
                   box.padding = 0.5,
                   max.overlaps = 20,
-                  size = 3) + 
+                  size = sp_size) + 
   xlab("NMDS1") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
 NMDS3 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
-  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = A_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
-  geom_point(data = species, aes(MDS2, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
+  geom_point(data = species, aes(MDS2, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_size(range = plot_range) + 
   geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
                   label= species$`PLANTS-Code`, 
                   direction = "both", 
-                  colour = col,
+                  colour = sp_fill,
                   box.padding = 0.5,
                   max.overlaps = 20,
-                  size = 3) + 
+                  size = sp_size) + 
+  xlab("NMDS2") + ylab("NMDS3") +
+  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+
+### Angiosperms ----------------------------------------------------------------
+
+NMDS1 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
+  geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = A_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS2), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
+  theme_bw(base_size = tam) + th +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_size(range = plot_range) + 
+  xlab("NMDS1") + ylab("NMDS2") +
+  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+
+NMDS2 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
+  geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = A_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
+  theme_bw(base_size = tam) + th +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_size(range = plot_range) + 
+  xlab("NMDS1") + ylab("NMDS3") +
+  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+
+NMDS3 <- ggplot() +
+  geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
+  geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
+  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = A_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
+  geom_point(data = species, aes(MDS2, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
+  theme_bw(base_size = tam) + th +
+  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  scale_size(range = plot_range) + 
   xlab("NMDS2") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
@@ -108,59 +153,41 @@ ggarrange(NMDS1, NMDS2, NMDS3,
           common.legend = TRUE, legend = "right")
 dev.off()
 
-### Micorrizal
+### Micorrizal -----------------------------------------------------------------
 
 NMDS1 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
-  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
-  geom_point(data = species, aes(MDS1, MDS2), colour = "white", fill = col, shape = 21, size = 2) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = AM_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS2), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
-                  label= species$`PLANTS-Code`, 
-                  direction = "both", 
-                  colour = col,
-                  box.padding = 0.5,
-                  max.overlaps = 20,
-                  size = 3) + 
+  scale_size(range = plot_range) + 
   xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
 
 NMDS2 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
-  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
-  geom_point(data = species, aes(MDS1, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = AM_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
+  geom_point(data = species, aes(MDS1, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
-                  label= species$`PLANTS-Code`, 
-                  direction = "both", 
-                  colour = col,
-                  box.padding = 0.5,
-                  max.overlaps = 20,
-                  size = 3) + 
+  scale_size(range = plot_range) + 
   xlab("NMDS1") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
 
 NMDS3 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
-  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = AM_to_T), shape = 21, colour = "grey75", size = 2, alpha = 0.5) +
-  geom_point(data = species, aes(MDS2, MDS3), colour = "white", fill = col, shape = 21, size = 2) +
+  geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = AM_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
+  geom_point(data = species, aes(MDS2, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
-                  label= species$`PLANTS-Code`, 
-                  direction = "both", 
-                  colour = col,
-                  box.padding = 0.5,
-                  max.overlaps = 20,
-                  size = 3) + 
+  scale_size(range = plot_range) + 
   xlab("NMDS2") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
 
@@ -171,103 +198,64 @@ ggarrange(NMDS1, NMDS2, NMDS3,
           common.legend = TRUE, legend = "bottom")
 dev.off()
 
-
-scatter3D(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, clab = c("Proportion of", "Angiosperms"),
-          col.var = plots_fia$A_to_T)
-
-with(plots_fia, scatter3D(MDS1, MDS2, MDS3, 
-                          labels = c("NMDS1", "NMDS2", "NMDS3"),
-                          colvar = A_to_T,
-                          col = brewer.pal(10, "BrBG"),
-                          clab = c("Proportion of", "Angiosperms"),
-                          pch = 20,
-                          cex = 1,
-                          xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3"),
-     points3D(species$MDS1, species$MDS2, species$MDS3, add = TRUE, col = "red"))
-
-with(plots_fia, scatter3D(MDS1, MDS2, MDS3, 
-                          labels = c("NMDS1", "NMDS2", "NMDS3"),
-                          colvar = AM_to_T,
-                          col = brewer.pal(10, "Spectral") ,
-                          clab = c("Proportion of", "Angiosperms"),
-                          pch = 20,
-                          cex = 1,
-                          xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3"),
-     points3D(species$MDS1, species$MDS2, species$MDS3, add = TRUE, col = "red"))
-
-plotrgl()
-rgl.snapshot(filename="figures/3dplot.png")
-
-with(plots_fia, scatter3D(MDS1, MDS2, MDS3, 
-                          labels = c("NMDS1", "NMDS2", "NMDS3"),
-                          colvar = AM_to_T,
-                          col = viridis(100, option = "magma", direction = 1),
-                          clab = c("Proportion of", "trees with AM"),
-                          pch = 20))
-
-
-
-
-scatter3D(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
-          xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
-          colvar = plots_fia$A_to_T,
-          col = viridis(100, option = "mako", direction = -1),
-          clab = c("Proportion of", "Angiosperms"),
-          pch = 20,
-          cex = 0.75)
-
-scatter3D(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
-          xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
-          colvar = plots_fia$AM_to_T,
-          col = viridis(100, option = "cividis", direction = 1),
-          clab = c("Proportion of", "trees with AM"),
-          pch = 20,
-          cex = 0.75)
-
-text3D(species$MDS1, species$MDS2, species$MDS3, labels = species$`PLANTS-Code`, add = TRUE, col = "#990000")
-points3D(species$MDS1, species$MDS2, species$MDS3, add = TRUE, col = "red")
-plotrgl()
-
-
-
-
-
-
+#3D plot -----------------------------------------------------------------------
 colors <- function(x, 
-                   gradient = brewer.pal(11, "BrBG"), 
+                   gradient = rev(brewer.pal(11, "BrBG")), 
                    colsteps= 100) {
   
   col <- colorRampPalette(gradient)(colsteps)[findInterval(x, seq(min(x), max(x), length.out = colsteps))]
-  
   return(col)
-  
 }
-
-colors(plots_fia$A_to_T)
-
-
-
-
-
-color <- data.frame( COLOR_VALUE = seq(-1000,1000,1), color.name=my.colors(2001))
-reg1.with.color<-merge(reg1, color.df, by="COLOR_VALUE")
 
 
 # Static chart
+plot3d(species$MDS1, species$MDS2, species$MDS3, 
+       xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
+       col = rep("darkred", nrow(species)),
+       type = "s", 
+       aspect = TRUE,
+       decorate = FALSE,
+       radius = 5,
+       fov = 1)
+text3d(species$MDS1, species$MDS2, (species$MDS3+10), text = species$`PLANTS-Code`)
+
 plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
        xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
-       col = colors(plots_fia$A_to_T),
+       col = rep("grey75", nrow(species)),
        type = "s", 
-       radius = plots_fia$goodness*2000)
+       aspect = TRUE,
+       decorate = FALSE,
+       add = TRUE,
+       radius = plots_fia$goodness*3000)
+
+
+plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
+       xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
+       col = colors(plots_fia$A_to_T, gradient = rev(brewer.pal(11, "BrBG"))),
+       type = "s", 
+       aspect = TRUE,
+       decorate = FALSE,
+       add = TRUE,
+       radius = plots_fia$goodness*3000)
+
+plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
+       xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
+       col = colors(plots_fia$AM_to_T, gradient = rev(brewer.pal(11, "PRGn"))),
+       type = "s", 
+       aspect = TRUE,
+       decorate = FALSE,
+       add = TRUE,
+       radius = plots_fia$goodness*3000)
 
 # We can indicate the axis and the rotation velocity
-play3d( spin3d( axis = c(0, 0, 1), rpm = 20), duration = 10 )
+Sys.sleep(5)
+play3d( spin3d( axis = c(0, 0, 1), rpm = 2), duration = 30)
 
 # Save like gif
 movie3d(
   movie = "NDMS", 
-  spin3d( axis = c(0, 0, 1), rpm = 7),
-  duration = 10, 
+  spin3d( axis = c(0, 0, 1), rpm = 2),
+  duration = 30, 
   dir = root_path,
   type = "gif", 
   webshot = TRUE,

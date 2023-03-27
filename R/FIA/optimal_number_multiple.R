@@ -4,8 +4,8 @@ optimal_number <- function(meta,
                            weigths,
                            split, 
                            int_ncomp = 50, 
-                           repeated = 10,
-                           threads = 4) {
+                           repeated = 100,
+                           threads = 26) {
   
   # Creates partition for training and testing-------------
   ordination_training <- ordination[split,]
@@ -15,9 +15,6 @@ optimal_number <- function(meta,
   
   #Results collector
   results <- data.table()
-  
-  #Progress bar
-  pb <- txtProgressBar(min = 1, max = repeated, style = 3) 
   
   #Create partitions and folds--3---------------------------
   #Model collectors
@@ -35,9 +32,22 @@ optimal_number <- function(meta,
     
   }
   
+  #Progress bar
+  pb <- txtProgressBar(min = 1, max = repeated, style = 3) 
+  
+  #Parallel 
+  if(threads > 1 ) {
+    cl <- makeCluster(threads)
+    pls.options(parallel = cl)
+  }
+  
   #Loop over ordination dimensions
   for(i in 1:repeated) {
     
+    #Progress
+    setTxtProgressBar(pb, i)
+    
+    #Select
     MDS <- ordination_training[data_folds[[i]],]
     bands <- spectra_training[data_folds[[i]],]
     we <- weights_training[data_folds[[i]]]
@@ -50,7 +60,7 @@ optimal_number <- function(meta,
                            validation = "CV",
                            method = "oscorespls",
                            na.action = na.omit,
-                           maxit = 1000)
+                           maxit = 10000)
     
     #Get optimal component
     press <- data.table(MDS = paste0("MDS", 1:ncol(ordination_training)),
@@ -58,7 +68,7 @@ optimal_number <- function(meta,
     press <- cbind(press, as.data.table(pls_components$validation$PRESS))
     
     #Export
-    results <- rbind(results, prediction)
+    results <- rbind(results, press)
     
   }
 

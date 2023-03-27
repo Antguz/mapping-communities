@@ -19,6 +19,7 @@ library(metrica)
 library(CAST)
 library(viridis)
 library(ggplot2)
+library(rTLS)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -28,8 +29,8 @@ options(scipen = 100)
 #' @param out_path
 
 #root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_taxonomic_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_VN.csv"))
@@ -39,8 +40,9 @@ out_path <- paste0(root_path, "/06_model")
 #'------------------------------------------------------------------------------
 #' Load source code
 
-source("R/FIA/optimal_number.R") 
-source("R/FIA/pls-ordination_model.R")
+source("R/FIA/grid_selection.R") 
+source("R/FIA/optimal_number_multiple.R") 
+source("R/FIA/run_models_multiple.R")
 source("R/FIA/performance.R")
 
 #'------------------------------------------------------------------------------
@@ -89,19 +91,61 @@ ncomponents <- optimal_number(meta = meta,
                               weigths = weigths,
                               split = split,
                               int_ncomp = 50, 
-                              repeated = 4, 
-                              threads = 4)
+                              repeated = 100, 
+                              threads = 26)
+
+saveRDS(ncomponents, paste0(out_path, "/PRESS_taxonomic.csv"))
+
+mean_PRESS <- ncomponents[, lapply(.SD, mean), by= MDS]
+
+plot(as.numeric(mean_PRESS[2, 3:ncol(mean_PRESS)]))
+plot(as.numeric(mean_PRESS[3, 3:19]))
+
+ncomp <- 19
 
 #------------------------------------------
-# Final Model of prediction
+# Run models
 
-model <- pls_ordination_model(meta = meta,
-                              ordination = ordination, 
-                              spectra = spectra, 
-                              split = split, 
-                              repeated = 5,
-                              opt_components = c(13, 5, 2),
-                              threads = 28)
+models <- run_models_multiple(meta, 
+                              ordination, 
+                              spectra, 
+                              split, 
+                              int_ncomp = ncomp, 
+                              repeated = 100,
+                              threads = 26)
+
+saveRDS(models, paste0(out_path, "/models_taxonomic.rds"))
+
+#------------------------------------------
+# Model performance
+
+model <- model_performance_multiple(meta = meta,
+                                    ordination = ordination, 
+                                    spectra = spectra,
+                                    models = models,
+                                    ncomp = 19)
+
+saveRDS(final_performance, paste0(out_path, "/models_performance.rds"))
+saveRDS(final_predicted, paste0(out_path, "/models_predicted.rds"))
+
+mean_summary <- final_predicted[, lapply(.SD, mean, na.rm=TRUE), by= MDS, .SDcols= 3:ncol(final_predicted)] 
+sd_summary <- final_predicted[, lapply(.SD, sd, na.rm=TRUE), by= MDS, .SDcols= 3:ncol(final_predicted)] 
+
+mean_summary <- melt(mean_summary, id.vars = c("MDS"), variable.name = "ID")
+sd_summary <- melt(sd_summary, id.vars = c("MDS"), variable.name = "ID")
+mean_summary$ID <- as.numeric(gsub('V', '', mean_summary$ID))
+sd_summary$ID <- as.numeric(gsub('V', '', sd_summary$ID))
+mean_summary <- dcast(mean_summary, ID ~ MDS)
+sd_summary <- dcast(sd_summary, ID ~ MDS)
+
+plot(ordination$MDS1, sd_summary$MDS1)
+abline(lm(ordination$MDS3 ~ mean_summary$MDS3))
+summary(lm(ordination$MDS3 ~ mean_summary$MDS3))
+
+delta <- (mean_summary$MDS3 - ordination$MDS3) / ordination$MDS3
+
+#------------------------------------------
+# Evaluate performance
 
 model$Performance
 
@@ -118,8 +162,7 @@ ggplot(model$Performance, aes(x= factor(MDS), y= as.numeric(Rsq), fill = factor(
 saveRDS(model, paste0(root_path, "/06_model/model_cwt.rds"))
 model <- readRDS(paste0(root_path, "/06_model/model_cwt.rds"))
 
-#------------------------------------------
-# Final Model of prediction
+
 
 evaluation <- model_performance(meta, ordination, spectra, split, model)
 saveRDS(evaluation, paste0(root_path, "/06_model/evaluation_cwt.rds"))

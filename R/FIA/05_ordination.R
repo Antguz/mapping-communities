@@ -29,8 +29,10 @@ library(ggpubr)
 #' @param stand
 #' @param out_path
 
-root_path <- "E:/Projects/DESIS_mapping"
-stand <- readRDS(paste0(root_path, "/03_diversity/master_taxonomy_DRYBIO.rds"))
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+stand <- readRDS(paste0(root_path, "/03_diversity/master_taxonomic_DRYBIO.rds"))
 out_path <- paste0(root_path, "/05_ordination")
 
 #'------------------------------------------------------------------------------
@@ -39,7 +41,7 @@ out_path <- paste0(root_path, "/05_ordination")
 #-------------------------------------------------------------------------------
 # Selecting the NMDS for taxonomic or phylogenetic ordinations
 
-NMDS_taxonomic <- readRDS(paste0(root_path, "/05_ordination/taxonomy/NMDS_taxonomy_DRYBIO_k3.rds"))
+NMDS_taxonomic <- readRDS(paste0(root_path, "/05_ordination/taxonomic/NMDS_taxonomic_DRYBIO_k3.rds"))
 NMDS_phylogenetic <- readRDS(paste0(root_path, "/05_ordination/phylogenetic/NMDS_phylogenetic_DRYBIO_k3.rds"))
 
 # Plot for inspection
@@ -82,12 +84,3 @@ dimensions_plots_phylogenetic <- as.data.table(NMDS_phylogenetic$points)
 dimensions_plots_phylogenetic$PLT_CN <- plot_names_phylogenetic
 dimensions_plots_phylogenetic$goodness <- goodness(NMDS_phylogenetic)
 saveRDS(dimensions_plots_phylogenetic, paste0(out_path, "/dimensions_plots_phylogenetic_DRYBIO.rds"))
-
-#-------------------------------------------------------------------------------
-# Get goodness
-god_taxonomic <- goodness(NMDS_taxonomic)
-saveRDS(god_taxonomic, paste0(out_path, "/goodness_taxonomic_DRYBIO.rds"))
-
-god_phylogenetic <- goodness(NMDS_phylogenetic)
-saveRDS(god_phylogenetic, paste0(out_path, "/goodness_phylogenetic_DRYBIO.rds"))
-
