@@ -20,6 +20,7 @@ library(rgl)
 library(magick)
 library(RColorBrewer)
 library(scales)
+library(ggpubr)
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -44,13 +45,13 @@ tam <- 12
 col <- "black"
 sp_fill <- "darkred"
 sp_color <- "white"
-sp_size <- 3
-plot_range <- c(0.5, 3)
+sp_size <- 2
+plot_range <- c(0.5, 2)
 
 ### Create plots ---------------------------------------------------------------
 ### Grey
 
-NMDS1 <- ggplot() +
+rNMDS1 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
@@ -69,7 +70,7 @@ NMDS1 <- ggplot() +
   xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
-NMDS2 <- ggplot() +
+rNMDS2 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
@@ -88,7 +89,7 @@ NMDS2 <- ggplot() +
   xlab("NMDS1") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
-NMDS3 <- ggplot() +
+rNMDS3 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
@@ -109,7 +110,7 @@ NMDS3 <- ggplot() +
 
 ### Angiosperms ----------------------------------------------------------------
 
-NMDS1 <- ggplot() +
+aNMDS1 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = A_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
@@ -121,7 +122,7 @@ NMDS1 <- ggplot() +
   xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
-NMDS2 <- ggplot() +
+aNMDS2 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = A_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
@@ -133,7 +134,7 @@ NMDS2 <- ggplot() +
   xlab("NMDS1") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
-NMDS3 <- ggplot() +
+aNMDS3 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = A_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
@@ -145,17 +146,9 @@ NMDS3 <- ggplot() +
   xlab("NMDS2") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
 
-
-jpeg("figures/NMDS_angiosperm_taxonomic.jpg", width = 280, height = 210, units = "mm", res = 300)
-ggarrange(NMDS1, NMDS2, NMDS3, 
-          labels = c("a", "b", "c"),
-          ncol = 2, nrow = 2,
-          common.legend = TRUE, legend = "right")
-dev.off()
-
 ### Micorrizal -----------------------------------------------------------------
 
-NMDS1 <- ggplot() +
+mNMDS1 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, fill = AM_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
@@ -167,7 +160,7 @@ NMDS1 <- ggplot() +
   xlab("NMDS1") + ylab("NMDS2") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
 
-NMDS2 <- ggplot() +
+mNMDS2 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, fill = AM_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
@@ -179,7 +172,7 @@ NMDS2 <- ggplot() +
   xlab("NMDS1") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
 
-NMDS3 <- ggplot() +
+mNMDS3 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
   geom_vline(xintercept= 0, linewidth = 0.1, colour = "grey") +
   geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, fill = AM_to_T, size = goodness), shape = 21, colour = "grey75", alpha = 0.5) +
@@ -191,12 +184,19 @@ NMDS3 <- ggplot() +
   xlab("NMDS2") + ylab("NMDS3") +
   scale_fill_distiller("Proportion of trees with AM", palette = "PRGn")
 
-jpeg("figures/NMDS_mycorrhizal.jpg", width = 210, height = 210, units = "mm", res = 300)
-ggarrange(NMDS1, NMDS2, NMDS3, 
-          labels = c("a", "b", "c"),
-          ncol = 2, nrow = 2,
-          common.legend = TRUE, legend = "bottom")
+#Multiple panel -----------------------------------------------------------------------
+
+p <- ggarrange(rNMDS1, rNMDS2, rNMDS3, 
+          aNMDS1, aNMDS2, aNMDS3,
+          mNMDS1, mNMDS2, mNMDS3, 
+          ncol=3, nrow=3, common.legend = TRUE, legend="bottom")
+
+
+jpeg("figures/NMDS_taxonomic.jpg", width = 210, height = 210, units = "mm", res = 300)
+p
 dev.off()
+
+
 
 #3D plot -----------------------------------------------------------------------
 colors <- function(x, 
@@ -215,9 +215,9 @@ plot3d(species$MDS1, species$MDS2, species$MDS3,
        type = "s", 
        aspect = TRUE,
        decorate = FALSE,
-       radius = 5,
+       radius = 0.05,
        fov = 1)
-text3d(species$MDS1, species$MDS2, (species$MDS3+10), text = species$`PLANTS-Code`)
+text3d(species$MDS1, species$MDS2, (species$MDS3+0.10), text = species$`PLANTS-Code`)
 
 plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
        xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
