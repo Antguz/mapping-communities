@@ -1,4 +1,4 @@
-grid_selection <- function(ordination, steps = 30) {
+data_split <- function(ordination, steps = 15) {
   
   rMDS1 <- round((max(ordination[,1]) - min(ordination[,1])) / steps, 3)
   rMDS2 <- round((max(ordination[,2]) - min(ordination[,2])) / steps, 3)
@@ -11,6 +11,7 @@ grid_selection <- function(ordination, steps = 30) {
   ordination$ID <- 1:nrow(ordination)
   
   samples <- NA
+  samples <- samples[-1]
   
   for(i in 1:nrow(grid)) {
     
@@ -18,12 +19,10 @@ grid_selection <- function(ordination, steps = 30) {
                                  MDS2 >= (grid$Y[i] - rMDS2/2) & MDS2 < (grid$Y[i] + rMDS2/2) & 
                                  MDS3 >= (grid$Z[i] - rMDS3/2) & MDS3 < (grid$Z[i] + rMDS3/2), ]
     
-    if(nrow(sub_ordination) == 1) {
-      samples[i] <- sub_ordination$ID[1]
-    } else {
-      select <- sample(nrow(sub_ordination), 1)
-      samples[i] <- sub_ordination$ID[select]
-    }
+    set.seed(20191107)
+    select <- sample(nrow(sub_ordination), ceiling(nrow(sub_ordination)*0.5))
+    samples <- c(samples, sub_ordination$ID[select])
+    
   }
   
   return(samples)

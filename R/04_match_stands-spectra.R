@@ -21,6 +21,7 @@ options(scipen = 100)
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 stand <- fread(paste0(root_path, "/03_reshape/BA_TPA-reshape.csv"))
+spectra_assesment <- fread(paste0(root_path, "/02_compile-files/master_spectra.csv"), header = TRUE)
 spectra <- fread(paste0(root_path, "/02_compile-files/02-spectra_SW.txt"), header = TRUE)
 out_path <- paste0(root_path, "/04_match_spectra-stand")
 
@@ -45,6 +46,14 @@ match_datasets <- function(fia, spectra, stand, out_path) {
 
   #------------------------------------
   #Clean spectra
+  
+  #Use samples that were checked
+  spectra_assesment$scene <- substr(spectra_assesment$scene, 1, 46)
+  spectra$scene <- substr(spectra$scene, 1, 46)
+  
+  spectra <- merge(spectra_assesment, spectra, 
+                   by = c("folder", "scene", "PLT_CN"),
+                   all.x = TRUE, all.y = FALSE)
   
   #Remove flaged pixels
   spectra <- spectra[Shadow != 1]
@@ -123,8 +132,8 @@ match_datasets <- function(fia, spectra, stand, out_path) {
   sub_spectra <- merge(unique_plots, sub_spectra, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   
   #Export
-  fwrite(unique_plots, paste0(out_path, "/plots.csv"))
-  fwrite(sub_stands, paste0(out_path, "/species.csv"))
+  fwrite(unique_plots, paste0(out_path, "/plots_SW.csv"))
+  fwrite(sub_stands, paste0(out_path, "/species_SW.csv"))
   fwrite(sub_spectra, paste0(out_path, "/spectra_SW.csv"))
 
 }

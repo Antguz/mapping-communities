@@ -25,10 +25,11 @@ library(ggpubr)
 #'------------------------------------------------------------------------------
 #' Read information
 
-root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_phylogenetic_DRYBIO.rds"))
-dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_phylogenetic_DRYBIO.rds"))
+species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_beta_DRYBIO.rds"))
+dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_beta_DRYBIO.rds"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
 proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
 
@@ -57,8 +58,8 @@ rNMDS1 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS2, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
   geom_point(data = species, aes(MDS1, MDS2), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
-  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-0.55, 0.55), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-0.45, 0.45), expand = c(0, 0)) +
   scale_size(range = plot_range) + 
   geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
                   label= species$`PLANTS-Code`, 
@@ -67,8 +68,7 @@ rNMDS1 <- ggplot() +
                   box.padding = 0.5,
                   max.overlaps = 20,
                   size = sp_size) + 
-  xlab("NMDS1") + ylab("NMDS2") +
-  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+  xlab("NMDS1") + ylab("NMDS2")
 
 rNMDS2 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
@@ -76,8 +76,8 @@ rNMDS2 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS1, y = MDS3, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
   geom_point(data = species, aes(MDS1, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
-  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-0.55, 0.55), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-0.45, 0.45), expand = c(0, 0)) +
   scale_size(range = plot_range) + 
   geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
                   label= species$`PLANTS-Code`, 
@@ -86,8 +86,7 @@ rNMDS2 <- ggplot() +
                   box.padding = 0.5,
                   max.overlaps = 20,
                   size = sp_size) + 
-  xlab("NMDS1") + ylab("NMDS3") +
-  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+  xlab("NMDS1") + ylab("NMDS3")
 
 rNMDS3 <- ggplot() +
   geom_hline(yintercept= 0, linewidth = 0.1, colour = "grey") + 
@@ -95,8 +94,8 @@ rNMDS3 <- ggplot() +
   geom_point(data = plots_fia, aes(x = MDS2, y = MDS3, size = goodness), shape = 21, fill = "grey75", colour = "grey95", alpha = 0.5) +
   geom_point(data = species, aes(MDS2, MDS3), colour = sp_color, fill = sp_fill, shape = 21, size = sp_size) +
   theme_bw(base_size = tam) + th +
-  #scale_x_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
-  #scale_y_continuous(limits = c(-1.1, 1.1), expand = c(0, 0)) +
+  #scale_x_continuous(limits = c(-0.55, 0.55), expand = c(0, 0)) +
+  #scale_y_continuous(limits = c(-0.45, 0.45), expand = c(0, 0)) +
   scale_size(range = plot_range) + 
   geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
                   label= species$`PLANTS-Code`, 
@@ -105,8 +104,7 @@ rNMDS3 <- ggplot() +
                   box.padding = 0.5,
                   max.overlaps = 20,
                   size = sp_size) + 
-  xlab("NMDS2") + ylab("NMDS3") +
-  scale_fill_distiller("Proportion of Angiosperms", palette = "BrBG")
+  xlab("NMDS2") + ylab("NMDS3")
 
 ### Angiosperms ----------------------------------------------------------------
 
@@ -192,7 +190,7 @@ p <- ggarrange(rNMDS1, rNMDS2, rNMDS3,
           ncol=3, nrow=3, common.legend = TRUE, legend="bottom")
 
 
-jpeg("figures/NMDS_taxonomic.jpg", width = 210, height = 210, units = "mm", res = 300)
+jpeg("figures/NMDS_beta.jpg", width = 210, height = 210, units = "mm", res = 300)
 p
 dev.off()
 
@@ -215,9 +213,10 @@ plot3d(species$MDS1, species$MDS2, species$MDS3,
        type = "s", 
        aspect = TRUE,
        decorate = FALSE,
-       radius = 0.05,
+       radius = 0.01,
+       add = FALSE,
        fov = 1)
-text3d(species$MDS1, species$MDS2, (species$MDS3+0.10), text = species$`PLANTS-Code`)
+text3d(species$MDS1, species$MDS2, (species$MDS3+0.03), text = species$`PLANTS-Code`)
 
 plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
        xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
@@ -226,7 +225,7 @@ plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3,
        aspect = TRUE,
        decorate = FALSE,
        add = TRUE,
-       radius = plots_fia$goodness*3000)
+       radius = plots_fia$goodness*2)
 
 
 plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
@@ -236,7 +235,7 @@ plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3,
        aspect = TRUE,
        decorate = FALSE,
        add = TRUE,
-       radius = plots_fia$goodness*3000)
+       radius = plots_fia$goodness*2)
 
 plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3, 
        xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
@@ -245,7 +244,29 @@ plot3d(plots_fia$MDS1, plots_fia$MDS2, plots_fia$MDS3,
        aspect = TRUE,
        decorate = FALSE,
        add = TRUE,
-       radius = plots_fia$goodness*3000)
+       radius = plots_fia$goodness*2)
+
+#Observed
+plot3d(old_ordination$MDS1, old_ordination$MDS2, old_ordination$MDS3, 
+       xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
+       col = rep("grey75", nrow(species)),
+       type = "s", 
+       aspect = TRUE,
+       decorate = FALSE,
+       add = TRUE,
+       radius = 0.005)
+rgl.viewpoint(theta = 0, phi = 15, zoom = 1)
+
+#Predicted
+plot3d(new_ordination$MDS1, new_ordination$MDS2, new_ordination$MDS3, 
+       xlab = "NMDS1", ylab ="NMDS2", zlab = "NMDS3",
+       col = rep("grey75", nrow(species)),
+       type = "s", 
+       aspect = TRUE,
+       decorate = FALSE,
+       add = TRUE,
+       radius = 0.005)
+rgl.viewpoint(theta = 0, phi = 15, zoom = 1)
 
 # We can indicate the axis and the rotation velocity
 Sys.sleep(5)
@@ -253,10 +274,11 @@ play3d( spin3d( axis = c(0, 0, 1), rpm = 2), duration = 30)
 
 # Save like gif
 movie3d(
-  movie = "NDMS", 
+  movie = "NDMS_predicted", 
   spin3d( axis = c(0, 0, 1), rpm = 2),
   duration = 30, 
-  dir = root_path,
+  clean = FALSE,
+  dir = paste0(root_path, "/images/predicted"),
   type = "gif", 
   webshot = TRUE,
 )

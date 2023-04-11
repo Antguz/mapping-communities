@@ -6,7 +6,7 @@ model_performance <- function(meta = meta,
                               models = models) {
   
   #Performance descriptors
-  my.metrics <- c("R2", "MAE", "RMAE", "RMSE", "RRMSE")
+  my.metrics <- c("R2", "MAE", "RMAE", "RMSE", "RRMSE", "B0", "B0", "B1", "MBE")
   
   #Number of models
   nMDS <- length(models)
@@ -24,28 +24,43 @@ model_performance <- function(meta = meta,
     observed <- ordination[, .SD, .SDcols = q]
     colnames(observed)[1] <- "MDS"
     observed <- observed$MDS
-    
-    
     #Collectors
     result_performance <- data.table()
     result_predicted <- data.table()
     
+    #Print progress
+    print(paste0("MDS", q))
+    pb <- txtProgressBar(min = 0, max = repeated, style = 3)
+    
     for(i in 1:repeated) {
       
+      #Progress
+      setTxtProgressBar(pb, i)
+      
+      #Select model
       grp <- models[[q]][[i]]
+      
+      #Predict model
       predicted <- predict(grp, spectra)
       
+      #Get performance
       metrics <- metrics_summary(obs = observed, 
                                  pred = predicted, 
                                  type = "regression",
                                  metrics_list = my.metrics)
+      metrics <- as.data.table(metrics)
+      
+      #Collect metrics
       metrics <- data.table(MDS = paste0("MDS", q),
                             repeated = i,
-                            R2 = metrics[1,2],
-                            MAE = metrics[2,2],
-                            RMAE = metrics[3,2],
-                            RMSE = metrics[4,2],
-                            RRMSE = metrics[5,2])
+                            R2 = metrics[Metric == my.metrics[1], ]$Score,
+                            MAE = metrics[Metric == my.metrics[2], ]$Score, 
+                            RMAE = metrics[Metric == my.metrics[3], ]$Score,
+                            RMSE = metrics[Metric == my.metrics[4], ]$Score,
+                            RRMSE = metrics[Metric == my.metrics[5], ]$Score,
+                            B0 = metrics[Metric == my.metrics[6], ]$Score,
+                            B1 = metrics[Metric == my.metrics[7], ]$Score,
+                            MBE = metrics[Metric == my.metrics[8], ]$Score)
       result_performance <- rbind(result_performance, metrics)
       
       predicted <- c(paste0("MDS", q), i, predicted)

@@ -42,7 +42,7 @@ out_path <- paste0(root_path, "/05_ordination")
 # Selecting the NMDS for taxonomic or phylogenetic ordinations
 
 NMDS_taxonomic <- readRDS(paste0(root_path, "/05_ordination/taxonomic/NMDS_taxonomic_DRYBIO_k3.rds"))
-NMDS_phylogenetic <- readRDS(paste0(root_path, "/05_ordination/phylogenetic/NMDS_phylogenetic_DRYBIO_k3.rds"))
+NMDS_phylogenetic <- readRDS(paste0(root_path, "/05_ordination/beta/NMDS_beta_DRYBIO_k3.rds"))
 
 # Plot for inspection
 plot(NMDS_taxonomic, choices = c(1, 2))
@@ -59,7 +59,7 @@ plot(NMDS_phylogenetic, choices = c(2, 3))
 stressplot(NMDS_taxonomic)
 stressplot(NMDS_phylogenetic)
 
-  #-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Get weighted averages scores of species
 species_scores_taxonomic <- wascores(NMDS_taxonomic$points, stand, expand = FALSE)
 species_names_taxonomic <- rownames(species_scores_taxonomic)
@@ -69,7 +69,7 @@ saveRDS(species_scores_taxonomic, paste0(out_path, "/species_scores_taxonomic_DR
 species_scores_phylogenetic <- wascores(NMDS_phylogenetic$points, stand, expand = FALSE)
 species_names_phylogenetic <- rownames(species_scores_phylogenetic)
 species_scores_phylogenetic <- cbind(Taxon2 = species_names_phylogenetic, as.data.table(species_scores_phylogenetic))
-saveRDS(species_scores_phylogenetic, paste0(out_path, "/species_scores_phylogenetic_DRYBIO.rds"))
+saveRDS(species_scores_phylogenetic, paste0(out_path, "/species_scores_beta_DRYBIO.rds"))
 
 #-------------------------------------------------------------------------------
 # Get dimensions
@@ -83,4 +83,4 @@ plot_names_phylogenetic <- as.integer64(rownames(NMDS_phylogenetic$points))
 dimensions_plots_phylogenetic <- as.data.table(NMDS_phylogenetic$points)
 dimensions_plots_phylogenetic$PLT_CN <- plot_names_phylogenetic
 dimensions_plots_phylogenetic$goodness <- goodness(NMDS_phylogenetic)
-saveRDS(dimensions_plots_phylogenetic, paste0(out_path, "/dimensions_plots_phylogenetic_DRYBIO.rds"))
+saveRDS(dimensions_plots_phylogenetic, paste0(out_path, "/dimensions_plots_beta_DRYBIO.rds"))

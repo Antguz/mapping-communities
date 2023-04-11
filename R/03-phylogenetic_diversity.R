@@ -114,13 +114,22 @@ phylogenetic_diversity <- function(master, threads) {
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
   saveRDS(matched$comm, paste0(out_path, "/master_taxonomy_DRYBIO.rds"))
  
+  matched$phy$edge.length <- log10(matched$phy$edge.length + 1)
+  
   #Calculates inter-community mean pairwise distance
   # this function uses the Rcpp modification
   ic_MDP <- comdist_rcpp(comm = matched$comm, 
                          dis = cophenetic(matched$phy), 
                          abundance.weighted = TRUE, 
-                         threads = 28)
+                         threads = 28  )
   saveRDS(ic_MDP, paste0(out_path, "/MDP_distance_DRYBIO.rds")) #Export beta distance
+  
+  
+  phy_beta <- beta(comm = matched$comm, 
+                   tree = matched$phy, 
+                   func = "s", 
+                   abund = TRUE)
+  saveRDS(phy_beta, paste0(out_path, "/beta_DRYBIO.rds"))
   
   #Phylogenetic diversity in a community - Faith's PD
   CPD <- ses.pd(matched$comm, matched$phy, runs = 99)
