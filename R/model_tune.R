@@ -69,7 +69,6 @@ model_tune <- function(meta,
                         trControl = cfitControl,
                         weights = sub_weigths,
                         metric = "RMSE",
-                        preProc = c("center"),
                         tuneGrid = tune_range)
       
       ml_model <- as.data.table(ml_model$results)

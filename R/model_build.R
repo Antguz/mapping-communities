@@ -74,7 +74,6 @@ modul_build <- function(meta,
                         method = method, 
                         trControl = cfitControl,
                         weights = sub_weigths,
-                        preProc = c("center"),
                         tuneGrid = tune_optimal[[q]])
       
       model_collector[[t]] <- ml_model

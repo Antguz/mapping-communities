@@ -20,6 +20,7 @@ options(scipen = 100)
 #' Arguments
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_beta_DRYBIO.rds"))
@@ -30,11 +31,11 @@ out_path <- paste0(root_path, "/06_model/SW_beta_GPR")
 #'------------------------------------------------------------------------------
 #' Load source code
 
-source("R/FIA/data_split.R")
-source("R/FIA/model_tune.R") 
-source("R/FIA/mds_segmentation.R") 
-source("R/FIA/model_build.R")
-source("R/FIA/performance.R")
+source("R/data_split.R")
+source("R/model_tune.R") 
+source("R/mds_segmentation.R") 
+source("R/model_build.R")
+source("R/performance.R")
 
 #'------------------------------------------------------------------------------
 #' @Analysis  
@@ -165,6 +166,3 @@ predicted_testing <- testing$predicted
 predicted_testing$type <- "Testing"
 fwrite(predicted_training, paste0(root_path, "/06_model/predicted_training.csv"))
 fwrite(predicted_testing, paste0(root_path, "/06_model/predicted_testing.csv"))
-
-#------------------------------------------
-# Get slopes
