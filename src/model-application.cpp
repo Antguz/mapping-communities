@@ -16,7 +16,7 @@ arma::mat predict_pls(arma::mat spectra,
   double n_root = sqrt(nmodels);
   
   //Mat to return
-  arma::mat result(npixels, 6);
+  arma::mat result(npixels, 7);
   
   //Get coefficients
   arma::mat coef_MDS1 = MDS1.cols(1, 171);
@@ -85,19 +85,20 @@ arma::mat predict_pls(arma::mat spectra,
     double amplitude_MDS3 = (mean_MDS3 + z_MDS3) - (mean_MDS3 - z_MDS3);
     
     //Fill results
-    //result(i, 0) = round(mean_MDS1*10000);
-    //result(i, 1) = round(mean_MDS2*10000);
-    //result(i, 2) = round(mean_MDS3*10000);
-    //result(i, 3) = round(amplitude_MDS1*10000);
-    //result(i, 4) = round(amplitude_MDS2*10000);
-    //result(i, 5) = round(amplitude_MDS3*10000);
+    result(i, 0) = round(mean_MDS1*10000);
+    result(i, 1) = round(mean_MDS2*10000);
+    result(i, 2) = round(mean_MDS3*10000);
+    result(i, 3) = round(amplitude_MDS1*10000);
+    result(i, 4) = round(amplitude_MDS2*10000);
+    result(i, 5) = round(amplitude_MDS3*10000);
+    result(i, 6) = result(i, 3) + result(i, 4) + result(i, 5);
     
-    result(i, 0) = mean_MDS1;
-    result(i, 1) = mean_MDS2;
-    result(i, 2) = mean_MDS3;
-    result(i, 3) = amplitude_MDS1;
-    result(i, 4) = amplitude_MDS2;
-    result(i, 5) = amplitude_MDS3;
+    //result(i, 0) = mean_MDS1;
+    //result(i, 1) = mean_MDS2;
+    //result(i, 2) = mean_MDS3;
+    //result(i, 3) = amplitude_MDS1;
+    //result(i, 4) = amplitude_MDS2;
+    //result(i, 5) = amplitude_MDS3;
     
   }
   
