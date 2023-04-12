@@ -2,7 +2,7 @@
 #' @tile Auxiliary functions for spectra transformation
 #'------------------------------------------------------------------------------
 
-#' @description Transform the spectra in diferent ways.
+#' @description Transform the spectra in different ways.
 #' 
 #' @return A frame with the transformed spectra.
 

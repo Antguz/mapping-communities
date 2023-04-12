@@ -19,7 +19,7 @@ options(scipen = 100000)
 #'------------------------------------------------------------------------------
 #' Load source code
 
-source("R/FIA/spectral_transform.R")
+source("R/spectral_transform.R")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -30,7 +30,7 @@ source("R/FIA/spectral_transform.R")
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Extreme SSD/DESIS"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 scene_path <- paste0(root_path, "/00_imagery")
 FIA_path <- paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv")
 out_path <- paste0(root_path, "/01_pixel-subtraction")
@@ -65,21 +65,21 @@ rast_subst <- function(scene_path, FIA_path, out_path) {
                              nrow= length(files), 
                              byrow=TRUE), 
                       stringsAsFactors=FALSE)
-  colnames(frame) <- c("folder", "scene", "product")
+  colnames(frame) <- c("folder", "scene")
   
   # Extract Product type
-  frame[, type := unlist(strsplit(product, "V0215-"))[2], 
+  frame[, type := unlist(strsplit(scene, "V0215-"))[2], 
         by = seq_along(1:nrow(frame))]
   frame[, type := unlist(strsplit(type, ".tif"))[1], 
         by = seq_along(1:nrow(frame))]
   
   # Unique scenes
-  unique_scenes <- frame[, .N, by= c("folder", "scene")]
+  unique_scenes <- frame[, .N, by= c("folder")]
   n_scenes <- nrow(unique_scenes)
   unique_scenes$N <- 1:n_scenes
   
   # Add unique scenes to frame
-  frame <- merge(unique_scenes, frame, by = c("folder", "scene"))
+  frame <- merge(unique_scenes, frame, by = c("folder"))
   
   #Add progress bar
   pb <- txtProgressBar(min = 1, max = n_scenes, style = 3)
@@ -96,18 +96,15 @@ rast_subst <- function(scene_path, FIA_path, out_path) {
     # Select products
     spectra <- paste0(scene_path, "/", 
                       sub_frame$folder[1], "/", 
-                      sub_frame$scene[1], "/",
-                      sub_frame[type == "SPECTRAL_IMAGE"]$product[1])
+                      sub_frame[type == "SPECTRAL_IMAGE"]$scene[1])
     
     quality_cube <- paste0(scene_path, "/", 
                            sub_frame$folder[1], "/", 
-                           sub_frame$scene[1], "/",
-                           sub_frame[type == "QL_QUALITY"]$product[1])
+                           sub_frame[type == "QL_QUALITY"]$scene[1])
     
     quality_flags <- paste0(scene_path, "/", 
-                            sub_frame$folder[1], "/", 
-                            sub_frame$scene[1], "/",
-                            sub_frame[type == "QL_QUALITY-2"]$product[1])
+                            sub_frame$folder[1], "/",
+                            sub_frame[type == "QL_QUALITY-2"]$scene[1])
     
     # Read products
     rast_spectra <- rast(spectra)
