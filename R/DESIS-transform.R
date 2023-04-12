@@ -26,46 +26,9 @@ library(parallel)
 #'------------------------------------------------------------------------------
 #' Function
 
-desis_transform <- function(scene_main_path, 
+desis_transform <- function(DESIS_scene, 
                             DESIS_bands,
                             threads = 28) {
-  
-  ### Raster files processing
-  #List files
-  files <- list.files(path = scene_main_path, 
-                      pattern = ".tif", 
-                      recursive = TRUE,
-                      include.dirs = TRUE)
-  
-  # Arrange path in a frame
-  frame <- data.table(matrix(unlist(strsplit(files, "/")), 
-                             nrow= length(files), 
-                             byrow=TRUE), 
-                      stringsAsFactors=FALSE)
-  colnames(frame) <- c("scene")
-  
-  # Extract Product type
-  frame[, type := unlist(strsplit(scene, "V0215-"))[2], 
-        by = seq_along(1:nrow(frame))]
-  frame[, type := unlist(strsplit(type, ".tif"))[1], 
-        by = seq_along(1:nrow(frame))]
-  
-  # Select products
-  spectra <- paste0(scene_main_path, "/", frame[type == "SPECTRAL_IMAGE"]$scene[1])
-  quality_cube <- paste0(scene_main_path, "/", frame[type == "QL_QUALITY"]$scene[1])
-  quality_flags <- paste0(scene_main_path, "/", frame[type == "QL_QUALITY-2"]$scene[1])
-  
-  # Read products
-  rast_spectra <- rast(spectra)
-  rast_quality_cube <- rast(quality_cube)
-  rast_quality_flags <- rast(quality_flags)
-  
-  # As frame
-  data_spectra <- as.data.table(as.data.frame(rast_spectra))
-  colnames(data_spectra) <- as.character(DESIS_bands)
-  data_quality_cube <- as.data.table(as.data.frame(rast_quality_cube))
-  colnames(data_quality_cube) <- as.character(DESIS_bands)
-  data_quality_flags <- as.data.table(as.data.frame(rast_quality_flags))
   
   #--------------------------------------------------------
   #Function for batch transformation
@@ -106,7 +69,7 @@ desis_transform <- function(scene_main_path,
   # Parallel
   transformed <- mclapply(1:nrow(data_spectra), 
                           FUN = application,
-                          data_spectra = data_spectra,
+                          data_spectra = DESIS_scene,
                           bands = DESIS_bands,
                           new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 2.55),
                           mc.cores = threads,
