@@ -32,9 +32,9 @@ pls_coefficients <- function(models = final_models) {
         bands_names <- object$xNames
       }
       
-      B <- rowSums(coef(object, comps = ncomp), dims = 2)
-      B0 <- object$Ymeans - object$Xmeans %*% B
-      coef <- c(q, i, B0, as.numeric(B[,1]))
+      #B <- rowSums(coef(object, comps = ncomp), dims = 2)
+      #B0 <- object$Ymeans - object$Xmeans %*% B
+      coef <- c(q, i, as.numeric(coef(object, ncomp = ncomp, intercept=TRUE)[,,1]))
       
       coefficients <- rbind(coefficients, 
                             matrix(coef, nrow = 1, ncol = length(coef)))
