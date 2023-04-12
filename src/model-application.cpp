@@ -18,7 +18,7 @@ arma::mat product(arma::mat multiplication, arma::vec intercept) {
       value += multiplication(r, c);
     }
     
-    ans[r] = exp(value);
+    ans[r] = value;
     
   }
   
@@ -63,32 +63,32 @@ arma::mat predicted_prob(arma::mat spectra,
     arma::vec pro_MDS3 = product(mMDS1, MDS3.col(0));
     
     //Get mean
-    double mean_healthy = mean(prob.col(0));
-    double mean_symptomatic = mean(prob.col(1));
-    double mean_dead = mean(prob.col(2));
+    double mean_MDS1 = mean(prob.col(0));
+    double mean_MDS2 = mean(prob.col(1));
+    double mean_MDS3 = mean(prob.col(2));
     
     //Get sd
-    double sd_healthy = stddev(prob.col(0));
-    double sd_symptomatic = stddev(prob.col(1));
-    double sd_dead = stddev(prob.col(2));
+    double sd_MDS1 = stddev(prob.col(0));
+    double sd_MDS2 = stddev(prob.col(1));
+    double sd_MDS3 = stddev(prob.col(2));
     
     //Get limits
-    double z_healthy = 1.96*(sd_healthy/n_root);
-    double z_symptomatic = 1.96*(sd_symptomatic/n_root);
-    double z_dead = 1.96*(sd_dead/n_root);
+    double z_MDS1 = 1.96*(sd_MDS1/n_root);
+    double z_MDS2 = 1.96*(sd_MDS2/n_root);
+    double z_MDS3 = 1.96*(sd_MDS3/n_root);
     
     //Difference
-    double amplitude_healthy = (mean_healthy + z_healthy) - (mean_healthy - z_healthy);
-    double amplitude_symptomatic = (mean_symptomatic + z_symptomatic) - (mean_symptomatic - z_symptomatic);
-    double amplitude_dead = (mean_dead + z_dead) - (mean_dead - z_dead);
+    double amplitude_MDS1 = (mean_MDS1 + z_MDS1) - (mean_MDS1 - z_MDS1);
+    double amplitude_MDS2 = (mean_MDS2 + z_MDS2) - (mean_MDS2 - z_MDS2);
+    double amplitude_MDS3 = (mean_MDS3 + z_MDS3) - (mean_MDS3 - z_MDS3);
     
     //Fill results
-    result(i, 0) = round(mean_healthy*10000);
-    result(i, 1) = round(mean_symptomatic*10000);
-    result(i, 2) = round(mean_dead*10000);
-    result(i, 3) = round(amplitude_healthy*10000);
-    result(i, 4) = round(amplitude_symptomatic*10000);
-    result(i, 5) = round(amplitude_dead*10000);
+    result(i, 0) = round(mean_MDS1*10000);
+    result(i, 1) = round(mean_MDS2*10000);
+    result(i, 2) = round(mean_MDS3*10000);
+    result(i, 3) = round(amplitude_MDS1*10000);
+    result(i, 4) = round(amplitude_MDS2*10000);
+    result(i, 5) = round(amplitude_MDS3*10000);
     
   }
   
