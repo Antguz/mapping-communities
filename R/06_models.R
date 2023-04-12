@@ -9,6 +9,8 @@
 
 library(data.table)
 library(caret)
+library(pls)
+library(plsVarSel)
 library(CAST)
 library(sf)
 library(doParallel)
@@ -26,7 +28,7 @@ meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_beta_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_SW.csv"))
 PD <- fread(paste0(root_path, "/03_diversity/master_phylogenetic-diversity_DRYBIO.txt"))
-out_path <- paste0(root_path, "/06_model/SW_beta_GPR")
+out_path <- paste0(root_path, "/06_model/SW_beta_PLS")
 
 #'------------------------------------------------------------------------------
 #' Load source code
@@ -36,6 +38,8 @@ source("R/model_tune.R")
 source("R/mds_segmentation.R") 
 source("R/model_build.R")
 source("R/performance.R")
+source("R/pls_vip.R")
+source("R/pls_coefficients.R")
 
 #'------------------------------------------------------------------------------
 #' @Analysis  
@@ -75,24 +79,6 @@ saveRDS(split, paste0(out_path, "/split.rds"))
 #------------------------------------------
 # Model tune estimation
 
-# Gaussian Regression
-gpr_tune <- expand.grid(sigma = seq(0.001, 0.015, by = 0.0005))
-models <- model_tune(meta = meta,
-                     ordination = ordination, 
-                     spectra = spectra, 
-                     split = split, 
-                     weigths = weigths,
-                     method = "gaussprRadial",
-                     tune_range = gpr_tune,
-                     ntimes = 50,
-                     threads = 28)
-saveRDS(models, paste0(root_path, "/optimal_models.rds"))
-
-optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
-                      RMSE = mean(RMSE), RMSE_SD = sd(RMSE)), by = c("MDS", "sigma")]
-optimal_tune <- optimal[, which.min(RMSE), by = "MDS"]$V1
-sigma_tuned <- seq(0.001, 0.015, by = 0.0005)[optimal_tune]
-
 # PLSR
 pls_tune <- expand.grid(ncomp = 1:30)
 models <- model_tune(meta = meta,
@@ -105,14 +91,14 @@ models <- model_tune(meta = meta,
                      ntimes = 2,
                      threads = 28)
 
-saveRDS(models, paste0(root_path, "/06_model/optimal_models.rds"))
-
 optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
                       RMSE = mean(RMSE), RMSE_SD = sd(RMSE)), by = c("MDS", "ncomp")]
 optimal_tune <- optimal[, which.min(RMSE), by = "MDS"]$V1
 ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]),
                     expand.grid(ncomp = optimal_tune[2]),
                     expand.grid(ncomp = optimal_tune[3]))
+
+fwrite(models, paste0(out_path, "/optimal_models.rds"))
 
 #------------------------------------------
 # Final Model of prediction
@@ -122,23 +108,13 @@ final_models <- modul_build(meta = meta,
                             spectra = spectra, 
                             split = split, 
                             weigths = weigths,
-                            method = "gaussprRadial",
-                            tune_optimal = sigma_tuned,
+                            method = "pls",
+                            tune_optimal = ncomp_tuned,
                             ntimes = 100,
                             threads = 28)
 
-final_models <- modul_build(meta = meta,
-                            ordination = ordination, 
-                            spectra = spectra, 
-                            split = split, 
-                            weigths = weigths,
-                            method = "pls",
-                            tune_optimal = ncomp_tuned,
-                            ntimes = 2,
-                            threads = 28)
-
-saveRDS(final_models, paste0(root_path, "/06_model/final_models.rds"))
-#final_models <- readRDS(paste0(root_path, "/06_model/final_models.rds"))
+saveRDS(final_models, paste0(out_path, "/final_models.rds"))
+final_models <- readRDS(paste0(out_path, "/final_models.rds"))
 
 #------------------------------------------
 # Performance
@@ -158,11 +134,24 @@ performance_training$type <- "Training"
 performance_testing <- testing$performance
 performance_testing$type <- "Testing"
 performance <- rbind(performance_training, performance_testing)
-fwrite(performance, paste0(root_path, "/06_model/performance.csv"))
+fwrite(performance, paste0(out_path, "/performance.csv"))
 
 predicted_training <- training$predicted
 predicted_training$type <- "Training"
 predicted_testing <- testing$predicted
 predicted_testing$type <- "Testing"
-fwrite(predicted_training, paste0(root_path, "/06_model/predicted_training.csv"))
-fwrite(predicted_testing, paste0(root_path, "/06_model/predicted_testing.csv"))
+fwrite(predicted_training, paste0(out_path, "/predicted_training.csv"))
+fwrite(predicted_testing, paste0(out_path, "/predicted_testing.csv"))
+
+#------------------------------------------
+# Get coefficients
+
+coefficients <- pls_coefficients(models = final_models)
+fwrite(coefficients, paste0(out_path, "/coefficients.csv"))
+
+#------------------------------------------
+# Get VIP
+
+vip <- pls_vip(models = final_models)
+fwrite(vip, paste0(out_path, "/vip.csv"))
+
