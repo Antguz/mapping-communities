@@ -27,11 +27,17 @@ sourceCpp("src/model-application.cpp")
 #' @param output_raster
 #' @param threads
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0599346912 015-20210615T161539-V0215")
 coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/", "coefficients.csv"))
 output_raster <- paste0(scene_main_path, "_predicted.tif")
+threads <- 28
+
+apply_model(scene_main_path, 
+            coefficients, 
+            output_raster,
+            threads = 28)
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -76,19 +82,24 @@ apply_model <- function(scene_main_path,
   rast_quality_flags <- rast(quality_flags)
   
   # As frame
-  data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE))
-  colnames(data_spectra)[-1] <- as.character(DESIS_bands)
-  data_quality_cube <- as.data.table(as.data.frame(rast_quality_cube, cells = TRUE))
-  colnames(data_quality_cube)[-1] <- as.character(DESIS_bands, cells = TRUE)
-  data_quality_flags <- as.data.table(as.data.frame(rast_quality_flags, cells = TRUE))
+  data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE, na.rm = TRUE))
+  colnames(data_spectra)[2:ncol(data_spectra)] <- as.character(DESIS_bands)
+  #data_quality_cube <- as.data.table(as.data.frame(rast_quality_cube, cells = TRUE))
+  #colnames(data_quality_cube)[-1] <- as.character(DESIS_bands, cells = TRUE)
+  data_quality_flags <- as.data.table(as.data.frame(rast_quality_flags, cells = TRUE, na.rm = TRUE))
   
   #---------------------------------------------------------
   # Transform raster files
   
-  sw <- desis_transform(scene_main_path, 
-                        DESIS_bands,
+  cell <- data_spectra$cell
+  spectra <- data_spectra[, .SD, .SDcols = 2:ncol(data_spectra)]
+  
+  sw <- desis_transform(spectra = spectra, 
+                        DESIS_bands = DESIS_bands,
+                        cell = cell,
                         threads = threads)
   
+  cell <- sw$cell
   sw <- sw[, .SD, .SDcols = 25:195]
   colnames(sw) <- bands
   
@@ -114,35 +125,43 @@ apply_model <- function(scene_main_path,
   
   #--------------------------------------------------------
   #Get a scene frame
+  predicted_scene <- subset(rast_spectra, 1:7)
+  predicted_scene[cell] <- as.matrix(predicted_ordination)
+  names(predicted_scene) <- c("MDS1", "MDS2", "MDS3",
+                              "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+                              "amp-total")
+  
   #-----------------------------------------------------------
   # Select products
-  quality_flags <- paste0(scene_main_path, "/", frame[type == "QL_QUALITY-2"]$scene[1])
-  scene_flag <- rast(quality_flags)
-  scene_frame <- as.data.table(as.data.frame(scene_flag, cells = TRUE))
+  mask_quality <- subset(rast_quality_flags, 1)
+  names(mask_quality) <- "mask"
+  mask_quality[] <- 1
   
-  #Quality flags
-  scene_frame <- scene_frame[Shadow != 1, kepp := 1]
-  scene_frame <- scene_frame[`Haze (land)` != 1, kepp := 1]
-  scene_frame <- scene_frame[`Cloud (land)` != 1, kepp := 1]
-  scene_frame <- scene_frame[Water != 1, kepp := 1]
-  scene_frame <- scene_frame[kepp != 1, kepp := 0]
+  #Masks
+  mask_quality <- mask(mask_quality, rast_quality_flags$Shadow, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$Land, maskvalues = 0)
+  mask_quality <- mask(mask_quality, rast_quality_flags$Snow, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$`Haze (land)`, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$`Haze (water)`, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (land)`, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (water)`, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
+  
+  #Final mask
+  predicted_scene <- mask(predicted_scene, mask_quality, maskvalues = 1, inverse = TRUE)
   
   #-----------------------------------------------------------
-  # Merge
-  predicted_ordination$cell <- scene_frame[, cell]
+  # Scene export
   
-  #Get an scene of predictions
-  scene_predictions <- c(scene_flag$`AOT (550 nm) * 100`,
-                         scene_flag$`AOT (550 nm) * 100`,
-                         scene_flag$`AOT (550 nm) * 100`,
-                         scene_flag$`AOT (550 nm) * 100`,
-                         scene_flag$`AOT (550 nm) * 100`,
-                         scene_flag$`AOT (550 nm) * 100`,
-                         scene_flag$`AOT (550 nm) * 100`)
-  names(scene_predictions) <- c("MDS1", "MDS2", "MDS3",
-                                "amp-MDS1", "amp-MDS2", "amp-MDS3", 
-                                "amp-total")
-  scene_predictions <- 
-    scene_predictions[] <- as.matrix(scene_frame)
-    
+  #Export
+  writeRaster(x = predicted_scene,
+              filename = output_raster,
+              names = c("MDS1", "MDS2", "MDS3",
+                        "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+                        "amp-total"),
+              NAflag = -9999,
+              overwrite= TRUE,
+              datatype = "INT4S")
+
 }

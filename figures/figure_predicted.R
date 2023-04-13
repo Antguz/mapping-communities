@@ -12,7 +12,7 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Load source code
 
-source("R/FIA/data_split.R")
+source("R/data_split.R")
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -58,9 +58,9 @@ split <- data_split(ordination)
 #------------------------------------------
 # Read predicted values
 
-performance <- fread(paste0(root_path, "/06_model/performance_SW.csv"))
-predicted_training <- fread(paste0(root_path, "/06_model/predicted_training_SW.csv"))
-predicted_testing <- fread(paste0(root_path, "/06_model/predicted_testing_SW.csv"))
+performance <- fread(paste0(root_path, "/06_model/SW_beta_PLS/performance.csv"))
+predicted_training <- fread(paste0(root_path, "/06_model/SW_beta_PLS/predicted_training.csv"))
+predicted_testing <- fread(paste0(root_path, "/06_model/SW_beta_PLS/predicted_testing.csv"))
 
 #------------------------------------------
 # Get summary of predicted

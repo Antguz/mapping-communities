@@ -26,26 +26,28 @@ library(parallel)
 #'------------------------------------------------------------------------------
 #' Function
 
-desis_transform <- function(DESIS_scene, 
+desis_transform <- function(spectra, 
                             DESIS_bands,
+                            cell,
                             threads = 28) {
   
   #--------------------------------------------------------
   #Function for batch transformation
   application <- function(i, 
-                          data_spectra,
+                          spectra = spectra,
                           bands = DESIS_bands,
-                          new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 2.55)) {
+                          new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 2.55),
+                          cell = cell) {
     
     # Sample
-    sample <- as.numeric(data_spectra[i, ]) 
+    sample <- as.numeric(spectra[i, ]) 
     
     # Constant values
     scales = 5
     sampling = 2.55
     
     # Cubic resample
-    resample <- spline(x = bands, 
+    resample <- spline(x = DESIS_bands, 
                        y = sample, 
                        xout = new_bands) 
     
@@ -60,27 +62,28 @@ desis_transform <- function(DESIS_scene,
                   variance= 1, 
                   wavelet= "gaussian2")
     
-    summed_wavelet <- c(i, rowSums(as.matrix(cwt)[,c(3, 4, 5)]))
+    summed_wavelet <- c(cell[i], rowSums(as.matrix(cwt)[,c(3, 4, 5)]))
     
     return(summed_wavelet)
     
   }
   
   # Parallel
-  transformed <- mclapply(1:nrow(data_spectra), 
+  transformed <- mclapply(1:nrow(spectra), 
                           FUN = application,
-                          data_spectra = DESIS_scene,
+                          spectra = spectra,
                           bands = DESIS_bands,
+                          cell = cell,
                           new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 2.55),
                           mc.cores = threads,
                           mc.preschedule = TRUE,
                           mc.cleanup = TRUE)
   
   transformed <- data.table(do.call(rbind, transformed))  
-  colnames(transformed) <- c("row", seq(min(DESIS_bands), 
+  colnames(transformed) <- c("cell", seq(min(DESIS_bands), 
                                         max(DESIS_bands), 
                                         by = 2.55)) 
-  transformed <- transformed[order(row)]
+  transformed <- transformed[order(cell)]
   
   return(transformed)
   

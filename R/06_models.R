@@ -22,7 +22,7 @@ options(scipen = 100)
 #' Arguments
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
 ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_beta_DRYBIO.rds"))
@@ -88,7 +88,7 @@ models <- model_tune(meta = meta,
                      weigths = weigths,
                      method = "pls",
                      tune_range = pls_tune,
-                     ntimes = 2,
+                     ntimes = 50,
                      threads = 28)
 
 optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
@@ -98,7 +98,7 @@ ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]),
                     expand.grid(ncomp = optimal_tune[2]),
                     expand.grid(ncomp = optimal_tune[3]))
 
-fwrite(models, paste0(out_path, "/optimal_models.rds"))
+fwrite(models, paste0(out_path, "/optimal_models.csv"))
 
 #------------------------------------------
 # Final Model of prediction
