@@ -29,7 +29,7 @@ sourceCpp("src/model-application.cpp")
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0599346912 015-20210615T161539-V0215")
+scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0750062432_011-20220728T215116-V0215")
 coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/", "coefficients.csv"))
 output_raster <- paste0(scene_main_path, "_predicted.tif")
 threads <- 28

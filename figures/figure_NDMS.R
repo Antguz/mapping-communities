@@ -274,11 +274,11 @@ play3d( spin3d( axis = c(0, 0, 1), rpm = 2), duration = 30)
 
 # Save like gif
 movie3d(
-  movie = "NDMS_predicted", 
+  movie = "NDMS_species", 
   spin3d( axis = c(0, 0, 1), rpm = 2),
   duration = 30, 
   clean = FALSE,
-  dir = paste0(root_path, "/images/predicted"),
+  dir = paste0(root_path, "/images/species"),
   type = "gif", 
-  webshot = TRUE,
+  webshot = FALSE,
 )

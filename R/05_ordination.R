@@ -61,12 +61,12 @@ stressplot(NMDS_phylogenetic)
 
 #-------------------------------------------------------------------------------
 # Get weighted averages scores of species
-species_scores_taxonomic <- wascores(NMDS_taxonomic$points, stand, expand = FALSE)
+species_scores_taxonomic <- wascores(NMDS_taxonomic$points, stand, expand = TRUE)
 species_names_taxonomic <- rownames(species_scores_taxonomic)
 species_scores_taxonomic <- cbind(Taxon2 = species_names_taxonomic, as.data.table(species_scores_taxonomic))
 saveRDS(species_scores_taxonomic, paste0(out_path, "/species_scores_taxonomic_DRYBIO.rds"))
 
-species_scores_phylogenetic <- wascores(NMDS_phylogenetic$points, stand, expand = FALSE)
+species_scores_phylogenetic <- wascores(NMDS_phylogenetic$points, stand, expand = TRUE)
 species_names_phylogenetic <- rownames(species_scores_phylogenetic)
 species_scores_phylogenetic <- cbind(Taxon2 = species_names_phylogenetic, as.data.table(species_scores_phylogenetic))
 saveRDS(species_scores_phylogenetic, paste0(out_path, "/species_scores_beta_DRYBIO.rds"))
