@@ -15,11 +15,13 @@ library(V.PhyloMaker)
 library(dplyr)
 library(tidyr)
 library(phytools)
+library(geiger)
 
 #'------------------------------------------------------------------------------
 #' Source code
-source("https://raw.githubusercontent.com/jesusNPL/BiodiversityScience/master/Spring2021/R-Functions/qDp.R")
-source("R/FIA/comdist_rcpp.R")
+#source("https://raw.githubusercontent.com/jesusNPL/BiodiversityScience/master/Spring2021/R-Functions/qDp.R")
+#source("R/comdist_rcpp.R")
+source("R/beta_rcpp.R")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -97,6 +99,17 @@ phylogenetic_diversity <- function(master, threads) {
   is.binary.phylo(phylo) #Test for Binary Tree
   is.ultrametric(phylo) #Test if a Tree is Ultrametric
   
+  #Transform phylo
+  tol = 1e-9
+  phylo$edge.length[phylo$edge.length <= 0] <- tol
+  is.ultrametric(phylo)
+  
+  #Scale phylo
+  rtrns <- rescale(phylo, "nrate")
+  phylo <- rtrns(time=c(0.2, 0.4, 0.6, 0.8), rate=c(2, 4, 8, 16))
+  plot(phylo)
+  is.ultrametric(phylo)
+  
   ### Community matrix ---------------------------------------------------------
   
   #dcast
@@ -109,87 +122,12 @@ phylogenetic_diversity <- function(master, threads) {
   #Standardization
   master_matrix <- decostand(master_matrix, method = "hellinger") 
   
-  ### Get phylogenetic indices -------------------------------------------------
+  ### Get phylogenetic beta diversity ------------------------------------------
   
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
-  saveRDS(matched$comm, paste0(out_path, "/master_taxonomy_DRYBIO.rds"))
+  saveRDS(matched$comm, paste0(out_path, "/master_matched_DRYBIO.rds"))
  
-  matched$phy$edge.length <- log10(matched$phy$edge.length + 1)
-  
-  #Calculates inter-community mean pairwise distance
-  # this function uses the Rcpp modification
-  ic_MDP <- comdist_rcpp(comm = matched$comm, 
-                         dis = cophenetic(matched$phy), 
-                         abundance.weighted = TRUE, 
-                         threads = 28  )
-  saveRDS(ic_MDP, paste0(out_path, "/MDP_distance_DRYBIO.rds")) #Export beta distance
-  
-  
-  phy_beta <- beta(comm = matched$comm, 
-                   tree = matched$phy, 
-                   func = "s", 
-                   abund = TRUE)
-  saveRDS(phy_beta, paste0(out_path, "/beta_DRYBIO.rds"))
-  
-  #Phylogenetic diversity in a community - Faith's PD
-  CPD <- ses.pd(matched$comm, matched$phy, runs = 99)
-  CPD <- CPD[, c(1, 2, 6, 7)]
-  
-  #Add PLT_CN and arrange
-  CPD$PLT_CN <- rownames(CPD)
-  CPD <- CPD[, c(5, 1, 2, 3, 4)]
-  CPD <- as.data.table(CPD)
-  
-  #Mean pairwise distance separating taxa in a community - MPD
-  SESMPD <- ses.mpd(matched$comm, 
-                    cophenetic(matched$phy), 
-                    null.model = "taxa.labels", 
-                    runs = 99)
-  CPD$mpd <- SESMPD[, c(2)]
-  CPD$mpd.obs.z <- SESMPD[, c(6)]
-  CPD$mpd.obs.p <- SESMPD[, c(7)]
-  
-  #Mean nearest taxon distance for taxa in a community - MNTD
-  SESMNTD <- ses.mntd(matched$comm, 
-                      cophenetic(matched$phy), 
-                      null.model = "taxa.labels", 
-                      runs = 99)
-  CPD$mntd <- SESMNTD[, c(2)]
-  CPD$mntd.obs.z <- SESMNTD[, c(6)]
-  CPD$mntd.obs.p <- SESMNTD[, c(7)]
-  
-  #Phylogenetic Rao’s quadratic entropy - RaoD
-  CPD$RaoD <- raoD(matched$comm, force.ultrametric(matched$phy))$Dkk
-  
-  #Phylogenetic species variability - PSV
-  PSV <- psv(matched$comm, 
-             matched$phy, 
-             compute.var = TRUE)
-  CPD$PSV <- PSV[, 1]
-  CPD$PSV_vars <- PSV[, 3]
-  
-  #Phylogenetic species richness - PSR
-  PSR <- psr(matched$comm, 
-             matched$phy, 
-             compute.var = TRUE)
-  CPD$PSR <- PSR[, 1]
-  CPD$PSR_vars <- PSR[, 3]
-  
-  #Phylogenetic species evenness - PSE
-  PSE <- pse(matched$comm, 
-             matched$phy)
-  CPD$PSE <- PSE[, 1]
-  
-  #Phylogenetic species clustering - PSC
-  PSC <- psc(matched$comm, matched$phy)
-  CPD$PSC <- PSC[, 1]
-  
-  #qDp
-  rqDp <- qDp(matched$phy, 
-              matched$comm, 
-              q = 2)
-  CPD$qDP <- rqDp
-  
-  fwrite(CPD, paste0(out_path, "/master_phylogenetic-diversity_DRYBIO.txt"), sep = "\t")
+  beta <- beta_rcpp(as.matrix(matched$comm), matched$phy, threads = 28)
+  saveRDS(beta, paste0(out_path, "/beta_DRYBIO.rds"))
   
 }
