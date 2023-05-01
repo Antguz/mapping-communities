@@ -16,6 +16,7 @@ library(dplyr)
 library(tidyr)
 library(phytools)
 library(geiger)
+library(bit64)
 
 #'------------------------------------------------------------------------------
 #' Source code
@@ -127,7 +128,9 @@ phylogenetic_diversity <- function(master, threads) {
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
   saveRDS(matched$comm, paste0(out_path, "/master_matched_DRYBIO.rds"))
  
-  beta <- beta_rcpp(as.matrix(matched$comm), matched$phy, threads = 28)
+  beta <- beta_rcpp(comm = as.matrix(matched$comm), 
+                    tree = matched$phy, 
+                    threads = 28)
   saveRDS(beta, paste0(out_path, "/beta_DRYBIO.rds"))
   
 }

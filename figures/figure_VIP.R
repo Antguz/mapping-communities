@@ -32,8 +32,9 @@ vip_melt <- melt(vip, id.vars = c("MDS", "iteration"),
 
 vip_summary <- vip_melt[, .(mean = mean(VIP), sd = sd(VIP)), 
                         by = c("MDS", "wavelength")]
+
 vip_summary$wavelength <- as.numeric(as.character(vip_summary$wavelength))
-vip_summary$MDS <- paste0("MDS", vip_summary$MDS)
+vip_summary$MDS <- paste0("Axis ", vip_summary$MDS)
 
 #-------------------------------------------------------------------------------
 # Get plot
@@ -46,15 +47,30 @@ th <- theme_bw() +
 
 plot <- ggplot(vip_summary) +
   geom_ribbon(aes(x = wavelength, ymin = mean - sd, ymax = mean + sd, fill = MDS), alpha = 0.25) +
-  geom_line(aes(x = wavelength, y = mean, colour = MDS), size = 0.5) +
+  geom_line(aes(x = wavelength, y = mean, colour = MDS), linewidth = 0.5) +
   scale_x_continuous(expand = c(0, 0), limits = c(460, 895)) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 3.1)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
-  xlab("Wavelength (nm)") + ylab("Variable Importance in Projection") +
+  xlab("Wavelength (nm)") + 
+  ylab("Variable Importance in Projection") +
   th + theme(legend.position = c(0.93, 0.90), 
-             legend.background = element_rect(fill= 'transparent'))
+             legend.background = element_rect(fill= "transparent"),
+             panel.background = element_rect(fill = "transparent"),
+             rect = element_rect(fill = "transparent"))
 
 jpeg("figures/VIP.jpg", width = 180, height = 90, units = "mm", res = 300)
+plot
+dev.off()
+
+
+p <- ggarrange(plot_coeffic, plot, ncol=1, nrow=2)
+
+
+png("figures/importance.png", width = 210, height = 210, units = "mm", res = 300, bg = "transparent")
+p
+dev.off()
+
+png("figures/VIP.png", width = 180, height = 90, units = "mm", res = 300, bg = "transparent")
 plot
 dev.off()

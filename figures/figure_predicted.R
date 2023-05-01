@@ -7,6 +7,7 @@
 
 library(data.table)
 library(ggplot2)
+library(ggpubr)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -80,6 +81,15 @@ ordination_testing_melt <- melt(ordination_testing, id.vars = c("sample"),
                                 variable.name = "MDS",
                                 value.name = "observed")
 
+#------------------------------------------
+# Get summary of performance
+
+testing <- performance[type == "Testing"]
+
+testing <- performance[, .(B0 = mean(B0),
+                           B1 = mean(B1)),
+                       by = c("MDS")]
+
 #Merge
 frame <- merge(ordination_testing_melt, predicted_summary_testing, by = c("sample", "MDS"))
 
@@ -94,37 +104,56 @@ values <- seq(-0.6, 0.6, by = 0.001)
 col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 
 th <- theme_bw() + 
-      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+      theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(),
+            legend.background = element_rect(fill= "transparent"),
+            panel.background = element_rect(fill = "transparent"),
+            rect = element_rect(fill = "transparent"),
+            plot.background = element_rect(fill = "transparent"))
 
-ggplot(frame[MDS == "MDS1"]) +
+a1 <- ggplot(frame[MDS == "MDS1"]) +
   geom_abline(intercept = 0, slope = 1, colour = "black", linetype = "dotted") +
   geom_errorbar(aes(xmin = predicted - predicted_sd, xmax = predicted + predicted_sd, y = observed), colour = "grey") +
   geom_point(aes(x = predicted, y = observed), size = 2, shape = 21, fill = col[1], colour = "white") +
-  #coord_cartesian(xlim = c(-0.55, 0.35), ylim = c(-0.55, 0.35)) +
+  geom_abline(intercept = as.numeric(testing[1,2]), slope = as.numeric(testing[1,3]), colour = "black", linetype = "solid") +
+  coord_cartesian(xlim = c(-0.55, 0.40), ylim = c(-0.55, 0.40)) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
-  xlab("Predicted (MDS1)") + ylab("Observed (MDS1)") +
+  xlab("Predicted (Axis 1)") + ylab("Observed (Axis 1)") +
   th
 
-ggplot(frame[MDS == "MDS2"]) +
+a2 <- ggplot(frame[MDS == "MDS2"]) +
   geom_abline(intercept = 0, slope = 1, colour = "black", linetype = "dotted") +
   geom_errorbar(aes(xmin = predicted - predicted_sd, xmax = predicted + predicted_sd, y = observed), colour = "grey") +
   geom_point(aes(x = predicted, y = observed), size = 2, shape = 21, fill = col[2], colour = "white") +
-  #coord_cartesian(xlim = c(-0.30, 0.30), ylim = c(-0.30, 0.30)) +
+  geom_abline(intercept = as.numeric(testing[2,2]), slope = as.numeric(testing[2,3]), colour = "black", linetype = "solid") +
+  coord_cartesian(xlim = c(-0.40, 0.35), ylim = c(-0.40, 0.35)) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
-  xlab("Predicted (MDS2)") + ylab("Observed (MDS2)") +
+  xlab("Predicted (Axis 2)") + ylab("Observed (Axis 2)") +
   th
 
-ggplot(frame[MDS == "MDS3"]) +
+a3 <- ggplot(frame[MDS == "MDS3"]) +
   geom_abline(intercept = 0, slope = 1, colour = "black", linetype = "dotted") +
   geom_errorbar(aes(xmin = predicted - predicted_sd, xmax = predicted + predicted_sd, y = observed), colour = "grey") +
   geom_point(aes(x = predicted, y = observed), size = 2, shape = 21, fill = col[3], colour = "white") +
-  #coord_cartesian(xlim = c(-0.35, 0.30), ylim = c(-0.35, 0.30)) +
+  geom_abline(intercept = as.numeric(testing[3,2]), slope = as.numeric(testing[3,3]), colour = "black", linetype = "solid") +
+  coord_cartesian(xlim = c(-0.34, 0.37), ylim = c(-0.34, 0.37)) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
-  xlab("Predicted (MDS3)") + ylab("Observed (MDS3)") +
+  xlab("Predicted (Axis 3)") + ylab("Observed (Axis 3)") +
   th
+
+p <- ggarrange(a1, a2, a3, ncol=3, nrow=1)
+
+
+jpeg("figures/Observed-predicted.jpg", width = 210, height = 210, units = "mm", res = 300)
+p
+dev.off()
+
+png("figures/Observed-predicted.png", width = 210, height = 80, units = "mm", res = 300, bg = "transparent")
+p
+dev.off()
   
 
 new_ordination <- dcast(frame, sample ~ MDS, value.var = "predicted")

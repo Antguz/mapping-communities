@@ -29,13 +29,14 @@ coef_melt <- melt(coefficients, id.vars = c("MDS", "iteration"),
                   variable.name = "wavelength",
                   value.name = "coefficients")
 
-coef_melt <- coef_melt[wavelength != "intercept"]
+coef_melt <- coef_melt[wavelength != "Intercept"]
+coef_melt$coefficients <- coef_melt$coefficients*10000
 
 coef_summary <- coef_melt[, .(mean = mean(coefficients), sd = sd(coefficients)), 
                         by = c("MDS", "wavelength")]
 
 coef_summary$wavelength <- as.numeric(as.character(coef_summary$wavelength))
-coef_summary$MDS <- paste0("MDS", coef_summary$MDS)
+coef_summary$MDS <- paste0("Axis ", coef_summary$MDS)
 
 #-------------------------------------------------------------------------------
 # Get plot
@@ -45,18 +46,25 @@ col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 th <- theme_bw() + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-plot <- ggplot(coef_summary) +
+plot_coeffic <- ggplot(coef_summary) +
   geom_ribbon(aes(x = wavelength, ymin = mean - sd, ymax = mean + sd, fill = MDS), alpha = 0.25) +
-  geom_line(aes(x = wavelength, y = mean, colour = MDS), size = 0.5) +
+  geom_line(aes(x = wavelength, y = mean, colour = MDS), linewidth = 0.5) +
   scale_x_continuous(expand = c(0, 0), limits = c(460, 895)) +
-  scale_y_continuous(expand = c(0, 0), limits = c(-0.00027, 0.00027)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(-3.7, 3.7)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name= "", values = col) +
-  xlab("Wavelength (nm)") + ylab("PLS coefficients") +
+  xlab("Wavelength (nm)") +
+  ylab(expression(paste("PLS coefficients (x10"^-6, ")", sep = ""))) + 
   th + theme(legend.position = c(0.93, 0.90), 
-             legend.background = element_rect(fill= 'transparent'))
+             legend.background = element_rect(fill= "transparent"),
+             panel.background = element_rect(fill = "transparent"),
+             rect = element_rect(fill = "transparent"))
 
 
 jpeg("figures/pls_coefficients.jpg", width = 180, height = 90, units = "mm", res = 300)
 plot
+dev.off()
+
+png("figures/pls_coefficients.png", width = 180, height = 90, units = "mm", res = 300, bg = "transparent")
+plot_coeffic
 dev.off()

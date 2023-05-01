@@ -80,7 +80,7 @@ saveRDS(split, paste0(out_path, "/split.rds"))
 # Model tune estimation
 
 # PLSR
-pls_tune <- expand.grid(ncomp = 1:30)
+pls_tune <- expand.grid(ncomp = 1:50)
 models <- model_tune(meta = meta,
                      ordination = ordination, 
                      spectra = spectra, 
@@ -88,15 +88,19 @@ models <- model_tune(meta = meta,
                      weigths = weigths,
                      method = "pls",
                      tune_range = pls_tune,
-                     ntimes = 50,
+                     ntimes = 100,
                      threads = 28)
 
 optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
                       RMSE = mean(RMSE), RMSE_SD = sd(RMSE)), by = c("MDS", "ncomp")]
 optimal_tune <- optimal[, which.min(RMSE), by = "MDS"]$V1
-ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]),
-                    expand.grid(ncomp = optimal_tune[2]),
-                    expand.grid(ncomp = optimal_tune[3]))
+ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]), #23
+                    expand.grid(ncomp = optimal_tune[2]), #9
+                    expand.grid(ncomp = optimal_tune[3])) #8
+
+ncomp_tuned <- list(expand.grid(ncomp = 23), #23
+                    expand.grid(ncomp = 9), #9
+                    expand.grid(ncomp = 8)) #8
 
 fwrite(models, paste0(out_path, "/optimal_models.csv"))
 

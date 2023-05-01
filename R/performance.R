@@ -6,7 +6,7 @@ model_performance <- function(meta = meta,
                               models = models) {
   
   #Performance descriptors
-  my.metrics <- c("R2", "MAE", "RMAE", "RMSE", "RRMSE", "B0", "B0", "B1", "MBE")
+  my.metrics <- c("R2", "MAE", "RMAE", "RMSE", "RRMSE", "B0", "B1", "MBE")
   
   #Number of models
   nMDS <- length(models)
@@ -41,13 +41,14 @@ model_performance <- function(meta = meta,
       grp <- models[[q]][[i]]
       
       #Predict model
-      predicted <- predict(grp, spectra)
+      predicted <- predict(grp, newdata = spectra)
       
       #Get performance
       metrics <- metrics_summary(obs = observed, 
                                  pred = predicted, 
                                  type = "regression",
-                                 metrics_list = my.metrics)
+                                 metrics_list = my.metrics,
+                                 orientation = "OP")
       metrics <- as.data.table(metrics)
       
       #Collect metrics

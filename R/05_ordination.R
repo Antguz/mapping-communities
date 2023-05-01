@@ -32,7 +32,7 @@ library(ggpubr)
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-stand <- readRDS(paste0(root_path, "/03_diversity/master_taxonomic_DRYBIO.rds"))
+stand <- readRDS(paste0(root_path, "/03_diversity/master_matched_DRYBIO.rds"))
 out_path <- paste0(root_path, "/05_ordination")
 
 #'------------------------------------------------------------------------------

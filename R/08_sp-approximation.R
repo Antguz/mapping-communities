@@ -16,6 +16,7 @@ library(RcppArmadillo)
 #' Source code
 
 source("R/DESIS-transform.R")
+sourceCpp("src/approximation_sp.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -27,9 +28,9 @@ source("R/DESIS-transform.R")
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-predicted_scene <- rast(paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0750062432_011-20220728T215116-V0215_predicted.tif"))
+predicted_scene <- rast(paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0465807416_009-20200617T193003-V0217_predicted.tif"))
 wascores <- readRDS(paste0(root_path, "/05_ordination/species_scores_beta_DRYBIO.rds"))
-output_raster <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0750062432_011-20220728T215116-V0215_species.tif")
+output_raster <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0465807416_009-20200617T193003-V0217_species.tif")
 threads <- 28
 
 apply_model(scene_main_path, 

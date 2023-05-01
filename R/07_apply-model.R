@@ -29,7 +29,7 @@ sourceCpp("src/model-application.cpp")
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0750062432_011-20220728T215116-V0215")
+scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0465807416_009-20200617T193003-V0217")
 coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/", "coefficients.csv"))
 output_raster <- paste0(scene_main_path, "_predicted.tif")
 threads <- 28
@@ -66,8 +66,10 @@ apply_model <- function(scene_main_path,
   colnames(frame) <- c("scene")
   
   # Extract Product type
-  frame[, type := unlist(strsplit(scene, "V0215-"))[2], 
+  frame[, type := unlist(strsplit(scene, "V0217-"))[2], 
         by = seq_along(1:nrow(frame))]
+  #frame[, type := unlist(strsplit(type, "-"))[2], 
+  #      by = seq_along(1:nrow(frame))]
   frame[, type := unlist(strsplit(type, ".tif"))[1], 
         by = seq_along(1:nrow(frame))]
   
@@ -78,6 +80,7 @@ apply_model <- function(scene_main_path,
   
   # Read products
   rast_spectra <- rast(spectra)
+  names(rast_spectra) <- DESIS_bands
   rast_quality_cube <- rast(quality_cube)
   rast_quality_flags <- rast(quality_flags)
   
@@ -147,9 +150,15 @@ apply_model <- function(scene_main_path,
   mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (water)`, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
+  NDVI <- (rast_spectra$`801` - rast_spectra$`680.8`) / (rast_spectra$`801` + rast_spectra$`680.8`)
+  NDVI[NDVI == Inf] <- NA
+  NDVI[NDVI < 0.60] <- 0
+  NDVI[NDVI >= 0.60] <- 1
+  
   
   #Final mask
   predicted_scene <- mask(predicted_scene, mask_quality, maskvalues = 1, inverse = TRUE)
+  predicted_scene <- mask(predicted_scene, NDVI, maskvalues = 1, inverse = TRUE)
   
   #-----------------------------------------------------------
   # Scene export
