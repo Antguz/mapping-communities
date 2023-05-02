@@ -14,6 +14,8 @@
 
 library(terra)
 library(data.table)
+library(utils)
+library(parallel)
 options(scipen = 100000)
 
 #'------------------------------------------------------------------------------
@@ -23,88 +25,85 @@ source("R/spectral_transform.R")
 
 #'------------------------------------------------------------------------------
 #' Arguments
-#' @param scene_path Path to the root folder where the scenes are located
-#' @param FIA_path Path where the FIA plot file with labels is located 
-#' @param out_path Path to export the transformed pixels.
+#' @param scene_path Path to the root folder where the scenes are located (compressed).
+#' @param FIA_path Path where the FIA plot file with labels is located.
+#' @param temp Path to a folder to storage temporal information during extraction.
+#' @param out_path Path to export the extracted and transformed pixels.
+#' @param threads An integer with the number of threads to use (no more than CPUs).
 
 #'------------------------------------------------------------------------------
 #' @example 
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-scene_path <- paste0(root_path, "/00_imagery")
-FIA_path <- paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv")
-out_path <- paste0(root_path, "/01_pixel-subtraction")
+folder <- "Appalachians"
+scene_path <- paste0("/media/antonio/Extreme SSD/Imagery", "/", folder)
+temp <- paste0("/media/antonio/Extreme SSD/Imagery", "/temp")
+FIA_path <- paste0(root_path, "/00_FIA/plots_eastern_20230427.csv")
+out_path <- paste0("/media/antonio/Extreme SSD/Imagery", "/01_pixel-subtraction/", folder)
+threads <- 5
 
-rast_subst(scene_path, FIA_path, out_path)
+rast_subst(scene_path, FIA_path, out_path, threads)
 
 #'------------------------------------------------------------------------------
 #' Function
-rast_subst <- function(scene_path, FIA_path, out_path) {
+rast_subst <- function(scene_path, FIA_path, out_path, threads) {
   
   ### Vector file processing 
   # Read the FI
   FIA <- fread(FIA_path)
-  FIA <- subset(FIA, STATECD == 27 | STATECD == 55) #Select specific states
   FIA <- FIA[, c("PLT_CN", "LAT", "LON")]
   
   # Create a virtual vector file
   FIA_vector <- vect(x = FIA, 
                      geom=c("LON", "LAT"), 
-                     crs = "+proj=longlat +datum=WGS84 +no_defs +type=crs", 
+                     crs = "+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs", 
                      keepgeom = FALSE)
   
   ### Raster files processing
   #List files
   files <- list.files(path = scene_path, 
-                      pattern = ".tif", 
+                      pattern = ".zip", 
                       recursive = TRUE,
                       include.dirs = TRUE)
   
   # Arrange path in a frame
-  frame <- data.table(matrix(unlist(strsplit(files, "/")), 
+  frame <- data.table(matrix(unlist(strsplit(files, ".zip")), 
                              nrow= length(files), 
                              byrow=TRUE), 
                       stringsAsFactors=FALSE)
-  colnames(frame) <- c("folder", "scene")
-  
-  # Extract Product type
-  frame[, type := unlist(strsplit(scene, "V0215-"))[2], 
-        by = seq_along(1:nrow(frame))]
-  frame[, type := unlist(strsplit(type, ".tif"))[1], 
-        by = seq_along(1:nrow(frame))]
+  colnames(frame) <- c("scene")
   
   # Unique scenes
-  unique_scenes <- frame[, .N, by= c("folder")]
-  n_scenes <- nrow(unique_scenes)
-  unique_scenes$N <- 1:n_scenes
+  n_scenes <- nrow(frame)
   
-  # Add unique scenes to frame
-  frame <- merge(unique_scenes, frame, by = c("folder"))
-  
-  #Add progress bar
-  pb <- txtProgressBar(min = 1, max = n_scenes, style = 3)
-  
-  ### Loop for pixel extraction 
-  for(i in 1:n_scenes) {
+  #Function to apply
+  extraction <- function(X, 
+                         frame = frame, 
+                         scene_path = scene_path, 
+                         out_path = out_path, 
+                         temp = temp, 
+                         FIA_vector = FIA_vector, 
+                         DESIS_bands = DESIS_bands) {
     
-    # Track progress
-    setTxtProgressBar(pb, i)
+    scene <- frame$scene[X]
     
-    # Select scene of interest
-    sub_frame <- frame[N == i]
-    
+    #Unzip files
+    zip_scene <- paste0(scene_path, "/", scene, ".zip")
+    out_zip <- paste0(temp, "/", scene)
+    unzip(zip_scene, exdir = out_zip)
+
     # Select products
-    spectra <- paste0(scene_path, "/", 
-                      sub_frame$folder[1], "/", 
-                      sub_frame[type == "SPECTRAL_IMAGE"]$scene[1])
+    spectra <- paste0(out_zip, "/", 
+                      scene, "-", 
+                      "SPECTRAL_IMAGE.tif")
     
-    quality_cube <- paste0(scene_path, "/", 
-                           sub_frame$folder[1], "/", 
-                           sub_frame[type == "QL_QUALITY"]$scene[1])
+    quality_cube <- paste0(out_zip, "/", 
+                           scene, "-", 
+                           "QL_QUALITY.tif")
     
-    quality_flags <- paste0(scene_path, "/", 
-                            sub_frame$folder[1], "/",
-                            sub_frame[type == "QL_QUALITY-2"]$scene[1])
+    quality_flags <- paste0(out_zip, "/", 
+                            scene, "-", 
+                            "QL_QUALITY-2.tif")
     
     # Read products
     rast_spectra <- rast(spectra)
@@ -113,11 +112,12 @@ rast_subst <- function(scene_path, FIA_path, out_path) {
     
     # Test for projections
     if(crs(FIA_vector) != crs(rast_quality_flags)) {
-      FIA_vector <- project(FIA_vector, rast_quality_flags)
+      points <- project(FIA_vector, rast_quality_flags)
+    } else {
+      points <- FIA_vector
     }
     
-    # Crop points by extend
-    points <- FIA_vector 
+    #Crop
     e <- ext(rast_quality_flags)
     points <- crop(points, e)
     
@@ -168,33 +168,62 @@ rast_subst <- function(scene_path, FIA_path, out_path) {
         VN <- cbind(point_quality_flags, vector_normalization(spectra))
         SG <- cbind(point_quality_flags, smooth(spectra))
         SW <- cbind(point_quality_flags, CWT(spectra, sampling = 2.55, scales = 5))
-        ME <- cbind(point_quality_flags, mean_extraction(spectra))
-        SN <- cbind(point_quality_flags, spectra_normalization(spectra))
+        #ME <- cbind(point_quality_flags, mean_extraction(spectra))
+        #SN <- cbind(point_quality_flags, spectra_normalization(spectra))
         
         ### Export 
         # Base file name
         export_name <- paste0(out_path, "/",
-                              sub_frame$folder[1], "/",
-                              unlist(strsplit(sub_frame[type == "QL_QUALITY-2"]$product[1], "-V0215-"))[1])
+                              scene)
         
         # Export files
         fwrite(VN, paste0(export_name, "_VN.txt"), sep = "\t")
         fwrite(SG, paste0(export_name, "_SG.txt"), sep = "\t")
         fwrite(SW, paste0(export_name, "_SW.txt"), sep = "\t")
-        fwrite(ME, paste0(export_name, "_ME.txt"), sep = "\t")
-        fwrite(SN, paste0(export_name, "_SN.txt"), sep = "\t")
-        
+        #fwrite(ME, paste0(export_name, "_ME.txt"), sep = "\t")
+        #fwrite(SN, paste0(export_name, "_SN.txt"), sep = "\t")
         
       }
     }
+    
+    #Remove temporal directory
+    unlink(out_zip, recursive = TRUE)
+    return(X)
+    
   }
   
-  #Close progress
-  close(pb)
+  #cl <- makeForkCluster(threads)
+  #clusterExport(cl, varlist = c("rast", "crs", "crop", "ext"))
+  #parLapply(cl, 
+  #          X = 1:nrow(frame), 
+  #          fun = extraction, 
+  #          frame = frame, 
+  #          scene_path = scene_path, 
+  #          out_path = out_path, 
+  #          temp = temp, 
+  #          FIA_vector = FIA_vector, 
+  #          DESIS_bands = DESIS_bands)
+  #stopCluster(cl)
+  
+  #Add progress bar
+  pb <- txtProgressBar(min = 1, max = n_scenes, style = 3)
+  
+  for(i in 1:n_scenes) {
+    
+    setTxtProgressBar(pb, i)
+    
+    extraction(X = i,
+               frame = frame, 
+               scene_path = scene_path, 
+               out_path = out_path, 
+               temp = temp, 
+               FIA_vector = FIA_vector, 
+               DESIS_bands = DESIS_bands)
+  }
   
 }
 
-#Auxiliary bands
+
 DESIS_bands <- c(401.9, 404.1, 406.7, 409.3, 411.7, 414.3, 416.8, 419.4, 
                  421.9, 424.5, 427.2, 429.8, 432.4, 434.9, 437.4, 439.9,
                  442.4, 444.9, 447.7, 450.3, 452.8, 455.5, 458,   460.7, 
@@ -225,3 +254,34 @@ DESIS_bands <- c(401.9, 404.1, 406.7, 409.3, 411.7, 414.3, 416.8, 419.4,
                  954.2, 957.2, 959.5, 962.2, 965.3, 968.1, 970.3, 972.9,
                  975.9, 978.5, 979.9, 981.9, 984.8, 988.8, 991.6, 993.1, 
                  995.6, 997.8, 999.5)
+
+#Auxiliary bands
+DESIS_bands <- c(401.53, 404.20, 406.82, 409.33, 411.81, 414.34, 416.91, 419.44, 
+                 422.01, 424.64, 427.29, 429.86, 432.45, 434.98, 437.49, 439.95, 
+                 442.49, 445.02, 447.76, 450.34, 452.89, 455.57, 458.18, 460.75, 
+                 463.28, 465.82, 468.30, 475.87, 478.57, 481.24, 483.80, 486.39, 
+                 488.99, 491.55, 493.97, 496.50, 499.24, 501.75, 504.32, 506.92, 
+                 509.54, 512.15, 514.69, 517.17, 519.66, 522.19, 524.69, 527.22, 
+                 529.76, 532.33, 534.93, 540.15, 542.69, 545.21, 547.76, 550.38, 
+                 552.91, 555.56, 558.08, 560.62, 563.18, 565.79, 568.41, 571.00, 
+                 573.58, 576.10, 578.60, 581.13, 583.66, 586.23, 588.78, 591.34, 
+                 593.96, 596.58, 599.04, 601.61, 604.19, 606.75, 609.26, 611.80, 
+                 614.34, 616.90, 619.52, 622.11, 624.71, 627.18, 629.66, 632.22, 
+                 639.76, 642.32, 644.95, 647.57, 650.02, 652.59, 655.24, 657.72, 
+                 660.22, 662.76, 665.30, 667.85, 670.48, 673.16, 675.80, 680.91, 
+                 683.47, 685.87, 688.42, 690.88, 693.47, 696.11, 698.82, 701.41, 
+                 703.92, 706.74, 709.37, 711.78, 714.02, 716.36, 718.89, 721.55, 
+                 724.21, 726.85, 729.45, 732.03, 734.37, 736.90, 739.50, 741.99, 
+                 744.52, 747.13, 749.74, 752.27, 755.17, 757.74, 760.33, 762.96, 
+                 764.91, 767.57, 770.33, 772.71, 775.34, 778.00, 780.59, 783.08, 
+                 785.58, 788.26, 790.57, 793.17, 795.90, 798.37, 801.16, 804.08, 
+                 806.67, 809.15, 811.70, 814.26, 816.88, 819.76, 822.81, 824.26, 
+                 827.17, 829.18, 832.20, 834.88, 836.69, 840.07, 841.97, 844.66, 
+                 847.73, 849.93, 852.46, 855.37, 857.88, 860.30, 862.87, 865.44, 
+                 867.97, 870.59, 873.18, 875.77, 878.76, 881.52, 883.08, 885.31, 
+                 888.08, 890.92, 894.05, 895.97, 898.36, 901.20, 903.76, 905.98, 
+                 908.63, 911.62, 914.77, 916.56, 918.38, 920.93, 923.84, 927.07, 
+                 929.66, 931.85, 934.49, 937.29, 939.40, 941.92, 944.74, 947.28, 
+                 949.58, 951.90, 954.22, 957.31, 959.57, 962.30, 965.42, 968.10, 
+                 970.43, 972.90, 976.03, 978.62, 980.00, 981.99, 984.84, 988.87, 
+                 991.66, 993.15, 995.64, 997.92, 1000.08)
