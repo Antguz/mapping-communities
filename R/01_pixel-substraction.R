@@ -38,12 +38,13 @@ source("R/spectral_transform.R")
 # List of folders: "Appalachians", "Great_Lakes", "Mid_Atlantic", "Northeast".
 # "Ozarks", "Southeast".
 
-root_path <- "/media/antonio/Extreme SSD/Imagery"
+root_path <- "F:/Imagery"
+#root_path <- "/media/antonio/Extreme SSD/Imagery"
 folder <- "Appalachians"
-scene_path <- paste0("/media/antonio/Extreme SSD/Imagery", "/", folder)
-temp <- paste0("/media/antonio/Extreme SSD/Imagery", "/temp")
+scene_path <- paste0(root_path, "/", folder)
+temp <- paste0(root_path, "/temp")
 FIA_path <- paste0(root_path, "/plots_eastern_20230427.csv")
-out_path <- paste0("/media/antonio/Extreme SSD/Imagery", "/01_pixel-subtraction/", folder)
+out_path <- paste0(root_path, "/01_pixel-subtraction/", folder)
 
 rast_subst(scene_path, FIA_path, out_path, DESIS_bands)
 
@@ -62,7 +63,7 @@ rast_subst <- function(scene_path,
   # Create a virtual vector file
   FIA_vector <- vect(x = FIA, 
                      geom=c("LON", "LAT"), 
-                     crs = "+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs", 
+                     crs = "EPSG:4269", 
                      keepgeom = FALSE)
   
   ### Raster files processing
