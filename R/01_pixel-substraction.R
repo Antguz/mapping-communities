@@ -38,8 +38,8 @@ source("R/spectral_transform.R")
 # List of folders: "Appalachians", "Great_Lakes", "Mid_Atlantic", "Northeast".
 # "Ozarks", "Southeast".
 
-root_path <- "F:/Imagery"
-#root_path <- "/media/antonio/Extreme SSD/Imagery"
+#root_path <- "F:/Imagery"
+root_path <- "/media/antonio/Extreme Pro/Imagery"
 folder <- "Appalachians"
 scene_path <- paste0(root_path, "/", folder)
 temp <- paste0(root_path, "/temp")
@@ -68,17 +68,19 @@ rast_subst <- function(scene_path,
   
   ### Raster files processing
   #List files
-  files <- list.files(path = scene_path, 
-                      pattern = ".zip", 
-                      recursive = TRUE,
-                      include.dirs = TRUE)
+  #files <- list.files(path = scene_path, 
+  #                    pattern = ".zip", 
+  #                    recursive = TRUE,
+  #                    include.dirs = TRUE)
+  files <- dir(scene_path)
   
   # Arrange path in a frame
-  frame <- data.table(matrix(unlist(strsplit(files, ".zip")), 
-                             nrow= length(files), 
-                             byrow=TRUE), 
-                      stringsAsFactors=FALSE)
-  colnames(frame) <- c("scene")
+  #frame <- data.table(matrix(unlist(strsplit(files, ".zip")), 
+  #                           nrow= length(files), 
+  #                           byrow=TRUE), 
+  #                    stringsAsFactors=FALSE)
+  frame <- data.table(scene = files)
+  #colnames(frame) <- c("scene")
   
   # Unique scenes
   n_scenes <- nrow(frame)
@@ -95,20 +97,23 @@ rast_subst <- function(scene_path,
     scene <- frame$scene[X]
     
     #Unzip files
-    zip_scene <- paste0(scene_path, "/", scene, ".zip")
-    out_zip <- paste0(temp, "/", scene)
-    unzip(zip_scene, exdir = out_zip)
+    #zip_scene <- paste0(scene_path, "/", scene, ".zip")
+    #out_zip <- paste0(temp, "/", scene)
+    #unzip(zip_scene, exdir = out_zip)
 
     # Select products
-    spectra <- paste0(out_zip, "/", 
+    spectra <- paste0(scene_path, "/", 
+                      scene, "/",
                       scene, "-", 
                       "SPECTRAL_IMAGE.tif")
     
-    quality_cube <- paste0(out_zip, "/", 
+    quality_cube <- paste0(scene_path, "/", 
+                           scene, "/",
                            scene, "-", 
                            "QL_QUALITY.tif")
     
-    quality_flags <- paste0(out_zip, "/", 
+    quality_flags <- paste0(scene_path, "/", 
+                            scene, "/",
                             scene, "-", 
                             "QL_QUALITY-2.tif")
     
@@ -193,8 +198,8 @@ rast_subst <- function(scene_path,
     }
     
     #Remove temporal directory
-    unlink(out_zip, recursive = TRUE)
-    return(X)
+    #unlink(out_zip, recursive = TRUE)
+    #return(X)
     
   }
   
