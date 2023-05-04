@@ -11,6 +11,7 @@
 #' Library
 
 library(data.table)
+library(bit64)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -21,9 +22,10 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Extreme SSD/DESIS"
-in_path <- paste0(root_path, "/01_pixel-subtraction")
-out_path <- paste0(root_path, "/02_compile-files/02-spectra")
+root_path <- "/media/antonio/Extreme Pro/Imagery" #Main folder (you just need to change this)
+folder <- "01_pixel-subtraction"
+in_path <- paste0(root_path, "/", folder)
+out_path <- paste0(root_path, "/", folder, "/02_spectra") #This will return 3 files
 
 compile_files(in_path, out_path)
 
@@ -45,6 +47,7 @@ compile_files <- function(in_path, out_path) {
   
   # Look for types of transformations
   frame[, type := strsplit(scene, "_")[[1]][3], by = seq_along(1:nrow(frame))]
+  frame[, type := strsplit(type, ".txt")[[1]][1], by = seq_along(1:nrow(frame))]
   unique_type <- unique(frame$type)
   
   # Loop file read per type  -----------------------
@@ -56,7 +59,14 @@ compile_files <- function(in_path, out_path) {
     # Compile return
     compile <- data.table()
     
+    # Add progress bar
+    cat(paste0("Getting ", unique_type[j], " files"))
+    pb <- txtProgressBar(min = 1, max = nrow(type), style = 3)
+    
     for(i in 1:nrow(type)) {
+      
+      # Progress bar
+      setTxtProgressBar(pb, i)
       
       # Read
       file <- fread(paste0(in_path, "/", type$folder[i], "/", type$scene[i]), header = TRUE)
@@ -67,7 +77,7 @@ compile_files <- function(in_path, out_path) {
     }
     
     # Name to export and export
-    name_export <- paste0(out_path, "_", unique_type[j])
+    name_export <- paste0(out_path, "-", unique_type[j], ".txt")
     fwrite(compile, name_export, sep = "\t")
     
   }
