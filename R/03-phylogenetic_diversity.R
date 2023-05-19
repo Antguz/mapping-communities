@@ -18,10 +18,11 @@ library(phytools)
 library(geiger)
 library(bit64)
 
+#Set working directory
+
 #'------------------------------------------------------------------------------
 #' Source code
-#source("https://raw.githubusercontent.com/jesusNPL/BiodiversityScience/master/Spring2021/R-Functions/qDp.R")
-#source("R/comdist_rcpp.R")
+setwd("/panfs/jay/groups/17/cavender/guzman/DESIS_mapping/mapping-species")
 source("R/beta_rcpp.R")
 
 #'------------------------------------------------------------------------------
@@ -30,21 +31,11 @@ source("R/beta_rcpp.R")
 #' @param SPCD
 #' @param out_path
 #' @param threads
-
-root_path <- "F:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_new.csv"), na.strings="NA")
-out_path <- paste0(root_path, "/03_diversity")
-threads <- 30
-
-#'------------------------------------------------------------------------------
-#' @example 
+#' @param progress
 
 #'------------------------------------------------------------------------------
 #' Function
-
-phylogenetic_diversity <- function(master, threads) {
+phylogenetic_diversity <- function(fia, SPCD, outpath, threads, progress = TRUE) {
   
   ### Prepare plots (Cleaning) -------------------------------------------------
   
@@ -120,8 +111,7 @@ phylogenetic_diversity <- function(master, threads) {
   
   #Scale phylo
   rtrns <- rescale(phylo, "nrate")
-  phylo <- rtrns(time=c(0.25, 0.50, 0.75), rate=c(2.5, 5, 7.5))
-  plot(phylo)
+  phylo <- rtrns(time=c(0.2, 0.4, 0.6, 0.8), rate=c(2, 4, 8, 16))
   is.ultrametric(phylo)
   
   ### Community matrix ---------------------------------------------------------
@@ -133,19 +123,33 @@ phylogenetic_diversity <- function(master, threads) {
   nsp <- apply(master_matrix, 1, function(x) sum(x > 0))
   master_matrix <- master_matrix[nsp != 0, ]
   
-  #Standardization
+  #Standardization of comunities
   master_matrix <- decostand(master_matrix, method = "hellinger") 
   
   ### Get phylogenetic beta diversity ------------------------------------------
   
+  #Get match
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
   saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO.rds"))
   saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
  
-  beta <- beta_rcpp(comm = as.matrix(matched$comm), 
+  beta <- beta_rcpp(comm = as.matrix(matched$comm[1:20,]), 
                     tree = matched$phy, 
-                    threads = 4)
-  object.size(beta)
+                    threads = threads,
+                    progress = progress)
   saveRDS(beta, paste0(out_path, "/beta_DRYBIO.rds"))
   
 }
+
+#'------------------------------------------------------------------------------
+#' @example 
+
+#root_path <- "F:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
+fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_new.csv"), na.strings="NA")
+out_path <- paste0(root_path, "/03_diversity")
+threads <- 64
+progress = FALSE
+phylogenetic_diversity(fia, SPCD, outpath, threads, progress)

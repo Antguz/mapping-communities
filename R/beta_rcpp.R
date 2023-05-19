@@ -9,6 +9,7 @@
 
 library(Rcpp)
 library(RcppArmadillo)
+library(RcppProgress)
 
 #'------------------------------------------------------------------------------
 #' Source code
@@ -17,7 +18,7 @@ sourceCpp("src/beta_rcpp.cpp")
 #'------------------------------------------------------------------------------
 #' Source code
 
-beta_rcpp <- function(comm, tree, threads = 1L) {
+beta_rcpp <- function(comm, tree, threads = 1L, progress = TRUE) {
   
   treea <- xTree(tree)
   xtree_1 <- treea[[1]]
@@ -26,7 +27,8 @@ beta_rcpp <- function(comm, tree, threads = 1L) {
   results <- beta_arma(comm = comm, 
                        xtree1 = xtree_1,
                        xtree2 = xtree_2,
-                       threads = threads)
+                       threads = threads,
+                       progress = progress)
     
   colnames(results) <- rownames(comm)
   rownames(results) <- rownames(comm)

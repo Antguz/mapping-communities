@@ -1,9 +1,14 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#define ARMA_64BIT_WORD 1
 #include <RcppArmadillo.h>
+#include <progress.hpp>
+#include <progress_bar.hpp>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
+// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::depends(RcppProgress)]]
 using namespace arma;
 
 // [[Rcpp::export]]
@@ -67,11 +72,14 @@ arma::vec betaObs_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_2)
 }
 
 // [[Rcpp::export]]
-arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, int threads = 1) {
+arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, int threads = 1, bool progress = true) {
   
   //Matrix of beta
   int ncomm = comm.n_rows;
   arma:cube distance(ncomm, ncomm, 3);
+  
+  //create progress
+  Progress p(ncomm*ncomm, progress);
   
   // Parallel for speed
 #ifdef _OPENMP
@@ -84,6 +92,10 @@ arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, int thr
 #pragma omp parallel for
   for(int k = 0; k < ncomm; k++) {
     for(int j = 0; j < ncomm; j++) {
+      
+      if (! Progress::check_abort() ) {
+        p.increment(); // update progress
+      }
       
       arma::uvec indices(2);
       indices[0] = k;
