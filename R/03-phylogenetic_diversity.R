@@ -1,9 +1,13 @@
 #'------------------------------------------------------------------------------
-#' @title Metrics phylogenetic diversity
+#' @title Beta phylogenetic diversity between communities 
 #'------------------------------------------------------------------------------
 
-#' @description It estimates metrics of the phylogenetic diversity
-#' @return .txt file with the stack of results
+#' @description It estimates beta phylogenetic diversity between communities.
+#' @return Return a distance matrices as .rds files.
+
+################################################################################
+#' @warming If you have to many communities this need to be run using HPC
+################################################################################
 
 #'------------------------------------------------------------------------------
 #' Library
@@ -133,7 +137,7 @@ phylogenetic_diversity <- function(fia, SPCD, outpath, threads, progress = TRUE)
   saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO.rds"))
   saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
  
-  beta <- beta_rcpp(comm = as.matrix(matched$comm[1:20,]), 
+  beta <- beta_rcpp(comm = as.matrix(matched$comm), 
                     tree = matched$phy, 
                     threads = threads,
                     progress = progress)
