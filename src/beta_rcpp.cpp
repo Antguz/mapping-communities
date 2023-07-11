@@ -14,9 +14,9 @@ using namespace arma;
 // [[Rcpp::export]]
 arma::vec betaObs_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_2) {
   
+  // Get a
   arma::mat BA = commBoth * xtree_2; // matrix samples X branches
   
-  //Apply function
   int ncol = BA.n_cols;
   arma::vec minBA(ncol);
   
@@ -26,28 +26,21 @@ arma::vec betaObs_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_2)
   
   double a = sum(xtree_1 % minBA);
   
-  arma::vec b_diff(ncol);
-  arma::vec c_diff(ncol);
+  arma::vec comm_diff(ncol);
   
   for(int i = 0; i < ncol; i++) {
-    
-    double diff = (BA(0, i) - BA(1, i)) * xtree_1[i];
-    
-    if(diff < 0) {
-      b_diff[i] = 0;
-    } else {
-      b_diff[i] = diff;
-    }
-    
-    if(diff > 0) {
-      c_diff[i] = 0;
-    } else {
-      c_diff[i] = diff * -1;
-    }
+    comm_diff[i] = (BA(0, i) - BA(1, i));
   }
   
-  double b = sum(b_diff);
-  double c = sum(c_diff);
+  arma::vec diff = xtree_1 % comm_diff;
+  arma::vec for_b = diff;
+  arma::vec for_c = diff;
+  
+  for_b.elem( find(diff < 0) ).zeros();
+  for_c.elem( find(diff > 0) ).zeros();
+  
+  double b = sum(for_b);
+  double c = sum(for_c * -1);
   
   double denominator = (a + b + c) + a;
   
@@ -61,12 +54,13 @@ arma::vec betaObs_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_2)
   arma::vec bc(2);
   bc(0) = b;
   bc(1) = c;
-  beta(1) = 2*(min(bc)/denominator);
+  beta(1) = (2*min(bc))/denominator;
   
   //Richness
   double substraction = b - c;
   beta(2) = fabs(substraction)/denominator;
   
+  //return beta;
   return beta;
   
 }
@@ -104,9 +98,9 @@ arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, int thr
       arma::mat commBoth = comm.rows(indices);
       arma::vec beta_comm = betaObs_rcpp(commBoth, xtree1, xtree2);
       
-      distance(k, j, 0) = beta_comm[0];
-      distance(k, j, 1) = beta_comm[1];
-      distance(k, j, 2) = beta_comm[2];
+      distance(k, j, 0) = round(beta_comm[0]*10000);
+      distance(k, j, 1) = round(beta_comm[1]*10000);
+      distance(k, j, 2) = round(beta_comm[2]*10000);
       
     }
   }

@@ -20,7 +20,13 @@ sourceCpp("src/beta_rcpp.cpp")
 
 beta_rcpp <- function(comm, tree, threads = 1L, progress = TRUE) {
   
-  treea <- xTree(tree)
+  # Organize data
+  if(!missing(tree)){
+    cleanData = clean(comm, tree)
+    comm = cleanData[[1]]
+    treea = cleanData[[2]]
+  }
+  
   xtree_1 <- treea[[1]]
   xtree_2 <- treea[[2]]
     
@@ -40,28 +46,6 @@ beta_rcpp <- function(comm, tree, threads = 1L, progress = TRUE) {
   
   return(results)
   
-}
-
-prep <- function(comm, xtree, abund = TRUE){
-  len <- xtree[[1]] 							## length of each branch
-  A <- xtree[[2]]									## matrix species X branches
-  minBranch <- min(len[colSums(A)==1]) 	## minimum branch length of terminal branches
-  if(is.data.frame(comm))
-    comm = as.matrix(comm)
-  BA <- comm%*%A 												## matrix samples X branches
-  if (!abund)	BA = ifelse(BA >= 1, 1, 0)
-  return (list(lenBranch = len, sampleBranch = BA, speciesBranch = A, minBranch = minBranch))
-}
-
-clean <- function(comm, tree = NA){
-  if(is.vector(comm))
-    comm <- matrix(comm, nrow = 1)
-  comm <- as.matrix(comm)
-  if (!missing(tree)){
-    comm = reorderComm(comm, tree)
-    tree <- xTree(tree)
-  }
-  return(list(comm, tree))
 }
 
 reorderComm <- function(comm, tree = NULL){
@@ -98,9 +82,20 @@ reorderComm <- function(comm, tree = NULL){
   return(comm)
 }
 
+clean <- function(comm, tree = NA){
+  if(is.vector(comm))
+    comm <- matrix(comm, nrow = 1)
+  comm <- as.matrix(comm)
+  if (!missing(tree)){
+    comm = reorderComm(comm, tree)
+    tree <- xTree(tree)
+  }
+  return(list(comm, tree))
+}
+
 #Function from BAT
 xTree <- function(tree) {
-  if (class(tree) == "hclust"){
+  if(is(tree, "hclust")){
     nSpp <- nrow(as.data.frame(tree['order']))
     sppEdges <- matrix(0, nSpp, 2 * nSpp - 2)
     lenEdges <- vector("numeric", 2 * nSpp - 2)
@@ -121,25 +116,29 @@ xTree <- function(tree) {
       }
     }
     rownames(sppEdges) <- tree$labels
-    list(lenEdges, sppEdges)
-  } else if (class(tree) == "phylo"){
-    lenEdges <- tree$edge.length
-    nSpp <- length(tree$tip.label)
-    nEdges <- length(tree$edge.length)
-    root <- nSpp + 1
-    sppEdges <- matrix(0, nSpp, nEdges)
-    for(i in 1:nSpp){
-      find = i                                    #start by finding the ith species
-      repeat{
-        row = which(tree$edge[,2] == find)        #locate in which row of the edge table is our species or edge to be found
-        sppEdges[i, row] = 1
-        find = tree$edge[row,1]                   #find next edge if any until reaching the root
-        if(find == root) break                    #all edges of this species were found, go to next species
+    return(list(lenEdges, sppEdges))
+    
+  } else if(is(tree, "phylo")){
+    
+    edgeList = tree$edge # edge list
+    edgeLength = tree$edge.length # edge length
+    spp = tree$tip.label # species
+    basal = min(edgeList[,1]) # Basal node
+    mat = matrix(data = 0, nrow = length(spp), ncol = length(edgeLength)) # empty matrix
+    for (i in 1:length(spp)) {
+      x = i
+      repeat {
+        mat[i, which(edgeList[,2] == x)] = 1
+        x = edgeList[which(edgeList[,2] == x), 1]
+        if (x == basal){
+          break
+        }
       }
     }
-    rownames(sppEdges) <- tree$tip.label
-    list(lenEdges, sppEdges)
+    return(list(edgeLength, mat))
+    
   } else {
     cat("Unrecognized tree object!")
   }
 }
+
