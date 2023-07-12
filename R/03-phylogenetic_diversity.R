@@ -34,13 +34,20 @@ source("R/beta_rcpp.R")
 #' @param fia
 #' @param SPCD
 #' @param domain
+#' @param domains_of_interest
 #' @param out_path
 #' @param threads
 #' @param progress
 
 #'------------------------------------------------------------------------------
 #' Function
-phylogenetic_diversity <- function(fia, SPCD, domain, outpath, threads, progress = TRUE) {
+phylogenetic_diversity <- function(fia, 
+                                   SPCD, 
+                                   domain, 
+                                   domains_of_interest = NULL, 
+                                   outpath, 
+                                   threads, 
+                                   progress = TRUE) {
   
   ### Prepare plots (Cleaning) -------------------------------------------------
   
@@ -99,7 +106,14 @@ phylogenetic_diversity <- function(fia, SPCD, domain, outpath, threads, progress
   
   # Select plots with proper boundaries within domains
   colnames(domain)[1] <- "Domain"
-  fia_summary <- merge(domain, fia_summary, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+  
+  if(is.null(domains_of_interest)) {
+    fia_summary <- merge(domain, fia_summary, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+  } else {
+    domain <- subset(domain, Domain == domains_of_interest)
+    fia_summary <- merge(domain, fia_summary, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+  }
+  
   
   ### Prepare phylo  -----------------------------------------------------------
   # Summary of species and families
@@ -139,14 +153,30 @@ phylogenetic_diversity <- function(fia, SPCD, domain, outpath, threads, progress
   
   #Get match
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
-  saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO.rds"))
-  saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
- 
-  beta <- beta_rcpp(comm = as.matrix(matched$comm[1:10000,]), 
+  
+  cat(paste0("Number of communities:", nrow(master_matrix)))
+  
+  # Export
+  if(is.null(domains_of_interest)) {
+    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO.rds"))
+    saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
+    
+  } else {
+    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO_",domains_of_interest,".rds"))
+    saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree_",domains_of_interest,".rds"))
+  }
+  
+  beta <- beta_rcpp(comm = as.matrix(matched$comm), 
                     tree = matched$phy, 
                     threads = threads,
                     progress = progress)
-  saveRDS(beta, paste0(out_path, "/beta_DRYBIO.rds"))
+  
+  if(is.null(domains_of_interest)) {
+    saveRDS(beta, paste0(out_path, "/beta_DRYBIO.rds"))
+    
+  } else {
+    saveRDS(beta, paste0(out_path, "/beta_DRYBIO_",domains_of_interest,".rds"))
+  }
   
 }
 
@@ -160,7 +190,85 @@ fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 domain <- fread(paste0(root_path, "/00_FIA/plot_domain.csv"))
 domain <- domain[, c("DomainName", "PLT_CN")]
+domains_of_interest <- NULL
 out_path <- paste0(root_path, "/03_diversity")
-threads <- 29
+threads <- 28
 progress = TRUE
-phylogenetic_diversity(fia, SPCD, domain, outpath, threads, progress)
+
+domain <- domain[DomainName != "Ozarks Complex",]
+domain <- domain[DomainName != "Atlantic Neotropical",]
+domain <- domain[DomainName != "Southeast",]
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = NULL,
+                       outpath, 
+                       threads, 
+                       progress)
+
+domain <- domain[DomainName == "Great Lakes", DomainName := "great_lakes"]
+domain <- domain[DomainName == "Northeast", DomainName := "northeast"]
+domain <- domain[DomainName == "Appalachians / Cumberland Plateau", DomainName := "appalachians"]
+domain <- domain[DomainName == "Mid Atlantic", DomainName := "mid_atlantic"]
+
+domain <- domain[DomainName == "Ozarks Complex", DomainName := "ozarks_complex"]
+domain <- domain[DomainName == "Atlantic Neotropical", DomainName := "atlantic_neotropical"]
+domain <- domain[DomainName == "Southeast", DomainName := "southeast"]
+
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "northeast",
+                       outpath, 
+                       threads, 
+                       progress)
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "great_lakes",
+                       outpath, 
+                       threads, 
+                       progress)
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "ozarks_complex",
+                       outpath, 
+                       threads, 
+                       progress)
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "appalachians",
+                       outpath, 
+                       threads, 
+                       progress)
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "atlantic_neotropical",
+                       outpath, 
+                       threads, 
+                       progress)
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "southeast",
+                       outpath, 
+                       threads, 
+                       progress)
+
+phylogenetic_diversity(fia, 
+                       SPCD, 
+                       domain, 
+                       domains_of_interest = "mid_atlantic",
+                       outpath, 
+                       threads, 
+                       progress)

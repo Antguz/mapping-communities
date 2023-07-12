@@ -9,6 +9,7 @@
 #' Library
 
 library(data.table)
+options(scipen = 100000)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -18,8 +19,10 @@ library(data.table)
 
 #root_path <- "E:/DESIS"
 root_path <-  "/media/antonio/Work/Projects/DESIS_mapping"
-fia <- fread(paste0(root_path, "/00_FIA/trees_WI_MN_20221102.csv"))
+fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
+domain <- fread(paste0(root_path, "/00_FIA/plot_domain.csv"))
+domain <- domain[, c("DomainName", "PLT_CN")]
 out_path <- paste0(root_path, "/03_reshape")
 
 #'------------------------------------------------------------------------------
@@ -31,17 +34,18 @@ out_path <- paste0(root_path, "/03_reshape")
 reshape_stands <- function(fia, SPCD, out_path) { 
   
   #Clean FIA
-  fia <- subset(fia, STATECD == 27 | STATECD == 55)
   fia <- fia[order(PLT_CN, SUBP)]
   
   #Merge species code
-  fia <- merge(fia, SPCD[, c("SPCD", "PLANTS-Code")], by = "SPCD", all.x = TRUE, all.y = TRUE)
+  fia <- merge(fia, SPCD[, c("SPCD", "PLANTS-Code-new")], 
+               by = "SPCD", all.x = TRUE, all.y = FALSE)
   
   #Get Basal Area
   fia$BA <- pi*(fia$DIA/2)^2
   
-  #Basal area multiplied by TPA
+  #Metrics multiplied by TPA
   fia$BA_TPA <- fia$BA*fia$TPA_UNADJ
+  fia$AGB_TPA <- fia$DRYBIO_AG*fia$TPA_UNADJ
   
   #Remove dead trees
   fia <- fia[STATUSCD == 1]
@@ -63,6 +67,7 @@ reshape_stands <- function(fia, SPCD, out_path) {
   #Summarize
   fia_summary <- fia[, .(ntrees = .N,
                          BA_TPA = sum(BA_TPA, na.rm = TRUE),
+                         AGB_TPA = sum(AGB_TPA, na.rm = TRUE),
                          BA = sum(BA, na.rm = TRUE), 
                          HT = mean(HT, na.rm = TRUE), 
                          TPA_UNADJ = sum(TPA_UNADJ, na.rm = TRUE), 
@@ -70,8 +75,8 @@ reshape_stands <- function(fia, SPCD, out_path) {
                          CARBON_AG = sum(CARBON_AG, na.rm = TRUE), 
                          DRYBIO_AG = sum(DRYBIO_AG, na.rm = TRUE), 
                          CARBON_BG = sum(CARBON_BG, na.rm = TRUE)), 
-                     by = c("PLOT", "PLT_CN", "PLANTS-Code", "date")]
-  fia_summary <- fia_summary[order(PLOT, PLT_CN)]
+                     by = c("PLT_CN", "PLANTS-Code-new", "date")]
+  fia_summary <- fia_summary[order(PLT_CN)]
   
   #Reshapes
   #ntress
@@ -80,9 +85,26 @@ reshape_stands <- function(fia, SPCD, out_path) {
   #ntrees <- setnafill(ntrees, fill = 0)
   
   #BA_TPA
-  BA_TPA <- fia_summary[, c("PLOT", "PLT_CN", "date", "PLANTS-Code", "BA_TPA")]
-  BA_TPA <- dcast(BA_TPA, PLOT + PLT_CN + date ~ `PLANTS-Code`)
+  BA_TPA <- fia_summary[, c("PLT_CN", "date", "PLANTS-Code-new", "BA_TPA")]
+  BA_TPA <- BA_TPA[date >= as.IDate("2018-01-01")]
+  BA_TPA <- dcast(BA_TPA, PLT_CN + date ~ `PLANTS-Code-new`)
   BA_TPA <- setnafill(BA_TPA, fill = 0)
+  
+  # Remove plots with missing information
+  to_clean <- BA_TPA[, c("PLT_CN", "NA", "2TREE")] 
+  to_clean$total <- to_clean$`NA` + to_clean$`2TREE`
+  to_clean <- to_clean[, sum(total), by = "PLT_CN"]
+  to_clean <- to_clean[V1 == 0, ]               
+          
+  BA_TPA <- merge(to_clean[, 1], BA_TPA, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  
+  # Add domains names
+  colnames(domain)[1] <- "Domain"
+  BA_TPA <- merge(domain, BA_TPA, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+  
+  # Remove junk columns
+  BA_TPA[, c("NA","2TREE"):=NULL]
+  BA_TPA <- BA_TPA[order(Domain, date)]
   
   #BA
   #BA <- fia_summary[, c("PLOT", "PLT_CN", "date", "PLANTS-Code", "BA")]
@@ -109,7 +131,7 @@ reshape_stands <- function(fia, SPCD, out_path) {
   #rDRYBIO_AG <- cbind(DRYBIO_AG[, 1:3], rDRYBIO_AG)
   
   #Export
-  fwrite(BA_TPA, paste0(out_path, "/BA_TPA-reshape.csv"))
+  fwrite(BA_TPA, paste0(out_path, "/AGB_TPA-reshape.csv"))
   #fwrite(BA, paste0(out_path, "/BA_reshape.csv"))
   #fwrite(DRYBIO_AG, paste0(out_path, "/DRYBIO_AG_reshape.csv"))
   
