@@ -21,13 +21,13 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Arguments
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "F:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
-meta <- fread(paste0(root_path, "/00_FIA/plots_WI_MN_20221102.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/dimensions_plots_beta_DRYBIO.rds"))
+meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
+ordination <- readRDS(paste0(root_path, "/05_ordination/communities_scores_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_SW.csv"))
-PD <- fread(paste0(root_path, "/03_diversity/master_phylogenetic-diversity_DRYBIO.txt"))
+match_meta <- fread(paste0(root_path, "/04_match_spectra-stand/stands_SW.csv"))
 out_path <- paste0(root_path, "/06_model/SW_beta_PLS")
 
 #'------------------------------------------------------------------------------
@@ -44,31 +44,28 @@ source("R/pls_coefficients.R")
 #'------------------------------------------------------------------------------
 #' @Analysis  
 
-#Meta file
-meta <- meta[, c("PLT_CN", "INVYR", "STATECD", "COUNTYCD", "LAT", "LON", "ELEV")]
+# Get location values from meta files
+match_meta <- merge(match_meta,
+                    meta[, c("PLT_CN", "INVYR", "STATECD", "COUNTYCD", "LAT", "LON", "ELEV")],
+                    by = "PLT_CN", all.x = TRUE, all.y = FALSE)
 
-#Merge phylogenetic diversity
-PD <- PD[, c("PLT_CN", "ntaxa", "pd.obs", "PSR")]
-PD <- merge(meta, 
-            PD,
-            by = "PLT_CN", all.x = FALSE, all.y = TRUE)
-
-#Merge meta with ordination
-ordination <- merge(PD, 
+# Merge meta with ordination
+ordination <- merge(match_meta, 
                     ordination,
-                    by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+                    by = "PLT_CN", all.x = TRUE, all.y = FALSE)
 
-#Merge ordination with spectra 
-data <- merge(ordination, 
-              spectra[, .SD, .SDcols = c(1, 7:ncol(spectra))],
-              by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+# Merge ordination with spectra 
+data <- merge(ordination[, .SD, .SDcols = c(2, 1, 8, 9, 4, 16, 13, 14, 15)],
+              spectra[, .SD, .SDcols = c(1, 22:172)],
+              by = "PLT_CN", all.x = FALSE, all.y = FALSE)
 
-#New frames
+# New frames
 data <- na.exclude(data)
-meta <- data[, .SD, .SDcols = 1:10]
-ordination <- data[, .SD, .SDcols = 11:13]
-spectra <- data[, .SD, .SDcols = 15:ncol(data)]
-weigths <- data$goodness
+meta <- data[, .SD, .SDcols = 1:6]
+ordination <- data[, .SD, .SDcols = 7:9]
+spectra <- data[, .SD, .SDcols = 10:ncol(data)]
+#weigths <- data$goodness
+weigths <- 1/meta$nspecies
 
 #------------------------------------------
 # Data-split
@@ -89,18 +86,16 @@ models <- model_tune(meta = meta,
                      method = "pls",
                      tune_range = pls_tune,
                      ntimes = 100,
-                     threads = 28)
+                     threads = 4)
 
 optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
                       RMSE = mean(RMSE), RMSE_SD = sd(RMSE)), by = c("MDS", "ncomp")]
+
 optimal_tune <- optimal[, which.min(RMSE), by = "MDS"]$V1
+
 ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]), #23
                     expand.grid(ncomp = optimal_tune[2]), #9
                     expand.grid(ncomp = optimal_tune[3])) #8
-
-ncomp_tuned <- list(expand.grid(ncomp = 23), #23
-                    expand.grid(ncomp = 9), #9
-                    expand.grid(ncomp = 8)) #8
 
 fwrite(models, paste0(out_path, "/optimal_models.csv"))
 
@@ -158,4 +153,3 @@ fwrite(coefficients, paste0(out_path, "/coefficients.csv"))
 
 vip <- pls_vip(models = final_models)
 fwrite(vip, paste0(out_path, "/vip.csv"))
-
