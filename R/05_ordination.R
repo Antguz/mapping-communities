@@ -41,25 +41,28 @@ ordination <- function(beta, stand, out_path, threads = 28) {
   NMDS <- metaMDS(comm = distance,
                   k = 3,
                   try = 15,
-                  trymax = 50,
+                  trymax = 30,
+                  maxit = 100,
                   engine = "monoMDS",
                   autotransform = FALSE,
                   plot = FALSE,
                   parallel = threads,
                   wascores = FALSE,
-                  maxit = 25,
                   trace = 3,
                   model = "linear",
-                  center = FALSE,
+                  center = TRUE,
                   pc = FALSE,
                   weakties = TRUE,
-                  stress = 1)
+                  stress = 1,
+                  halfchange = TRUE,
+                  threshold = 1.0)
   
   # Ordination export
   saveRDS(NMDS, paste0(out_path, "/NMDS_DRYBIO.rds"))
+  #NMDS <- readRDS(paste0(out_path, "/NMDS_DRYBIO.rds"))
   
   # Get weighted averages scores of species
-  species_scores <- wascores(NMDS$points, comm, expand = TRUE)
+  species_scores <- wascores(NMDS$points, comm, expand = FALSE)
   species_names <- rownames(species_scores)
   species_scores <- cbind(Taxon2 = species_names, as.data.table(species_scores))
   saveRDS(species_scores, paste0(out_path, "/species_scores_DRYBIO.rds"))
@@ -77,6 +80,7 @@ ordination <- function(beta, stand, out_path, threads = 28) {
 #' @example 
 
 #root_path <- "F:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 beta <- paste0(root_path, "/03_diversity/beta_DRYBIO.rds")
 stand <- paste0(root_path, "/03_diversity/master_matched_comm-DRYBIO.rds")

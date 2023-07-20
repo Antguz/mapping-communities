@@ -9,6 +9,7 @@
 #' Library
 
 library(data.table)
+library(bit64)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -113,7 +114,6 @@ match_datasets <- function(fia,
   
   biomass <- apply(sub_stands[, .SD, .SDcols=c(4:ncol(sub_stands)),], 1, sum)
   
-  
   sub_stands <- sub_stands[, .SD, .SDcols=c(2, 1, 3)]
   sub_stands$nspecies <- nspecies
   sub_stands$biomass <- biomass
@@ -122,6 +122,8 @@ match_datasets <- function(fia,
   #Spectra
   sub_spectra <- spectra[unique_plots$sample, ]
   sub_spectra <- sub_spectra[, .SD, .SDcols=c(c(3, 15:(ncol(sub_spectra)-1)))]
+  
+  all.equal(sub_spectra$PLT_CN, sub_stands$PLT_CN)
   
   #Export
   fwrite(sub_stands, paste0(out_path, "/stands_SW.csv"))

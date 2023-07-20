@@ -1,4 +1,4 @@
-data_split <- function(ordination, steps = 15) {
+data_split <- function(ordination, ptraining = 0.6, steps = 15) {
   
   rMDS1 <- round((max(ordination[,1]) - min(ordination[,1])) / steps, 3)
   rMDS2 <- round((max(ordination[,2]) - min(ordination[,2])) / steps, 3)
@@ -20,7 +20,7 @@ data_split <- function(ordination, steps = 15) {
                                  MDS3 >= (grid$Z[i] - rMDS3/2) & MDS3 < (grid$Z[i] + rMDS3/2), ]
     
     set.seed(20191107)
-    select <- sample(nrow(sub_ordination), ceiling(nrow(sub_ordination)*0.5))
+    select <- sample(nrow(sub_ordination), ceiling(nrow(sub_ordination)*ptraining))
     samples <- c(samples, sub_ordination$ID[select])
     
   }

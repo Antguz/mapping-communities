@@ -114,7 +114,6 @@ phylogenetic_diversity <- function(fia,
     fia_summary <- merge(domain, fia_summary, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
   }
   
-  
   ### Prepare phylo  -----------------------------------------------------------
   # Summary of species and families
   species <- unique(fia_summary[, c("Taxon2", "Genus", "Family")])
@@ -131,11 +130,12 @@ phylogenetic_diversity <- function(fia,
   tol = 1e-9
   phylo$edge.length[phylo$edge.length <= 0] <- tol
   is.ultrametric(phylo)
+  phylo$edge.length <- (log10(phylo$edge.length)+(min(log10(phylo$edge.length))*-1))
   
   # Scale phylo
-  rtrns <- rescale(phylo, "nrate")
-  phylo <- rtrns(time=c(0.2, 0.4, 0.6, 0.8), rate=c(2, 4, 8, 16))
-  is.ultrametric(phylo)
+  #rtrns <- rescale(phylo, "nrate")
+  #phylo <- rtrns(time=c(0.2, 0.4, 0.6, 0.8), rate=c(2, 4, 8, 16))
+  #is.ultrametric(phylo)
   
   ### Community matrix ---------------------------------------------------------
   
@@ -184,91 +184,21 @@ phylogenetic_diversity <- function(fia,
 #' @example 
 
 #root_path <- "F:/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 domain <- fread(paste0(root_path, "/00_FIA/plot_domain.csv"))
 domain <- domain[, c("DomainName", "PLT_CN")]
 domains_of_interest <- NULL
 out_path <- paste0(root_path, "/03_diversity")
-threads <- 28
-progress = TRUE
-
-domain <- domain[DomainName != "Ozarks Complex",]
-domain <- domain[DomainName != "Atlantic Neotropical",]
-domain <- domain[DomainName != "Southeast",]
+threads <- 120
+progress = FALSE
 
 phylogenetic_diversity(fia, 
                        SPCD, 
                        domain, 
                        domains_of_interest = NULL,
-                       outpath, 
-                       threads, 
-                       progress)
-
-domain <- domain[DomainName == "Great Lakes", DomainName := "great_lakes"]
-domain <- domain[DomainName == "Northeast", DomainName := "northeast"]
-domain <- domain[DomainName == "Appalachians / Cumberland Plateau", DomainName := "appalachians"]
-domain <- domain[DomainName == "Mid Atlantic", DomainName := "mid_atlantic"]
-
-domain <- domain[DomainName == "Ozarks Complex", DomainName := "ozarks_complex"]
-domain <- domain[DomainName == "Atlantic Neotropical", DomainName := "atlantic_neotropical"]
-domain <- domain[DomainName == "Southeast", DomainName := "southeast"]
-
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "northeast",
-                       outpath, 
-                       threads, 
-                       progress)
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "great_lakes",
-                       outpath, 
-                       threads, 
-                       progress)
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "ozarks_complex",
-                       outpath, 
-                       threads, 
-                       progress)
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "appalachians",
-                       outpath, 
-                       threads, 
-                       progress)
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "atlantic_neotropical",
-                       outpath, 
-                       threads, 
-                       progress)
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "southeast",
-                       outpath, 
-                       threads, 
-                       progress)
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       domain, 
-                       domains_of_interest = "mid_atlantic",
                        outpath, 
                        threads, 
                        progress)

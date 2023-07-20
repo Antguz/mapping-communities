@@ -21,14 +21,15 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Arguments
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "F:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "F:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 ordination <- readRDS(paste0(root_path, "/05_ordination/communities_scores_DRYBIO.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_SW.csv"))
 match_meta <- fread(paste0(root_path, "/04_match_spectra-stand/stands_SW.csv"))
-out_path <- paste0(root_path, "/06_model/SW_beta_PLS")
+outlier <- fread(paste0(root_path, "/04_match_spectra-stand/outlier.csv"))
+out_path <- paste0(root_path, "/06_model/SW_beta_PLS_cleaning")
 
 #'------------------------------------------------------------------------------
 #' Load source code
@@ -61,6 +62,8 @@ data <- merge(ordination[, .SD, .SDcols = c(2, 1, 8, 9, 4, 16, 13, 14, 15)],
 
 # New frames
 data <- na.exclude(data)
+#data <- data[outlier[MD <= quantile(MD, 0.95), sample],] #Outlier
+saveRDS(data, paste0(out_path, "/data.rds"))
 meta <- data[, .SD, .SDcols = 1:6]
 ordination <- data[, .SD, .SDcols = 7:9]
 spectra <- data[, .SD, .SDcols = 10:ncol(data)]
@@ -70,8 +73,14 @@ weigths <- 1/meta$nspecies
 #------------------------------------------
 # Data-split
 set.seed(1107)
-split <- data_split(ordination)
+split <- data_split(ordination, ptraining = 1.0, steps = 15) #0.525
+
+# Percentage of samples for training
+length(split)/nrow(ordination)
+
+# Export split
 saveRDS(split, paste0(out_path, "/split.rds"))
+split <- readRDS(paste0(out_path, "/split.rds"))
 
 #------------------------------------------
 # Model tune estimation
@@ -86,23 +95,29 @@ models <- model_tune(meta = meta,
                      method = "pls",
                      tune_range = pls_tune,
                      ntimes = 100,
-                     threads = 4)
+                     threads = 28)
 
 optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
                       RMSE = mean(RMSE), RMSE_SD = sd(RMSE)), by = c("MDS", "ncomp")]
 
 optimal_tune <- optimal[, which.min(RMSE), by = "MDS"]$V1
 
+# Computational checked
 ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]), #23
                     expand.grid(ncomp = optimal_tune[2]), #9
                     expand.grid(ncomp = optimal_tune[3])) #8
+
+# Manual checked
+ncomp_tuned <- list(expand.grid(ncomp = 15), #23
+                    expand.grid(ncomp = 15), #9
+                    expand.grid(ncomp = 8)) #8
 
 fwrite(models, paste0(out_path, "/optimal_models.csv"))
 
 #------------------------------------------
 # Final Model of prediction
 
-final_models <- modul_build(meta = meta,
+final_models <- model_build(meta = meta,
                             ordination = ordination, 
                             spectra = spectra, 
                             split = split, 
@@ -113,7 +128,7 @@ final_models <- modul_build(meta = meta,
                             threads = 28)
 
 saveRDS(final_models, paste0(out_path, "/final_models.rds"))
-final_models <- readRDS(paste0(out_path, "/final_models.rds"))
+#final_models <- readRDS(paste0(out_path, "/final_models.rds"))
 
 #------------------------------------------
 # Performance
