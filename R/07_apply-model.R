@@ -27,18 +27,6 @@ sourceCpp("src/model-application.cpp")
 #' @param output_raster
 #' @param threads
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
-scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0465807416_009-20200617T193003-V0217")
-coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/", "coefficients.csv"))
-output_raster <- paste0(scene_main_path, "_predicted.tif")
-threads <- 28
-
-apply_model(scene_main_path, 
-            coefficients, 
-            output_raster,
-            threads = 28)
-
 #'------------------------------------------------------------------------------
 #' Function
 
@@ -100,11 +88,12 @@ apply_model <- function(scene_main_path,
   sw <- desis_transform(spectra = spectra, 
                         DESIS_bands = DESIS_bands,
                         cell = cell,
+                        new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 3.0),
                         threads = threads)
   
   cell <- sw$cell
-  sw <- sw[, .SD, .SDcols = 25:195]
-  colnames(sw) <- bands
+  coef_bands <- colnames(coefficients)[4:ncol(coefficients)]
+  sw <- sw[, ..coef_bands]
   
   #--------------------------------------------------------
   # Predict raster files
@@ -140,7 +129,7 @@ apply_model <- function(scene_main_path,
   names(mask_quality) <- "mask"
   mask_quality[] <- 1
   
-  #Masks
+  # Quality masks
   mask_quality <- mask(mask_quality, rast_quality_flags$Shadow, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$Land, maskvalues = 0)
   mask_quality <- mask(mask_quality, rast_quality_flags$Snow, maskvalues = 1)
@@ -150,15 +139,21 @@ apply_model <- function(scene_main_path,
   mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (water)`, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
-  NDVI <- (rast_spectra$`801` - rast_spectra$`680.8`) / (rast_spectra$`801` + rast_spectra$`680.8`)
-  NDVI[NDVI == Inf] <- NA
-  NDVI[NDVI < 0.60] <- 0
-  NDVI[NDVI >= 0.60] <- 1
-  
-  
-  #Final mask
   predicted_scene <- mask(predicted_scene, mask_quality, maskvalues = 1, inverse = TRUE)
+  
+  # NDVI mask
+  NDVI <- (rast_spectra$`801.16` - rast_spectra$`680.91`) / (rast_spectra$`801.16` + rast_spectra$`680.91`)
+  NDVI[NDVI == Inf] <- NA
+  NDVI[NDVI < 0.50] <- 0
+  NDVI[NDVI >= 0.50] <- 1
   predicted_scene <- mask(predicted_scene, NDVI, maskvalues = 1, inverse = TRUE)
+  
+  # NIR mask
+  NIR <- rast_spectra$`801.16`
+  NIR[NIR == Inf] <- NA
+  NIR[NIR < 0.60] <- 0
+  NIR[NIR >= 0.60] <- 1
+  predicted_scene <- mask(predicted_scene, NIR, maskvalues = 1, inverse = TRUE)
   
   #-----------------------------------------------------------
   # Scene export
@@ -173,4 +168,34 @@ apply_model <- function(scene_main_path,
               overwrite= TRUE,
               datatype = "INT4S")
 
+}
+
+#'------------------------------------------------------------------------------
+#' @example 
+
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0621221713_014-20220621T171230-V0217")
+coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/", "coefficients.csv"))
+output_raster <- paste0(scene_main_path, "_predicted.tif")
+threads <- 28
+
+# Apply in a single scene
+apply_model(scene_main_path, 
+            coefficients, 
+            output_raster,
+            threads = 28)
+
+# Apply in a batch of scenes
+scenes <- list.dirs(path = paste0(root_path, "/00_imagery"),
+                    recursive = FALSE)
+output_scenes <- paste0(scenes, "_predicted.tif")
+
+for(i in 1:length(scenes)) {
+  
+  apply_model(scenes[i], 
+              coefficients, 
+              output_scenes[i],
+              threads = 28)
+  
 }

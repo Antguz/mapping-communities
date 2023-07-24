@@ -16,6 +16,7 @@ library(sf)
 library(doParallel)
 library(metrica)
 library(rTLS)
+#library(trqwe)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -25,20 +26,20 @@ root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "F:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
 meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
-ordination <- readRDS(paste0(root_path, "/05_ordination/communities_scores_DRYBIO.rds"))
+ordination <- readRDS(paste0(root_path, "/05_ordination/communities_scores_BA.rds"))
 spectra <- fread(paste0(root_path, "/04_match_spectra-stand/spectra_SW.csv"))
 match_meta <- fread(paste0(root_path, "/04_match_spectra-stand/stands_SW.csv"))
 outlier <- fread(paste0(root_path, "/04_match_spectra-stand/outlier.csv"))
-out_path <- paste0(root_path, "/06_model/SW_beta_PLS_cleaning")
+out_path <- paste0(root_path, "/06_model/SW_beta_PLS")
 
 #'------------------------------------------------------------------------------
 #' Load source code
 
 source("R/data_split.R")
-source("R/model_tune.R") 
 source("R/mds_segmentation.R") 
+source("R/model_tune.R") 
 source("R/model_build.R")
-source("R/performance.R")
+source("R/model_predict.R")
 source("R/pls_vip.R")
 source("R/pls_coefficients.R")
 
@@ -62,21 +63,21 @@ data <- merge(ordination[, .SD, .SDcols = c(2, 1, 8, 9, 4, 16, 13, 14, 15)],
 
 # New frames
 data <- na.exclude(data)
-#data <- data[outlier[MD <= quantile(MD, 0.95), sample],] #Outlier
+data <- data[outlier[remove == FALSE, sample],] #Outlier
 saveRDS(data, paste0(out_path, "/data.rds"))
 meta <- data[, .SD, .SDcols = 1:6]
 ordination <- data[, .SD, .SDcols = 7:9]
 spectra <- data[, .SD, .SDcols = 10:ncol(data)]
-#weigths <- data$goodness
 weigths <- 1/meta$nspecies
 
 #------------------------------------------
 # Data-split
 set.seed(1107)
-split <- data_split(ordination, ptraining = 1.0, steps = 15) #0.525
+split <- data_split(ordination, ptraining = 0.55, steps = 15) #0.525
 
 # Percentage of samples for training
 length(split)/nrow(ordination)
+nrow(ordination) - length(split)
 
 # Export split
 saveRDS(split, paste0(out_path, "/split.rds"))
@@ -86,7 +87,7 @@ split <- readRDS(paste0(out_path, "/split.rds"))
 # Model tune estimation
 
 # PLSR
-pls_tune <- expand.grid(ncomp = 1:50)
+pls_tune <- expand.grid(ncomp = 1:60)
 models <- model_tune(meta = meta,
                      ordination = ordination, 
                      spectra = spectra, 
@@ -97,22 +98,14 @@ models <- model_tune(meta = meta,
                      ntimes = 100,
                      threads = 28)
 
-optimal <- models[, .(Rsq = mean(Rsquared), Rsq_SD = sd(Rsquared), 
-                      RMSE = mean(RMSE), RMSE_SD = sd(RMSE)), by = c("MDS", "ncomp")]
+fwrite(models, paste0(out_path, "/optimal_models.csv"))
 
-optimal_tune <- optimal[, which.min(RMSE), by = "MDS"]$V1
-
-# Computational checked
-ncomp_tuned <- list(expand.grid(ncomp = optimal_tune[1]), #23
-                    expand.grid(ncomp = optimal_tune[2]), #9
-                    expand.grid(ncomp = optimal_tune[3])) #8
+#' @note Do a manual checking of the optimal number of components
 
 # Manual checked
-ncomp_tuned <- list(expand.grid(ncomp = 15), #23
-                    expand.grid(ncomp = 15), #9
-                    expand.grid(ncomp = 8)) #8
-
-fwrite(models, paste0(out_path, "/optimal_models.csv"))
+ncomp_tuned <- list(expand.grid(ncomp = 55), #23
+                    expand.grid(ncomp = 22), #9
+                    expand.grid(ncomp = 21)) #8
 
 #------------------------------------------
 # Final Model of prediction
@@ -127,21 +120,24 @@ final_models <- model_build(meta = meta,
                             ntimes = 100,
                             threads = 28)
 
-saveRDS(final_models, paste0(out_path, "/final_models.rds"))
+saveRDS(final_models, paste0(out_path, "/final_models.rds")) # Do it if you really need it
+#mcsaveRDS(final_models, paste0(out_path, "/final_models.rds"), 4)
 #final_models <- readRDS(paste0(out_path, "/final_models.rds"))
 
 #------------------------------------------
 # Performance
 
-training <- model_performance(meta = meta[split,],
-                              ordination = ordination[split,], 
-                              spectra = spectra[split,],
-                              models = final_models)
+training <- model_predict(meta = meta[split,],
+                          ordination = ordination[split,],
+                          spectra = spectra[split,],
+                          models = final_models,
+                          threads = 4)
 
-testing <- model_performance(meta = meta[!split,],
-                             ordination = ordination[!split,], 
-                             spectra = spectra[!split,],
-                             models = final_models)
+testing <- model_predict(meta = meta[!split,],
+                         ordination = ordination[!split,],
+                         spectra = spectra[!split,],
+                         models = final_models,
+                         threads = 4)
 
 performance_training <- training$performance
 performance_training$type <- "Training"

@@ -10,6 +10,7 @@ arma::mat predict_pls(arma::mat spectra,
   
   // Dimensions
   int npixels = spectra.n_rows; //n pixels
+  int nbands = spectra.n_cols; //n bands
   int nmodels = MDS1.n_elem; //n models
   
   //Root of nmodels for IC
@@ -19,9 +20,9 @@ arma::mat predict_pls(arma::mat spectra,
   arma::mat result(npixels, 7);
   
   //Get coefficients
-  arma::mat coef_MDS1 = MDS1.cols(1, 171);
-  arma::mat coef_MDS2 = MDS2.cols(1, 171);
-  arma::mat coef_MDS3 = MDS3.cols(1, 171);
+  arma::mat coef_MDS1 = MDS1.cols(1, nbands);
+  arma::mat coef_MDS2 = MDS2.cols(1, nbands);
+  arma::mat coef_MDS3 = MDS3.cols(1, nbands);
   
   for(int i = 0; i < npixels; i++) {
     
@@ -92,14 +93,7 @@ arma::mat predict_pls(arma::mat spectra,
     result(i, 4) = round(amplitude_MDS2*1000);
     result(i, 5) = round(amplitude_MDS3*1000);
     result(i, 6) = result(i, 3) + result(i, 4) + result(i, 5);
-    
-    //result(i, 0) = mean_MDS1;
-    //result(i, 1) = mean_MDS2;
-    //result(i, 2) = mean_MDS3;
-    //result(i, 3) = amplitude_MDS1;
-    //result(i, 4) = amplitude_MDS2;
-    //result(i, 5) = amplitude_MDS3;
-    
+
   }
   
   return result;

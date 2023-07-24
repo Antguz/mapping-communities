@@ -1,4 +1,4 @@
-modul_build <- function(meta, 
+model_build <- function(meta, 
                         ordination, 
                         spectra, 
                         split, 
@@ -14,7 +14,6 @@ modul_build <- function(meta,
   meta_training <- meta[split,]
   dimentions <- ncol(ordination_training)
   data_weigths <- weigths[split]
-  data_weigths <- data_weigths/sum(data_weigths)
   
   #Results collector
   final_collector <- list()
@@ -48,15 +47,15 @@ modul_build <- function(meta,
       #Progress
       setTxtProgressBar(pb, t)
       
-      #Homogeneous segmentation
-      segmentation <- mds_segmentation(train_master$MDS)
+      # Homogeneous segmentation
+      segmentation <- mds_segmentation(train_master$MDS, proportions = 0.75)
       sub_master <- train_master[segmentation, ]
       sub_weigths <- data_weigths[segmentation]
       sub_meta <- meta_training[segmentation, ]
       
-      #Create spatial folds
+      # Create spatial folds
       folds <- CreateSpacetimeFolds(x = sub_meta,
-                                    spacevar = "COUNTYCD", 
+                                    spacevar = "STATECD", 
                                     seed = sample(1:10000, 1))
       folds <- folds$index
       

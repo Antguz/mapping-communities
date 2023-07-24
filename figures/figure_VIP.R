@@ -7,7 +7,8 @@
 
 library(ggplot2)
 library(data.table)
-
+library(bit64)
+library(ggdark)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
@@ -39,7 +40,6 @@ vip_summary$MDS <- paste0("Axis ", vip_summary$MDS)
 #-------------------------------------------------------------------------------
 # Get plot
 
-
 col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 
 th <- theme_bw() + 
@@ -48,8 +48,8 @@ th <- theme_bw() +
 plot <- ggplot(vip_summary) +
   geom_ribbon(aes(x = wavelength, ymin = mean - sd, ymax = mean + sd, fill = MDS), alpha = 0.25) +
   geom_line(aes(x = wavelength, y = mean, colour = MDS), linewidth = 0.5) +
-  scale_x_continuous(expand = c(0, 0), limits = c(460, 895)) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 3.1)) +
+  scale_x_continuous(expand = c(0, 0), limits = c(467, 918)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 3.0)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab("Wavelength (nm)") + 
@@ -72,5 +72,35 @@ p
 dev.off()
 
 png("figures/VIP.png", width = 180, height = 90, units = "mm", res = 300, bg = "transparent")
+plot
+dev.off()
+
+
+# Black background
+plot <- ggplot(vip_summary) +
+  geom_ribbon(aes(x = wavelength, ymin = mean - sd, ymax = mean + sd, fill = MDS), alpha = 0.25) +
+  geom_line(aes(x = wavelength, y = mean, colour = MDS), linewidth = 0.5) +
+  scale_x_continuous(expand = c(0, 0), limits = c(467, 918)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 3.0)) +
+  scale_colour_manual(name = "", values = col) +
+  scale_fill_manual(name = "", values = col) +
+  xlab("Wavelength (nm)") + 
+  ylab("VIP") +
+  dark_theme_bw(base_size = 12) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        legend.position = c(0.90, 0.90), 
+        legend.background = element_rect(fill= "transparent"),
+        panel.background = element_rect(fill = "transparent"),
+        rect = element_rect(fill = "transparent"),
+        legend.title = element_text(colour="white", size = 12),
+        legend.text = element_text(color = "white"),
+        axis.text=element_text(color="white"),
+        plot.background = element_rect(colour = "transparent",
+                                       fill = "transparent",
+                                       size=0)) +
+  labs(subtitle = "Variable Importance in Projection")
+
+png("figures/VIP_black.png", width = 140, height = 90, units = "mm", res = 600, bg = "transparent", pointsize = 12)
 plot
 dev.off()

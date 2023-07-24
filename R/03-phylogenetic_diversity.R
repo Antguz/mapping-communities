@@ -61,7 +61,7 @@ phylogenetic_diversity <- function(fia,
   fia <- merge(fia, 
                SPCD[, c("SPCD", "PLANTS-Code-new", 
                         "Taxon2", "Genus", "Family", 
-                        "Remove")], 
+                        "Remove", "Gymnosperm", "mycorrhizal_association")], 
                by = "SPCD", 
                all.x = TRUE, 
                all.y = TRUE)
@@ -101,7 +101,8 @@ phylogenetic_diversity <- function(fia,
                          BA_TPA = sum(BA, na.rm = TRUE), 
                          DRYBIO_AG_TPA = sum(DRYBIO_AG_TPA, na.rm = TRUE)),
                      by = c("PLT_CN", "PLANTS-Code-new", 
-                            "Taxon2", "Genus", "Family")]
+                            "Taxon2", "Genus", "Family",
+                            "Gymnosperm", "mycorrhizal_association")]
   fia_summary <- fia_summary[order(PLT_CN)]
   
   # Select plots with proper boundaries within domains
@@ -109,6 +110,7 @@ phylogenetic_diversity <- function(fia,
   
   if(is.null(domains_of_interest)) {
     fia_summary <- merge(domain, fia_summary, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+    saveRDS(fia_summary, paste0(out_path, "/for_proportions_comm.rds"))
   } else {
     domain <- subset(domain, Domain == domains_of_interest)
     fia_summary <- merge(domain, fia_summary, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
@@ -140,7 +142,7 @@ phylogenetic_diversity <- function(fia,
   ### Community matrix ---------------------------------------------------------
   
   # dcast
-  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "DRYBIO_AG_TPA", "Taxon2")])
+  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "BA_TPA", "Taxon2")])
   
   # Remove plots without species
   nsp <- apply(master_matrix, 1, function(x) sum(x > 0))
@@ -158,11 +160,11 @@ phylogenetic_diversity <- function(fia,
   
   # Export
   if(is.null(domains_of_interest)) {
-    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO.rds"))
+    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-BA.rds"))
     saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
     
   } else {
-    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-DRYBIO_",domains_of_interest,".rds"))
+    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-BA_",domains_of_interest,".rds"))
     saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree_",domains_of_interest,".rds"))
   }
   
@@ -172,10 +174,10 @@ phylogenetic_diversity <- function(fia,
                     progress = progress)
   
   if(is.null(domains_of_interest)) {
-    saveRDS(beta, paste0(out_path, "/beta_DRYBIO.rds"))
+    saveRDS(beta, paste0(out_path, "/beta_BA.rds"))
     
   } else {
-    saveRDS(beta, paste0(out_path, "/beta_DRYBIO_",domains_of_interest,".rds"))
+    saveRDS(beta, paste0(out_path, "/beta_BA_",domains_of_interest,".rds"))
   }
   
 }
@@ -187,7 +189,7 @@ phylogenetic_diversity <- function(fia,
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_features2.csv"), na.strings="NA")
 domain <- fread(paste0(root_path, "/00_FIA/plot_domain.csv"))
 domain <- domain[, c("DomainName", "PLT_CN")]
 domains_of_interest <- NULL
