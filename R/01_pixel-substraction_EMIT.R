@@ -35,15 +35,11 @@ source("R/spectral_transform.R")
 #'------------------------------------------------------------------------------
 #' @example 
 
-# List of folders: "Appalachians", "Great_Lakes", "Mid_Atlantic", "Northeast".
-# "Ozarks", "Southeast".
-
-#root_path <- "F:/Imagery"
-root_path <- "E:/Imagery"
-folder <- "envi"
+root_path <- "E:"
+folder <- "EMIT"
 scene_path <- paste0(root_path, "/", folder)
 FIA_path <- "F:/Projects/DESIS_mapping/00_FIA/plots_eastern_20230427.csv"
-out_path <- "E:/Imagery/extraction"
+out_path <- "E:/pixel_extraction/EMIT"
 
 rast_subst_EMIT(scene_path,
                 FIA_path,
@@ -51,7 +47,7 @@ rast_subst_EMIT(scene_path,
                 EMIT_bands = EMIT_bands,
                 EMIT_mask = EMIT_mask,
                 EMIT_good_bands = EMIT_good_bands,
-                threads = 6)
+                threads = 1) # No threads in windows
 
 #'------------------------------------------------------------------------------
 #' Function

@@ -35,22 +35,25 @@ source("R/spectral_transform.R")
 #'------------------------------------------------------------------------------
 #' @example 
 
-# List of folders: "Appalachians", "Great_Lakes", "Mid_Atlantic", "Northeast".
-# "Ozarks", "Southeast".
+# List of folders: "Appalachians", 
+#                  "Great_Lakes", 
+#                  "Mid_Atlantic", 
+#                  "Northeast"
+#                  "Ozarks", 
+#                  "Southeast"
 
-#root_path <- "F:/Imagery"
-root_path <- "E:/Imagery"
-folder <- "DESIS"
+root_path <- "E:/DESIS"
+folder <- "Appalachians"
 scene_path <- paste0(root_path, "/", folder)
 FIA_path <- "F:/Projects/DESIS_mapping/00_FIA/plots_eastern_20230427.csv"
-out_path <- "E:/Imagery/extraction"
+out_path <- paste0("E:/pixel_extraction/DESIS/", folder)
 
 rast_subst_DESIS(scene_path, 
                  FIA_path, 
                  out_path, 
                  DESIS_bands,
                  DESIS_mask,
-                 threads = 6)
+                 threads = 1) # No threads in windows
 
 #'------------------------------------------------------------------------------
 #' Function
