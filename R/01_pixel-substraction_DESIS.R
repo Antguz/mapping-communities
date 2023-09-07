@@ -1,12 +1,12 @@
 #'------------------------------------------------------------------------------
-#' @tile Pixel Subtraction
+#' @title Pixel Subtraction
 #'------------------------------------------------------------------------------
 
 #' @description Subtract pixels from Geotiffs of DESIS L2. During the extraction
 #' use a file of coordinates and plot labels (PLT_CN, "LON", "LAT") and transform
 #' the extracted bands using three methods.
 #' 
-#' @return several .txt files with names according the DESIS file of pixels 
+#' @return several .txt files with names according to the DESIS file of pixels 
 #' transformed.
 
 #'------------------------------------------------------------------------------

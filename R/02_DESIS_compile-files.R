@@ -1,11 +1,11 @@
 #'------------------------------------------------------------------------------
-#' @tile Compile pixel extraction
+#' @tile Compile pixel extraction files from DESIS
 #'------------------------------------------------------------------------------
 
 #' @description Compile the files of pixel extraction by scene and spectral 
 #' transformation from previews function.
 
-#' @return Return a .csv.
+#' @return Export a frame
 
 #'------------------------------------------------------------------------------
 #' Library
