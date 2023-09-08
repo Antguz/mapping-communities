@@ -1,9 +1,11 @@
 #'------------------------------------------------------------------------------
-#' @title Quality assessment of spectra
+#' @title Quality assessment of spectra for DESIS
 #'------------------------------------------------------------------------------
 
 #' @description It helps to do a quality assessment of the spectra extracted
-#' @return .txt file (master file) with the spectral observations that can be used.
+#' 
+#' @return A .txt file (master file) with the spectral observations that can be 
+#' used.
 
 #'------------------------------------------------------------------------------
 #' Library
@@ -16,10 +18,13 @@ options(scipen = 100)
 #' Arguments
 
 # Select root path
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping/02_compile-files"
+root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping/02_compile-files"
 
-# Read smoothed spectra
-spectra <- fread(paste0(root_path, "/02_spectra-SG.txt"))
+# Select sensor
+sensor <- "DESIS"
+
+# Read smoothed spectra (DESIS or EMIT)
+spectra <- fread(paste0(root_path, "/02_", sensor, "_spectra-SG.txt"))
 
 # Filter by flags
 spectra <- spectra[Shadow != 1]
@@ -65,8 +70,6 @@ NDVI <- round(NDVI, 2)
 CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 CCI <- round(CCI, 2)
 NIR <- round(spectra$`801.16`, 2)
-spectra$sample <- 1:nrow(spectra)
-Wavelength <- as.numeric(colnames(spectra[, .SD, .SDcols = 14:208]))
 
 # Final file
 master <- spectra[, c("folder", "scene", "PLT_CN")]
@@ -75,4 +78,4 @@ master$NIR <- NIR
 master$CCI <- CCI
 
 # Export
-fwrite(master, paste0(root_path, "/master_spectra.csv"))
+fwrite(master, paste0(root_path, "/DESIS_master_spectra.csv"))
