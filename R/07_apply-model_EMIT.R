@@ -30,54 +30,57 @@ sourceCpp("src/model-application.cpp")
 #'------------------------------------------------------------------------------
 #' Function
 
-apply_model <- function(scene_main_path, 
+apply_model <- function(scene_path,
+                        scene_frame, 
                         coefficients, 
-                        output_raster,
+                        output_path,
                         threads = 28) {
   
-  #Colnames
-  bands <- colnames(coefficients)
-  bands <- bands[4:length(bands)]
-  
   #---------------------------------------------------------
-  # Raster files processing
-  files <- list.files(path = scene_main_path, 
-                      pattern = ".tif", 
-                      recursive = TRUE,
-                      include.dirs = TRUE)
-  
-  # Arrange path in a frame
-  frame <- data.table(matrix(unlist(strsplit(files, "/")), 
-                             nrow= length(files), 
-                             byrow=TRUE), 
-                      stringsAsFactors=FALSE)
-  colnames(frame) <- c("scene")
-  
-  # Extract Product type
-  frame[, type := unlist(strsplit(scene, "V0217-"))[2], 
-        by = seq_along(1:nrow(frame))]
-  #frame[, type := unlist(strsplit(type, "-"))[2], 
-  #      by = seq_along(1:nrow(frame))]
-  frame[, type := unlist(strsplit(type, ".tif"))[1], 
-        by = seq_along(1:nrow(frame))]
+  # Select and read products
   
   # Select products
-  spectra <- paste0(scene_main_path, "/", frame[type == "SPECTRAL_IMAGE"]$scene[1])
-  quality_cube <- paste0(scene_main_path, "/", frame[type == "QL_QUALITY"]$scene[1])
-  quality_flags <- paste0(scene_main_path, "/", frame[type == "QL_QUALITY-2"]$scene[1])
+  spectra <- paste0(scene_path, "/", 
+                    scene_frame[type == "RFL"]$scene)
+  
+  mask <- paste0(scene_path, "/", 
+                 scene_frame[type == "MASK" & band_mask == "mask"]$scene)
   
   # Read products
   rast_spectra <- rast(spectra)
-  names(rast_spectra) <- DESIS_bands
-  rast_quality_cube <- rast(quality_cube)
-  rast_quality_flags <- rast(quality_flags)
+  names(rast_spectra) <- EMIT_bands
+  rast_mask <- rast(mask)
+  
+  #---------------------------------------------------------
+  # Mask reflectance
+  
+  # Mask for quality
+  rast_spectra <- mask(rast_spectra, 
+                       rast_mask$EMIT_L2A_MASK_001_20230527T194414_2314713_001_mask_8,
+                       maskvalues = 1)
+  
+  # Mask for NDVI
+  NDVI <- (rast_spectra$`805.361755371093` - rast_spectra$`686.010314941406`) / 
+          (rast_spectra$`805.361755371093` + rast_spectra$`686.010314941406`)
+  NDVI[NDVI == Inf] <- NA
+  NDVI[NDVI < 0.50] <- 0
+  NDVI[NDVI >= 0.50] <- 1
+  rast_spectra <- mask(rast_spectra, NDVI, maskvalues = 1, inverse = TRUE)
+  
+  # Mask for NIR
+  NIR <- rast_spectra$`805.361755371093`
+  NIR[NIR == Inf] <- NA
+  NIR[NIR < 0.3] <- 0
+  NIR[NIR >= 0.3 & NIR <= 0.8] <- 1
+  NIR[NIR > 0.8] <- 1
+  rast_spectra <- mask(rast_spectra, NIR, maskvalues = 1, inverse = TRUE)
   
   # As frame
   data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE, na.rm = TRUE))
-  colnames(data_spectra)[2:ncol(data_spectra)] <- as.character(DESIS_bands)
-  #data_quality_cube <- as.data.table(as.data.frame(rast_quality_cube, cells = TRUE))
-  #colnames(data_quality_cube)[-1] <- as.character(DESIS_bands, cells = TRUE)
-  data_quality_flags <- as.data.table(as.data.frame(rast_quality_flags, cells = TRUE, na.rm = TRUE))
+  colnames(data_spectra)[2:ncol(data_spectra)] <- as.character(EMIT_bands)
+  
+  # Release memory
+  rm(list = c('rast_spectra', 'rast_mask','NDVI', 'NIR'))
   
   #---------------------------------------------------------
   # Transform raster files
@@ -85,11 +88,11 @@ apply_model <- function(scene_main_path,
   cell <- data_spectra$cell
   spectra <- data_spectra[, .SD, .SDcols = 2:ncol(data_spectra)]
   
-  sw <- desis_transform(spectra = spectra, 
-                        DESIS_bands = DESIS_bands,
-                        cell = cell,
-                        new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 3.0),
-                        threads = threads)
+  sw <- EMIT_transform(spectra = data_spectra[, .SD, .SDcols = 2:ncol(data_spectra)], 
+                       bands = EMIT_bands,
+                       cell = cell,
+                       new_bands = seq(min(EMIT_bands), max(EMIT_bands), by = 7.43),
+                       threads = threads)
   
   cell <- sw$cell
   coef_bands <- colnames(coefficients)[4:ncol(coefficients)]
@@ -124,38 +127,6 @@ apply_model <- function(scene_main_path,
                               "amp-total")
   
   #-----------------------------------------------------------
-  # Select products
-  mask_quality <- subset(rast_quality_flags, 1)
-  names(mask_quality) <- "mask"
-  mask_quality[] <- 1
-  
-  # Quality masks
-  mask_quality <- mask(mask_quality, rast_quality_flags$Shadow, maskvalues = 1)
-  #mask_quality <- mask(mask_quality, rast_quality_flags$Land, maskvalues = 0)
-  mask_quality <- mask(mask_quality, rast_quality_flags$Snow, maskvalues = 1)
-  #mask_quality <- mask(mask_quality, rast_quality_flags$`Haze (land)`, maskvalues = 1)
-  #mask_quality <- mask(mask_quality, rast_quality_flags$`Haze (water)`, maskvalues = 1)
-  mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (land)`, maskvalues = 1)
-  mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (water)`, maskvalues = 1)
-  mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
-  predicted_scene <- mask(predicted_scene, mask_quality, maskvalues = 1, inverse = TRUE)
-  
-  # NDVI mask
-  NDVI <- (rast_spectra$`801.16` - rast_spectra$`680.91`) / (rast_spectra$`801.16` + rast_spectra$`680.91`)
-  NDVI[NDVI == Inf] <- NA
-  NDVI[NDVI < 0.50] <- 0
-  NDVI[NDVI >= 0.50] <- 1
-  predicted_scene <- mask(predicted_scene, NDVI, maskvalues = 1, inverse = TRUE)
-  
-  # NIR mask
-  NIR <- rast_spectra$`801.16`
-  NIR[NIR == Inf] <- NA
-  NIR[NIR < 3000] <- 0
-  NIR[NIR >= 3000 & NIR <= 8000] <- 1
-  NIR[NIR > 8000] <- 1
-  predicted_scene <- mask(predicted_scene, NIR, maskvalues = 1, inverse = TRUE)
-  
-  #-----------------------------------------------------------
   # Scene export
   
   #Export
@@ -173,17 +144,36 @@ apply_model <- function(scene_main_path,
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
-scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0621221713_022-20220621T171230-V0217")
+# Scenes path
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
+scene_path <- paste0(root_path, "/00_imagery/EMIT", "")
+
+# List scenes
+files <- list.files(scene_path)
+
+# Arrange path in a frame
+frame <- data.table(scene = files)
+
+# Get product information
+frame[, type := strsplit(scene, "_")[[1]][3], by = seq_along(1:nrow(frame))]
+frame[, time := strsplit(scene, "_")[[1]][5], by = seq_along(1:nrow(frame))]
+frame[, band_mask := strsplit(scene, "_")[[1]][8], by = seq_along(1:nrow(frame))]
+frame[, keep := unlist(gregexpr('.hdr', scene))[1], by = seq_along(1:nrow(frame))]
+frame <- frame[keep == -1, 1:4]
+
+list_scenes <- data.table(time = unique(frame$time))
+list_scenes$ID <- 1:nrow(list_scenes)
+frame <- merge(frame, list_scenes, by = "time", all.x = TRUE, all.y = TRUE)
 
 output_raster <- paste0(scene_main_path, "_predicted.tif")
 threads <- 28
 
 # Apply in a single scene
-apply_model(scene_main_path, 
+apply_model(scene_path,
+            scene_frame = frame, 
             coefficients, 
-            output_raster,
+            output_path,
             threads = 28)
 
 # Apply in a batch of scenes
