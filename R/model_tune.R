@@ -3,7 +3,7 @@ model_tune <- function(meta,
                        spectra, 
                        split, 
                        weigths,
-                       method = "gaussprRadial",
+                       method = "pls",
                        tune_range,
                        ntimes = 10,
                        threads = 24) {
@@ -42,7 +42,8 @@ model_tune <- function(meta,
       setTxtProgressBar(pb, t)
       
       # Homogeneous segmentation
-      segmentation <- mds_segmentation(train_master$MDS, proportions = 0.75)
+      segmentation <- mds_segmentation(MDS = train_master$MDS, 
+                                       proportions = 0.80)
       sub_master <- train_master[segmentation, ]
       sub_weigths <- data_weigths[segmentation]
       sub_meta <- meta_training[segmentation, ]

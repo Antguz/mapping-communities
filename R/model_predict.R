@@ -10,9 +10,9 @@ model_predict <- function(meta = meta,
   # Apply prediction
   apply_predict <- function(i,
                             model_q = models[[q]],
-                            data = spectra) {
+                            spectra = spectra) {
     # Predict new values
-    predicted <- predict(model_q[[i]], newdata = data)
+    predicted <- predict(model_q[[i]], newdata = spectra)
     return(predicted)
   }
   
@@ -55,7 +55,7 @@ model_predict <- function(meta = meta,
     predictions <- mclapply(X = 1:repeated, 
                             FUN = apply_predict,
                             model_q = models[[q]],
-                            data = spectra,
+                            spectra = spectra,
                             mc.cores = threads,
                             mc.preschedule = TRUE,
                             mc.cleanup = TRUE)
@@ -79,7 +79,7 @@ model_predict <- function(meta = meta,
     performance <- mclapply(X = 1:repeated, 
                             FUN = apply_performance,
                             observed = frame$MDS_observed,
-                            predicted = frame[, 11:ncol(frame)],
+                            predicted = frame[, .SD, .SDcols = c((ncol(frame) - repeated + 1):ncol(frame))],
                             metrics = metrics_feature,
                             mc.cores = threads,
                             mc.preschedule = TRUE,

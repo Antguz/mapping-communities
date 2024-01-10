@@ -131,7 +131,7 @@ reshape_stands <- function(fia, SPCD, out_path) {
   #rDRYBIO_AG <- cbind(DRYBIO_AG[, 1:3], rDRYBIO_AG)
   
   #Export
-  fwrite(BA_TPA, paste0(out_path, "/AGB_TPA-reshape.csv"))
+  fwrite(BA_TPA, paste0(out_path, "/VOL_TPA-reshape.csv"))
   #fwrite(BA, paste0(out_path, "/BA_reshape.csv"))
   #fwrite(DRYBIO_AG, paste0(out_path, "/DRYBIO_AG_reshape.csv"))
   

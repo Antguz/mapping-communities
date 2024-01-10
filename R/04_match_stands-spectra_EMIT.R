@@ -28,8 +28,10 @@ options(scipen = 100)
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
-stand <- fread(paste0(root_path, "/03_reshape/AGB_TPA-reshape.csv"))
+master_comm <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm-VOL.rds"))
 master_spectra <- fread(paste0(root_path, "/02_compile-files/EMIT_master_spectra.csv"), header = TRUE)
+spectra_sg <- fread(paste0(root_path, "/02_compile-files/02_EMIT_spectra-SG.txt"), header = TRUE)
+spectra_vn <- fread(paste0(root_path, "/02_compile-files/02_EMIT_spectra-VN.txt"), header = TRUE)
 spectra_sw <- fread(paste0(root_path, "/02_compile-files/02_EMIT_spectra-SW.txt"), header = TRUE)
 out_path <- paste0(root_path, "/04_match_spectra-stand")
 
@@ -44,31 +46,38 @@ match_datasets_EMIT <- function(fia,
                                 out_path) {
   
   #------------------------------------
-  # Clean spectra
   # Use samples that were checked
   master_spectra$scene <- substr(master_spectra$scene, 1, 44)
   master_spectra$date <- as.IDate(paste0(substr(master_spectra$scene, 18, 21), "-",
                                          substr(master_spectra$scene, 22, 23), "-",
                                          substr(master_spectra$scene, 24, 25)))
-  spectra_sw$scene <- substr(spectra_sw$scene, 1, 44)
-  spectra <- merge(master_spectra[, c("scene", "PLT_CN", "date")], spectra_sw, 
-                   by = c("scene", "PLT_CN"),
-                   all.x = TRUE, all.y = FALSE)
-  spectra$sample <- 1:nrow(spectra)
-  
-  # Error of SW
-  remove <- spectra$`678.205584716796`
-  spectra <- spectra[is.na(remove) == FALSE, ]
-  spectra$sample <- 1:nrow(spectra)
+  master_spectra$sample <- 1:nrow(master_spectra)
   
   #------------------------------------
   # Master file for merge
-  unique_plots <- stand[, .N, by = c("Domain", "PLT_CN", "date")]
+  # Master community file to merge
+  master_comm <- data.table(PLT_CN = as.integer64(rownames(master_comm)))
+  
+  fia <- fia[MEASYEAR >= 2018]
+  fia$date <- as.IDate(paste0(fia$MEASYEAR, "-",
+                              fia$MEASMON, "-",
+                              fia$MEASDAY))
+  fia <- fia[, .N, by = c("PLT_CN", "date", "LAT", "LON")]
+  fia <- fia[, 1:4]
+  
+  unique_plots <- merge(master_comm, fia, 
+                        by = "PLT_CN", 
+                        all.x = TRUE, 
+                        all.y = FALSE)
+  
+  #------------------------------------
+  #Create unique plots to fill
   unique_plots$sample <- 0
   unique_plots$plot <- 0
   unique_plots$dtime <- 0
   unique_plots$nobservations <- 0
-  
+  unique_plots$observation_date <- as.IDate("2000-01-01")
+
   # Progress bar
   pb <- txtProgressBar(min = 1, max = nrow(unique_plots), style = 3)
   
@@ -79,7 +88,7 @@ match_datasets_EMIT <- function(fia,
     setTxtProgressBar(pb, i)
     
     # Subset plot
-    sub_spectra <- subset(spectra, PLT_CN == unique_plots$PLT_CN[i])
+    sub_spectra <- subset(master_spectra, PLT_CN == unique_plots$PLT_CN[i])
     
     # If no observations
     if(nrow(sub_spectra) == 0) {
@@ -87,7 +96,8 @@ match_datasets_EMIT <- function(fia,
       unique_plots$sample[i] <- NA
       unique_plots$plot[i] <- NA
       unique_plots$dtime[i] <- NA
-      
+      unique_plots$observation_date[i] <- NA
+
       # If there is one or mode observation
     } else {
       
@@ -98,7 +108,8 @@ match_datasets_EMIT <- function(fia,
         unique_plots$plot[i] <- i
         unique_plots$dtime[i] <- sub_spectra$date[1] - unique_plots$date[i]
         unique_plots$nobservations[i] <- 1
-        
+        unique_plots$observation_date[i] <- sub_spectra$date[1]
+
         # If there is two or more observation
       } else {
         
@@ -115,40 +126,41 @@ match_datasets_EMIT <- function(fia,
         unique_plots$sample[i] <- sub_spectra$sample[which.min(abs(delta_time))]
         unique_plots$plot[i] <- i
         unique_plots$dtime[i] <- delta_time[which.min(delta_time)]
-        
+        unique_plots$observation_date[i] <- sub_spectra$date[which.min(abs(delta_time))]
+
       }
     }
   }
   
+  # Export match spectra
+  fwrite(unique_plots, paste0(out_path, "/EMIT_plot_match.csv"))
+  
   #Plots with useful spectra
   unique_plots <- na.exclude(unique_plots)
+  master_spectra <- master_spectra[unique_plots$sample, ]
+  master_spectra <- master_spectra[, c(1, 3:5)]
+  unique_plots <- cbind(unique_plots, master_spectra)
   
   #------------------------------------
   # Matching files
+
+  # Remove labels
+  spectra_sg$scene <- substr(spectra_sg$scene, 1, 44)
+  spectra_vn$scene <- substr(spectra_vn$scene, 1, 44)
+  spectra_sw$scene <- substr(spectra_sw$scene, 1, 44)
   
-  #Stands
-  sub_stands <- stand[unique_plots$plot, ]
-  
-  nspecies <- apply(sub_stands[, .SD, .SDcols=c(4:ncol(sub_stands)),], 1, function(value) {
-    return(length(value[value > 0]))
-  })
-  
-  biomass <- apply(sub_stands[, .SD, .SDcols=c(4:ncol(sub_stands)),], 1, sum)
-  
-  sub_stands <- sub_stands[, .SD, .SDcols=c(2, 1, 3)]
-  sub_stands$nspecies <- nspecies
-  sub_stands$biomass <- biomass
-  sub_stands$dtime <- unique_plots$dtime
-  sub_stands$nobservations <- unique_plots$nobservations
-  
-  #Spectra
-  sub_spectra <- spectra[unique_plots$sample, ]
-  sub_spectra <- sub_spectra[, .SD, .SDcols=c(c(2, 16:(ncol(sub_spectra)-1)))]
-  
-  all.equal(sub_spectra$PLT_CN, sub_stands$PLT_CN)
+  # Merge
+  spectra_sg <- merge(unique_plots, spectra_sg, by = c("scene", "PLT_CN"),
+                      all.x = TRUE, all.y = FALSE)
+  spectra_vn <- merge(unique_plots, spectra_vn, by = c("scene", "PLT_CN"),
+                      all.x = TRUE, all.y = FALSE)
+  spectra_sw <- merge(unique_plots, spectra_sw, by = c("scene", "PLT_CN"),
+                      all.x = TRUE, all.y = FALSE)
   
   #Export
-  fwrite(sub_stands, paste0(out_path, "/EMIT_stands_SW.csv"))
-  fwrite(sub_spectra, paste0(out_path, "/EMIT_spectra_SW.csv"))
+  fwrite(unique_plots, paste0(out_path, "/EMIT_match_usefull.csv"))
+  fwrite(spectra_sg, paste0(out_path, "/EMIT_spectra_SG.csv"))
+  fwrite(spectra_vn, paste0(out_path, "/EMIT_spectra_VN.csv"))
+  fwrite(spectra_sw, paste0(out_path, "/EMIT_spectra_SW.csv"))
   
 }

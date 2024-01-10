@@ -73,9 +73,12 @@ phylogenetic_diversity <- function(fia,
   fia$BA <- pi*(fia$DIA/2)^2
   fia$BA_TPA <- fia$BA*fia$TPA_UNADJ
   fia$DRYBIO_AG_TPA <- fia$DRYBIO_AG*fia$TPA_UNADJ
+  fia$VOL <- pi*(round(((fia$DIA*0.0833333333)/2), 6)^2)*fia$HT
+  fia[VOL >= 600, VOL := NA,] #Potential errors
+  fia$VOL_TPA <- fia$VOL*fia$TPA_UNADJ
   
   # Get plots with complete
-  complete_plots <- fia[, sum(is.na(DRYBIO_AG_TPA)), by = "PLT_CN"]
+  complete_plots <- fia[, sum(is.na(VOL_TPA)), by = "PLT_CN"]
   complete_plots <- complete_plots[V1 == 0]
   
   fia <- merge(complete_plots[, 1], 
@@ -99,7 +102,8 @@ phylogenetic_diversity <- function(fia,
   # Summarize
   fia_summary <- fia[, .(ntrees = .N,
                          BA_TPA = sum(BA, na.rm = TRUE), 
-                         DRYBIO_AG_TPA = sum(DRYBIO_AG_TPA, na.rm = TRUE)),
+                         DRYBIO_AG_TPA = sum(DRYBIO_AG_TPA, na.rm = TRUE),
+                         VOL_TPA = sum(VOL_TPA, na.rm = TRUE)),
                      by = c("PLT_CN", "PLANTS-Code-new", 
                             "Taxon2", "Genus", "Family",
                             "Gymnosperm", "mycorrhizal_association")]
@@ -142,14 +146,15 @@ phylogenetic_diversity <- function(fia,
   ### Community matrix ---------------------------------------------------------
   
   # dcast
-  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "BA_TPA", "Taxon2")])
+  master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "VOL_TPA", "Taxon2")])
   
   # Remove plots without species
   nsp <- apply(master_matrix, 1, function(x) sum(x > 0))
   master_matrix <- master_matrix[nsp != 0, ]
   
   # Standardization of comunities
-  master_matrix <- decostand(master_matrix, method = "hellinger") 
+  master_matrix <- decostand(master_matrix, method = "total")
+  master_matrix <- round(master_matrix, 4)
   
   ### Get phylogenetic beta diversity ------------------------------------------
   
@@ -160,24 +165,24 @@ phylogenetic_diversity <- function(fia,
   
   # Export
   if(is.null(domains_of_interest)) {
-    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-BA.rds"))
+    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-VOL.rds"))
     saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
     
   } else {
-    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-BA_",domains_of_interest,".rds"))
+    saveRDS(matched$comm, paste0(out_path, "/master_matched_comm-VOL_",domains_of_interest,".rds"))
     saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree_",domains_of_interest,".rds"))
   }
   
-  beta <- beta_rcpp(comm = as.matrix(matched$comm), 
+  beta <- beta_rcpp(comm = as.matrix(matched$comm)[1:20,], 
                     tree = matched$phy, 
                     threads = threads,
                     progress = progress)
   
   if(is.null(domains_of_interest)) {
-    saveRDS(beta, paste0(out_path, "/beta_BA.rds"))
+    saveRDS(beta, paste0(out_path, "/beta_VOL.rds"))
     
   } else {
-    saveRDS(beta, paste0(out_path, "/beta_BA_",domains_of_interest,".rds"))
+    saveRDS(beta, paste0(out_path, "/beta_VOL_",domains_of_interest,".rds"))
   }
   
 }

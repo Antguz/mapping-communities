@@ -49,7 +49,7 @@ hist(NIR)
 # Filter by CCI
 CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 hist(CCI)
-spectra <- spectra[CCI >= 0.05 & CCI <= 1.0]
+spectra <- spectra[CCI >= 0.05 & CCI <= 0.6]
 CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 hist(CCI)
 

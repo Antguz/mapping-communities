@@ -113,7 +113,7 @@ for(i in 1:length(files)) {
   
   apply_model(predicted_scene = scene, 
               wascores = wascores, 
-              output_raster = paste0(output_pathm, "/", species_name, "_species.tif"),
+              output_raster = paste0(output_path, "/", species_name, "_species.tif"),
               threads = 28)
   
 }

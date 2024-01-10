@@ -12,7 +12,7 @@
 
 library(data.table)
 library(bit64)
-options(scipen = 100)
+options(scipen = 100000000000)
 
 #'------------------------------------------------------------------------------
 #' Arguments

@@ -43,6 +43,13 @@ spectra <- spectra[NIR >= 0.15 & NIR <= 0.8,]
 NIR <- spectra$`797.9`
 hist(NIR)
 
+# Filter by CCI
+CCI <- (spectra$`529.53` - spectra$`626.37`) / (spectra$`529.53` + spectra$`626.37`)
+hist(CCI)
+spectra <- spectra[CCI >= 0.05 & CCI <= 0.6]
+CCI <- (spectra$`529.53` - spectra$`626.37`) / (spectra$`529.53` + spectra$`626.37`)
+hist(CCI)
+
 # Filter by AOT_550
 AOD550 <- spectra$AOD550
 hist(AOD550)
