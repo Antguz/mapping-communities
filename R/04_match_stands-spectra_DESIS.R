@@ -28,7 +28,8 @@ library(bit64)
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
-master_comm <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm-VOL.rds"))
+master_comm <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
 master_spectra <- fread(paste0(root_path, "/02_compile-files/DESIS_master_spectra.csv"), header = TRUE)
 spectra_sg <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-SG.txt"), header = TRUE)
 spectra_vn <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-VN.txt"), header = TRUE)
@@ -57,7 +58,8 @@ match_datasets_DESIS <- function(fia,
 
   #------------------------------------
   # Master community file to merge
-  master_comm <- data.table(PLT_CN = as.integer64(rownames(master_comm)))
+  master_comm <- master_comm[, .(n_sp = length(unique(SPCD))),
+                             by = "PLT_CN"]
   
   fia <- fia[MEASYEAR >= 2018]
   fia$date <- as.IDate(paste0(fia$MEASYEAR, "-",
