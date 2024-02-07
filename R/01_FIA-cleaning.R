@@ -35,13 +35,6 @@ fia_reshaping <- function(fia,
   # Inventories from 2018 until now
   fia <- fia[MEASYEAR >= 2018]
   
-  # Merge species code
-  fia <- merge(fia, 
-               SPCD[, c("SPCD", "Remove")], 
-               by = "SPCD", 
-               all.x = TRUE, 
-               all.y = TRUE)
-  
   # Remove dead trees
   fia <- fia[STATUSCD == 1]
   
@@ -53,7 +46,7 @@ fia_reshaping <- function(fia,
   fia[VOL >= 600, VOL := NA,] #Potential errors
   fia$VOL_TPA <- fia$VOL*fia$TPA_UNADJ
   
-  # Get plots with complete data
+  # Select plots with complete volume information
   complete_plots <- fia[, sum(is.na(VOL_TPA)), by = "PLT_CN"]
   complete_plots <- complete_plots[V1 == 0]
   
@@ -63,7 +56,13 @@ fia_reshaping <- function(fia,
                all.x = TRUE, 
                all.y = FALSE)
   
-  # Select plots with complete information
+  # Select plots with complete tree identification
+  fia <- merge(fia, 
+               SPCD[, c("SPCD", "Remove")], 
+               by = "SPCD", 
+               all.x = TRUE, 
+               all.y = TRUE)
+  
   fia[is.na(Remove), Remove := 1]
   
   complete_plots <- fia[, sum(Remove), by = "PLT_CN"]
