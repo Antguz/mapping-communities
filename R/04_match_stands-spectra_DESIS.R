@@ -27,9 +27,9 @@ library(bit64)
 #' @example 
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 master_comm <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
 master_spectra <- fread(paste0(root_path, "/02_compile-files/DESIS_master_spectra.csv"), header = TRUE)
 spectra_sg <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-SG.txt"), header = TRUE)
 spectra_vn <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-VN.txt"), header = TRUE)
@@ -55,18 +55,20 @@ match_datasets_DESIS <- function(fia,
                                          substr(master_spectra$scene, 36, 37), "-",
                                          substr(master_spectra$scene, 38, 39)))
   master_spectra$sample <- 1:nrow(master_spectra)
-
+  
   #------------------------------------
   # Master community file to merge
-  n_sp <- master_comm[, .(n_sp = length(SPCD)), by = "PLT_CN"]
+  master_comm <- master_comm[, .(n_sp = length(unique(SPCD))),
+                             by = "PLT_CN"]
   
+  fia <- fia[MEASYEAR >= 2018]
   fia$date <- as.IDate(paste0(fia$MEASYEAR, "-",
-                             fia$MEASMON, "-",
-                             fia$MEASDAY))
+                              fia$MEASMON, "-",
+                              fia$MEASDAY))
   fia <- fia[, .N, by = c("PLT_CN", "date", "LAT", "LON")]
   fia <- fia[, 1:4]
   
-  unique_plots <- merge(n_sp, fia, 
+  unique_plots <- merge(master_comm, fia, 
                         by = "PLT_CN", 
                         all.x = TRUE, 
                         all.y = FALSE)
@@ -158,7 +160,7 @@ match_datasets_DESIS <- function(fia,
   spectra_sg$scene <- substr(spectra_sg$scene, 1, 46)
   spectra_vn$scene <- substr(spectra_vn$scene, 1, 46)
   spectra_sw$scene <- substr(spectra_sw$scene, 1, 46)
-
+  
   # Merge
   spectra_sg <- merge(unique_plots, spectra_sg, by = c("folder", "scene", "PLT_CN"),
                       all.x = TRUE, all.y = FALSE)

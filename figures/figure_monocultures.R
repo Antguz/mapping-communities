@@ -23,45 +23,74 @@ sensor <- "EMIT"
 spectra_SG <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "_spectra_SG.csv"))
 spectra_VN <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "_spectra_VN.csv"))
 spectra_SW <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "_spectra_SW.csv"))
-communities <- fread(paste0(root_path, "/03_diversity/", "proportions.csv"))
+master_comm <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
+SPCD <- fread(paste0(root_path, "/00_FIA/", "SPCD.csv"))
 
 #'------------------------------------------------------------------------------
 #' Data reshaping
 
-# Select communities with a species
-communities <- communities[SR == 1, ]
+# Limit dtime (2 years)
+spectra_SG <- spectra_SG[abs(dtime) <= (365*2),]
+spectra_VN <- spectra_VN[abs(dtime) <= (365*2),]
+spectra_SW <- spectra_SW[abs(dtime) <= (365*2),]
 
-spectra_SG <- merge(communities, spectra_SG, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
-spectra_SW <- merge(communities, spectra_SW, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+# Select communities with a species
+spectra_SG <- spectra_SG[n_sp == 1]
+spectra_VN <- spectra_VN[n_sp == 1]
+spectra_SW <- spectra_SW[n_sp == 1]
+
+# Select plot and species
+species <- spectra_SG[, "PLT_CN"]
+species <- merge(species, master_comm, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+species <- species[order(SPCD)]
+species <- merge(species, SPCD[, c("SPCD", "Family", "Genus", "Taxon2")])
+
+spectra_SG <- merge(species, spectra_SG, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+spectra_VN <- merge(species, spectra_VN, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+spectra_SW <- merge(species, spectra_SW, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
 
 # Collector
 results_SG <- data.table()
+results_VN <- data.table()
 results_SW <- data.table()
 
 # Unique species
-unique_species <- unique(spectra_SG$species)
+unique_species <- unique(spectra_SG$SPCD)
 
 for(i in 1:length(unique_species)) {
   
   species_selection <- unique_species[i]
-  species_SG <- subset(spectra_SG, species == species_selection)
-  species_SW <- subset(spectra_SW, species == species_selection)
+  species_SG <- subset(spectra_SG, SPCD == species_selection)
+  species_VN <- subset(spectra_VN, SPCD == species_selection)
+  species_SW <- subset(spectra_SW, SPCD == species_selection)
+  
+  Family <- unique(species_SG$Family)
+  Genus <- unique(species_SG$Genus)
+  Taxon2 <- unique(species_SG$Taxon2)
+  
+  info <- c(species_selection, Taxon2, Genus, Family)
   
   if(sensor == "DESIS") {
     
-    species_SG <- species_SG[, .SD, .SDcols = c(47:254)] #
-    species_SW <- species_SW[, .SD, .SDcols = c(45:222)] #440 - 971
+    species_SG <- species_SG[, .SD, .SDcols = c(44:238)] #429.86 - 927.07
+    species_VN <- species_VN[, .SD, .SDcols = c(33:227)] #429.86 - 927.07
+    species_SW <- species_SW[, .SD, .SDcols = c(46:223)] #440.53 - 971.53
     
     species_SG <- colMeans(species_SG)
+    species_VN <- colMeans(species_VN)
     species_SW <- colMeans(species_SW)
     
-    sub_results_SG <- as.data.table(matrix(c(species_selection, species_SG), nrow = 1))
-    colnames(sub_results_SG) <- c("species", names(species_SG))
+    sub_results_SG <- as.data.table(matrix(c(info, species_SG), nrow = 1))
+    colnames(sub_results_SG) <- c("SPCD", "species", "genus", "family", names(species_SG))
     
-    sub_results_SW <- as.data.table(matrix(c(species_selection, species_SW), nrow = 1))
-    colnames(sub_results_SW) <- c("species", names(species_SW))
+    sub_results_VN <- as.data.table(matrix(c(info, species_VN), nrow = 1))
+    colnames(sub_results_VN) <- c("SPCD", "species", "genus", "family", names(species_VN))
+    
+    sub_results_SW <- as.data.table(matrix(c(info, species_SW), nrow = 1))
+    colnames(sub_results_SW) <- c("SPCD", "species", "genus", "family", names(species_SW))
     
     results_SG <- rbind(results_SG, sub_results_SG)
+    results_VN <- rbind(results_VN, sub_results_VN)
     results_SW <- rbind(results_SW, sub_results_SW)
     
   } else if(sensor == "EMIT") {
@@ -75,21 +104,27 @@ for(i in 1:length(unique_species)) {
                                                 249:304)] #440 - 971
     
     species_SG <- colMeans(species_SG)
+    species_VN <- colMeans(species_VN)
     species_SW <- colMeans(species_SW)
     
     sub_results_SG <- as.data.table(matrix(c(species_selection, species_SG), nrow = 1))
-    colnames(sub_results_SG) <- c("species", names(species_SG))
+    colnames(sub_results_SG) <- c("SPCD", "species", "genus", "family", names(species_SG))
+    
+    sub_results_VN <- as.data.table(matrix(c(species_selection, species_VN), nrow = 1))
+    colnames(sub_results_VN) <- c("SPCD", "species", "genus", "family", names(species_VN))
     
     sub_results_SW <- as.data.table(matrix(c(species_selection, species_SW), nrow = 1))
-    colnames(sub_results_SW) <- c("species", names(species_SW))
+    colnames(sub_results_SW) <- c("SPCD", "species", "genus", "family", names(species_SW))
     
     results_SG <- rbind(results_SG, sub_results_SG)
+    results_VN <- rbind(results_VN, sub_results_VN)
     results_SW <- rbind(results_SW, sub_results_SW)
     
   }
 }
 
 fwrite(results_SG, paste0(root_path, "/03_reshape/", sensor, "_species_SG.csv"))
+fwrite(results_VN, paste0(root_path, "/03_reshape/", sensor, "_species_VN.csv"))
 fwrite(results_SW, paste0(root_path, "/03_reshape/", sensor, "_species_SW.csv"))
 
 # Melt for plot
@@ -122,9 +157,9 @@ if(sensor == "EMIT") {
   band <- 805.36
   
 } else {
-
+  
   band <- 801.16
-
+  
 }
 
 order_sp <- subset(SG_frame, wavelength == band) 
