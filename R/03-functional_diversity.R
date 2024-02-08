@@ -16,15 +16,12 @@ library(data.table)
 library(phytools)
 library(V.PhyloMaker2)
 library(picante)
-library(geiger)
 library(bit64)
-
-#Set working directory
 
 #'------------------------------------------------------------------------------
 #' Source code
 setwd("/panfs/jay/groups/17/cavender/guzman/DESIS_mapping/mapping-species")
-source("R/beta_rcpp.R")
+source("R/MPDaw_rcpp.R")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -39,10 +36,7 @@ source("R/beta_rcpp.R")
 functional_diversity <- function(fia, 
                                  SPCD, 
                                  outpath, 
-                                 threads, 
-                                 progress = TRUE) {
-  
-  
+                                 threads) {
   
   ###---------------------------------------------------------------------------
   # Merge inventory with taxonomic information
@@ -74,7 +68,7 @@ functional_diversity <- function(fia,
   func <- ape::as.phylo(func)
   func$tip.label <- species$Taxon2
 
-  # Transform phylo
+  # Transform funct
   tol = 1e-9
   func$edge.length[func$edge.length <= 0] <- tol
   is.ultrametric(func)
@@ -88,8 +82,8 @@ functional_diversity <- function(fia,
   master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "VOL_TPA", "Taxon2")])
   
   # Standardization of communities
-  master_matrix <- decostand(master_matrix, method = "total")
-  master_matrix <- round(master_matrix, 4)
+  #master_matrix <- decostand(master_matrix, method = "total")
+  #master_matrix <- round(master_matrix, 4)
   
   ### Get functional beta diversity ------------------------------------------
   
@@ -103,29 +97,26 @@ functional_diversity <- function(fia,
   saveRDS(matched$phy, paste0(out_path, "/master_matched_func-tree.rds"))
   
   # Compute functional beta diversity
-  beta <- beta_rcpp(comm = as.matrix(matched$comm)[1:20,], 
-                    tree = matched$phy, 
-                    threads = threads,
-                    progress = progress)
+  PDpw <- comdist(comm = matched$comm, 
+                  tree = matched$phy, 
+                  threads = threads)
   
-  saveRDS(beta, paste0(out_path, "/beta_functional_VOL.rds"))
+  saveRDS(PDpw, paste0(out_path, "/beta_functional_VOL.rds"))
   
 }
 
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 fia <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCP_meta.csv"), na.strings="NA")
 out_path <- paste0(root_path, "/03_diversity")
 threads <- 120
-progress = FALSE
 
 functional_diversity(fia, 
                      SPCD, 
                      outpath, 
-                     threads, 
-                     progress)
+                     threads)

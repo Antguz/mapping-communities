@@ -37,7 +37,7 @@ arma::mat distmat_rcpp(arma::mat comm, arma::mat dis, int threads = 1) {
       arma::mat outer = com_one * com_two.t();
       
       //Multiply and sum accu(1 + 1)
-      mdistance(i, j) = accu(outer % dis);
+      mdistance(i, j) = round(accu(outer % dis)*10000);
       
     }
   }
