@@ -15,11 +15,14 @@ library(V.PhyloMaker2)
 library(PVR)
 library(missForest)
 library(bit64)
+library(BIEN)
 
 #'------------------------------------------------------------------------------
 #' Paths and files
 
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 FIA_SPCD <- fread(paste0(root_path, "/00_FIA/FIA_SPCD.csv"), na.strings="NA")
@@ -147,14 +150,48 @@ traits <- merge(traits, NV, by.x = "Taxon", by.y = "Species", all.x = TRUE, all.
 fwrite(traits, paste0(root_path, "/00_FIA/traits/fia_traits_res_nv.csv")) 
 
 #'------------------------------------------------------------------------------
+# Get traits from BIEN (Botanical Information and Ecology Network)
+
+traits <- fread(paste0(root_path, "/00_FIA/traits/fia_traits_res_nv.csv"))
+
+# Download BIEN (date: 2024-02-07)
+leaf_area <- BIEN_trait_mean(trait = "leaf area", species = traits$Taxon)
+LMA <- BIEN_trait_mean(trait = "leaf area per leaf dry mass", species = traits$Taxon)
+N <- BIEN_trait_mean(trait = "leaf nitrogen content per leaf dry mass", species = traits$Taxon)
+
+# Export BIEN records
+bien <- rbind(leaf_area, LMA, N)
+fwrite(bien, paste0(root_path, "/00_FIA/traits/FIA_BIEN.csv")) 
+
+# Merge BIEN traits with existing traits
+leaf_area <- leaf_area[, 1:2]
+colnames(leaf_area) <- c("Taxon", "leaf_area")
+traits <- merge(traits, leaf_area, by = "Taxon", all.x = TRUE, all.y = FALSE)
+
+LMA <- LMA[, 1:2]
+colnames(LMA) <- c("Taxon", "LMA")
+traits <- merge(traits, LMA, by = "Taxon", all.x = TRUE, all.y = FALSE)
+
+N <- N[, 1:2]
+colnames(N) <- c("Taxon", "N")
+traits <- merge(traits, N, by = "Taxon", all.x = TRUE, all.y = FALSE)
+
+### Manual cleaning of observations
+fwrite(traits, paste0(root_path, "/00_FIA/traits/fia_traits_res_nv_bien.csv")) 
+
+#'------------------------------------------------------------------------------
 # Create the phylogenetic tree
 
 # Read species
-traits <- fread(paste0(root_path, "/00_FIA/traits/fia_traits_res_nv.csv"))
+traits <- fread(paste0(root_path, "/00_FIA/traits/fia_traits_res_nv_bien.csv"))
 hypotheses <- phylo.maker(traits[, c("Taxon2", "Genus", "Family")], scenarios = "S3")
 phylo <- multi2di(hypotheses$scenario.3)
 is.binary.phylo(phylo)
 is.ultrametric(phylo)
+
+# Categorical
+traits[leaf_habit == "evergreen", lh := 0]
+traits[leaf_habit != "evergreen", lh := 1]
 
 # Decompose the phylogenetic tree
 decompose <- PVRdecomp(phylo)
@@ -166,7 +203,7 @@ traits_and_phylo <- merge(traits, pc, by = "Taxon2", all.x = TRUE, all.y = TRUE)
 fwrite(traits_and_phylo, paste0(root_path, "/00_FIA/traits/traits_and_phylogeny.csv")) 
 
 # Imputation of traits
-imputation_traits <- missForest(traits_and_phylo[, .SD, .SDcols = c(13:31)], 
+imputation_traits <- missForest(traits_and_phylo[, .SD, .SDcols = c(13:35)], 
                             maxiter = 500, ntree = 100, verbose = TRUE)
 imputation_traits_and_phylo <- cbind(traits_and_phylo[, 1:12], imputation_traits$ximp)
 fwrite(imputation_traits_and_phylo, paste0(root_path, "/00_FIA/traits/imputation_traits_and_phylo.csv")) 

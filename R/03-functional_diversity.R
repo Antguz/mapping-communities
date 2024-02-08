@@ -2,8 +2,8 @@
 #' @title Beta functional diversity between communities 
 #'------------------------------------------------------------------------------
 
-#' @description It estimates beta functional diversity between communities.
-#' @return Return a distance matrices as .rds files.
+#' @description It estimates beta functional diversity between communities
+#' @return Return a distance matrices as .rds files
 
 ################################################################################
 #' @warming If you have to many communities this need to be run using HPC
@@ -54,17 +54,15 @@ functional_diversity <- function(fia,
   species <- fia[, .N, by = "SPCD"]
   species <- species[, 1]
   species <- merge(species, 
-                   SPCD[, c("SPCD", "Taxon2", "leaf_habit", "HTq", "SLq", 
+                   SPCD[, c("SPCD", "Taxon2", "lh", "HTq", "SLq", 
                             "CCLCD_mode", "WOOD_SPGR_GREENVOL_DRYWT", 
                             "MC_PCT_GREEN_WOOD", "CARBON_RATIO_LIVE", "shade", 
-                            "drought", "waterlogging")],
+                            "drought", "waterlogging", "leaf_area", "LMA", "N")],
                    by = "SPCD",
                    all.x = TRUE,
                    all.y = FALSE)
-  species[leaf_habit == "evergreen", lh := 0]
-  species[leaf_habit != "evergreen", lh := 1]
   
-  trait_distance <- dist(species[, c(4:13)], method="euclidean", 
+  trait_distance <- dist(species[, c(3:15)], method="euclidean", 
                          diag = TRUE, upper = TRUE)
   
   # Rescale
