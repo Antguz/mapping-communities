@@ -21,7 +21,7 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' Source code
 setwd("/panfs/jay/groups/17/cavender/guzman/DESIS_mapping/mapping-species")
-source("R/MPDaw_rcpp.R")
+source("R/beta_rcpp.R")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -36,6 +36,7 @@ source("R/MPDaw_rcpp.R")
 phylogenetic_diversity <- function(fia, 
                                    SPCD, 
                                    outpath, 
+                                   progress,
                                    threads) {
   
   ###---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ phylogenetic_diversity <- function(fia,
   tol = 1e-9
   phylo$edge.length[phylo$edge.length <= 0] <- tol
   is.ultrametric(phylo)
-  phylo$edge.length <- (log10(phylo$edge.length)+(min(log10(phylo$edge.length))*-1))
+  #phylo$edge.length <- (log10(phylo$edge.length)+(min(log10(phylo$edge.length))*-1))
   
   #plot(phylo, type = "fan")
 
@@ -69,8 +70,8 @@ phylogenetic_diversity <- function(fia,
   master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "VOL_TPA", "Taxon2")])
   
   # Standardization of communities
-  #master_matrix <- decostand(master_matrix, method = "total")
-  #master_matrix <- round(master_matrix, 4)
+  master_matrix <- decostand(master_matrix, method = "total")
+  master_matrix <- round(master_matrix, 4)
   
   ### Get phylogenetic beta diversity ------------------------------------------
   
@@ -81,14 +82,15 @@ phylogenetic_diversity <- function(fia,
   
   # Export
   saveRDS(matched$comm, paste0(out_path, "/master_matched_comm_phylo-VOL.rds"))
-  saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-tree.rds"))
+  saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo.rds"))
   
-  # Compute phylogenetic beta diversity
-  PDpw <- comdist(comm = matched$comm, 
-                  tree = matched$phy, 
-                  threads = threads)
+  # Compute functional beta diversity
+  beta <- beta_rcpp(comm = as.matrix(matched$comm), 
+                    tree = matched$phy, 
+                    threads = threads,
+                    progress = progress)
   
-  saveRDS(PDpw, paste0(out_path, "/beta_phylogenetic_VOL.rds"))
+  saveRDS(beta, paste0(out_path, "/beta_phylo_VOL.rds"))
   
 }
 
@@ -97,13 +99,16 @@ phylogenetic_diversity <- function(fia,
 
 #root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 fia <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCP_meta.csv"), na.strings="NA")
 out_path <- paste0(root_path, "/03_diversity")
+progress <- TRUE
 threads <- 120
 
 phylogenetic_diversity(fia, 
                        SPCD, 
                        outpath, 
+                       progress,
                        threads)

@@ -189,10 +189,6 @@ phylo <- multi2di(hypotheses$scenario.3)
 is.binary.phylo(phylo)
 is.ultrametric(phylo)
 
-# Categorical
-traits[leaf_habit == "evergreen", lh := 0]
-traits[leaf_habit != "evergreen", lh := 1]
-
 # Decompose the phylogenetic tree
 decompose <- PVRdecomp(phylo)
 pc <- decompose@Eigen$vectors[,1:10]
@@ -203,7 +199,7 @@ traits_and_phylo <- merge(traits, pc, by = "Taxon2", all.x = TRUE, all.y = TRUE)
 fwrite(traits_and_phylo, paste0(root_path, "/00_FIA/traits/traits_and_phylogeny.csv")) 
 
 # Imputation of traits
-imputation_traits <- missForest(traits_and_phylo[, .SD, .SDcols = c(13:35)], 
+imputation_traits <- missForest(traits_and_phylo[, .SD, .SDcols = c(15:39)], 
                             maxiter = 500, ntree = 100, verbose = TRUE)
-imputation_traits_and_phylo <- cbind(traits_and_phylo[, 1:12], imputation_traits$ximp)
+imputation_traits_and_phylo <- cbind(traits_and_phylo[, 1:14], imputation_traits$ximp)
 fwrite(imputation_traits_and_phylo, paste0(root_path, "/00_FIA/traits/imputation_traits_and_phylo.csv")) 

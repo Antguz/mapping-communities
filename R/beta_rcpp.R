@@ -18,28 +18,38 @@ sourceCpp("src/beta_rcpp.cpp")
 #'------------------------------------------------------------------------------
 #' Source code
 
-beta_rcpp <- function(comm, tree, threads = 1L, progress = TRUE) {
+beta_rcpp <- function(comm, tree = NULL, taxonomic = TRUE, threads = 1L, progress = TRUE) {
   
-  # Organize data
-  if(!missing(tree)){
+  # Phylogenetic or Functional
+  if(!taxonomic) {
+    
     cleanData = clean(comm, tree)
     comm = cleanData[[1]]
     treea = cleanData[[2]]
+    
+    xtree_1 <- treea[[1]]
+    xtree_2 <- treea[[2]]
+  
+  # Taxonomic
+  } else {
+    
+    comm <- as.matrix(comm)
+    xtree_1 <- 1
+    xtree_2 <- as.matrix(2)
+    
   }
   
-  xtree_1 <- treea[[1]]
-  xtree_2 <- treea[[2]]
-    
   results <- beta_arma(comm = comm, 
                        xtree1 = xtree_1,
                        xtree2 = xtree_2,
+                       taxonomic = taxonomic,
                        threads = threads,
                        progress = progress)
     
   colnames(results) <- rownames(comm)
   rownames(results) <- rownames(comm)
   
-  #as.dist(
+  # as.dist
   results <- list(Btotal = as.dist(results[,,1]),
                   Brepl = as.dist(results[,,2]),
                   Brich = as.dist(results[,,3]))
@@ -48,7 +58,7 @@ beta_rcpp <- function(comm, tree, threads = 1L, progress = TRUE) {
   
 }
 
-reorderComm <- function(comm, tree = NULL){
+reorderComm <- function(comm, tree = NULL) {
   
   if(is.vector(comm))
     comm = as.matrix(comm, nrow = 1)
@@ -82,7 +92,7 @@ reorderComm <- function(comm, tree = NULL){
   return(comm)
 }
 
-clean <- function(comm, tree = NA){
+clean <- function(comm, tree = NA) {
   if(is.vector(comm))
     comm <- matrix(comm, nrow = 1)
   comm <- as.matrix(comm)
