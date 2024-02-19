@@ -68,7 +68,7 @@ EMIT_transform <- function(spectra,
       
       summed_wavelet <- c(cell[i], rowSums(as.matrix(cwt)[, scales]))
       
-    } else if(max(sample) == 0) {
+    } else {
       
       summed_wavelet <- c(cell[i], rep(NA, 285))
       
@@ -88,15 +88,7 @@ EMIT_transform <- function(spectra,
                           mc.cores = threads,
                           mc.preschedule = TRUE,
                           mc.cleanup = TRUE)
-  
-  
-  transformed <- lapply(1:nrow(spectra), 
-                        FUN = application,
-                        spectra = spectra,
-                        bands = EMIT_bands,
-                        cell = cell,
-                        new_bands = new_bands)
-  
+
   transformed <- data.table(do.call(rbind, transformed))  
   colnames(transformed) <- c("cell", as.character(new_bands)) 
   transformed <- transformed[order(cell)]

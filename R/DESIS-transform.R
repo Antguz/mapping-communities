@@ -28,7 +28,7 @@ DESIS_bands <- readRDS("data/DESIS_bands.rds")
 #'------------------------------------------------------------------------------
 #' Function
 
-desis_transform <- function(spectra, 
+DESIS_transform <- function(spectra, 
                             DESIS_bands,
                             cell,
                             new_bands = seq(min(DESIS_bands), max(DESIS_bands), by = 3.0),
@@ -45,30 +45,38 @@ desis_transform <- function(spectra,
     # Sample
     sample <- as.numeric(spectra[i, ]) 
     
-    # Constant values
-    scales <- 5
-    sampling <- 3.0
-    
-    # Cubic resample
-    resample <- prospectr::resample2(X = sample,
-                                     wav = bands,
-                                     new.wav = new_bands,
-                                     fwhm = sampling)
-    
-    resample <- resample[3:(length(resample)-1)]
-    
-    # Create time series
-    ts_resample <- ts(resample, 
-                      start = min(new_bands), 
-                      deltat = sampling)
-    
-    # Transformation
-    cwt <- wavCWT(ts_resample, 
-                  scale.range= c(sampling, sampling*scales), 
-                  variance= 1, 
-                  wavelet= "gaussian2")
-    
-    summed_wavelet <- c(cell[i], rowSums(as.matrix(cwt)[,c(3, 4, 5)]))
+    if(max(sample) != 0) {
+      
+      # Constant values
+      scales <- c(3, 4, 5)
+      sampling <- 3.0
+      
+      # Cubic resample
+      resample <- prospectr::resample2(X = sample,
+                                       wav = bands,
+                                       new.wav = new_bands,
+                                       fwhm = sampling)
+      
+      resample <- resample[3:(length(resample)-1)]
+      
+      # Create time series
+      ts_resample <- ts(resample, 
+                        start = min(new_bands), 
+                        deltat = sampling)
+      
+      # Transformation
+      cwt <- wavCWT(ts_resample, 
+                    scale.range= c(sampling, sampling*max(scales)), 
+                    variance= 1, 
+                    wavelet= "gaussian2")
+      
+      summed_wavelet <- c(cell[i], rowSums(as.matrix(cwt)[, scales]))
+      
+    } else {
+      
+      summed_wavelet <- c(cell[i], rep(NA, 197))
+      
+    }
     
     return(summed_wavelet)
     

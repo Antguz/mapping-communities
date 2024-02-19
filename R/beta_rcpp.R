@@ -50,9 +50,9 @@ beta_rcpp <- function(comm, tree = NULL, taxonomic = TRUE, threads = 1L, progres
   rownames(results) <- rownames(comm)
   
   # as.dist
-  results <- list(Btotal = as.dist(results[,,1]),
-                  Brepl = as.dist(results[,,2]),
-                  Brich = as.dist(results[,,3]))
+  results <- list(Btotal = results[,,1],
+                  Brepl = results[,,2],
+                  Brich = results[,,3])
   
   return(results)
   

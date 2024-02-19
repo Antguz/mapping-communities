@@ -52,14 +52,12 @@ taxonomic_diversity <- function(fia,
 
 #root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-#root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-
-# Fia matched communities from phylo or functional
+#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 fia <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds"))
 out_path <- paste0(root_path, "/03_diversity")
 progress <- TRUE
-threads <- 28
+threads <- 120
 
 taxonomic_diversity(fia, 
                     outpath, 
