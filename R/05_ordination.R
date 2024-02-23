@@ -2,7 +2,9 @@
 #' @title Non-metric Multidimensional Scaling
 #'------------------------------------------------------------------------------
 
-#' @description It creates a NMDS ordination of phylogenetic beta diversity
+#' @description It creates a NMDS ordination for multiple dimensions of beta 
+#' diversity
+
 #' @return .rds file with scores per communities and species
 
 ################################################################################
@@ -15,7 +17,6 @@
 library(data.table)
 library(vegan)
 library(bit64)
-options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -26,22 +27,20 @@ options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Function
-ordination <- function(beta, stand, out_path, threads = 28) {
-  
-  # Read stands
-  comm <- readRDS(stand)
+ordination <- function(beta, stand, type, out_path, threads = 1) {
   
   # Read distances
   distance <- readRDS(beta)
   
   # Select total distances
   distance <- distance$Btotal/10000
+  gc()
   
   # Run NMDS
-  NMDS <- metaMDS(comm = distance,
-                  k = 3,
-                  try = 5, #15
-                  trymax = 10, #30
+  NMDS <- metaMDS(comm = as.dist(distance),
+                  k = 6,
+                  try = 10, #15
+                  trymax = 15, #30
                   maxit = 50, #50
                   engine = "monoMDS",
                   autotransform = FALSE,
@@ -53,35 +52,38 @@ ordination <- function(beta, stand, out_path, threads = 28) {
                   center = FALSE,
                   pc = FALSE,
                   stress = 1,
-                  halfchange = FALSE)
+                  halfchange = FALSE,
+                  maxdist = 1)
   
   # Ordination export
-  saveRDS(NMDS, paste0(out_path, "/NMDS_VOL.rds"))
-  #NMDS <- readRDS(paste0(out_path, "/NMDS_DRYBIO.rds"))
-  
-  # Get weighted averages scores of species
-  species_scores <- wascores(NMDS$points, comm, expand = FALSE)
-  species_names <- rownames(species_scores)
-  species_scores <- cbind(Taxon2 = species_names, as.data.table(species_scores))
-  saveRDS(species_scores, paste0(out_path, "/species_scores_VOL.rds"))
-  
-  # Get dimensions
-  PLT_CN <- as.integer64(rownames(NMDS$points))
-  communities_scores <- as.data.table(NMDS$points)
-  communities_scores$PLT_CN <- PLT_CN
-  communities_scores$goodness <- goodness(NMDS)
-  saveRDS(communities_scores, paste0(out_path, "/communities_scores_VOL.rds"))
+  saveRDS(NMDS, paste0(out_path, "/NMDS_", type, ".rds"))
   
 }
 
 #'------------------------------------------------------------------------------
 #' @example 
 
-#root_path <- "F:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-beta <- paste0(root_path, "/03_diversity/beta_VOL.rds")
-stand <- paste0(root_path, "/03_diversity/master_matched_comm-VOL.rds")
+
+# Taxonomic
+beta <- paste0(root_path, "/03_diversity/beta_taxo_VOL.rds")
 out_path <- paste0(root_path, "/05_ordination")
+type <- "taxo"
+threads <- 1
+ordination(beta, stand, type, out_path, threads)
+
+# Phylogenetic
+beta <- paste0(root_path, "/03_diversity/beta_phylo_VOL.rds")
+out_path <- paste0(root_path, "/05_ordination")
+type <- "phylo"
+threads <- 1
+ordination(beta, stand, type, out_path, threads)
+
+# Functional
+beta <- paste0(root_path, "/03_diversity/beta_func_VOL.rds")
+out_path <- paste0(root_path, "/05_ordination")
+type <- "func"
 threads <- 1
 ordination(beta, stand, out_path, threads)

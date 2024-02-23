@@ -14,10 +14,8 @@
 #' Library
 
 library(data.table)
-library(hrms)
-library(vegan)
+library(stats)
 library(bit64)
-options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -29,13 +27,9 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Function
 ordination <- function(beta, 
-                       stand, 
                        out_path, 
                        type) {
-  
-  # Read stands
-  comm <- readRDS(stand)
-  
+
   # Read distances
   beta <- readRDS(beta)
   
@@ -43,97 +37,18 @@ ordination <- function(beta,
   # Btotal
   
   # Get beta 
-  beta <- as.matrix(beta$Btotal/10000)
+  beta <- as.dist(beta$Btotal/10000)
   gc()
   
   # Run MDS
-  MDS <- hrms::pcoa(beta[1:100, 1:100], k = 50)
-  
-  # Create name to export
-  out_name_ordination <- paste0(paste0(out_path, "/PCoA_Btotal_", type,".rds"))
-  out_name_species <- paste0(paste0(out_path, "/species_Btotal_", type,".rds"))
-  out_name_species_exp <- paste0(paste0(out_path, "/species-exp_Btotal_", type,".rds"))
-  
-  # Ordination export
-  saveRDS(MDS, out_name_ordination)
-  
-  # Get weighted averages scores of species
-  species_scores <- vegan::wascores(x = MDS$pc,
-                                    w = comm[1:100, 1:100],
-                                    expand = FALSE)
-  saveRDS(species_scores, out_name_species)
-  
-  species_scores_expanded <- vegan::wascores(x = MDS$pc,
-                                             w = comm[1:100, 1:100],
-                                             expand = TRUE)
-  saveRDS(species_scores_expanded, out_name_species_exp)
-  
-  rm(list = c("beta", 
-              "MDS", 
-              "out_name_ordination", 
-              "out_name_species",
-              "out_name_species_exp", 
-              "species_scores",
-              "species_scores_expanded"))
-  gc()
-  
-  ### --------------------------------------------------------------------------
-  # Brepl
-  
-  # Get beta 
-  #beta <- as.matrix(distance$Brepl/10000)
-  #gc()
-  
-  # Run MDS
-  #MDS <- cmdscale(beta, 
-  #                k = 3, eig = TRUE, add = TRUE)
-  
-  # Create name to export
-  #out_name_ordination <- paste0(paste0(out_path, "/MDS_Brepl_", type,".rds"))
-  #out_name_species <- paste0(paste0(out_path, "/species_Brepl_", type,".rds"))
+  MDS <- cmdscale(beta, 
+                  k = 10, 
+                  eig = TRUE, 
+                  add = FALSE, 
+                  x.ret = FALSE)
   
   # Ordination export
-  #saveRDS(MDS, out_name_ordination)
-  
-  # Get weighted averages scores of species
-  #species_scores <- wascores(MDS$points, comm, expand = FALSE)
-  #species_names <- rownames(species_scores)
-  #species_scores <- cbind(Taxon2 = species_names, as.data.table(species_scores))
-  #colnames(species_scores) <- c("Taxon2", "pco1", "pco2", "pco3")
-  #saveRDS(species_scores, out_name_species)
-  
-  #rm(list = c("beta", "MDS", "out_name_ordination", "out_name_species",
-  #            "species_scores", "species_names"))
-  #gc()
-  
-  ### --------------------------------------------------------------------------
-  # Brich
-  
-  # Get beta 
-  #beta <- as.matrix(distance$Brich/10000)
-  #gc()
-  
-  # Run MDS
-  #MDS <- cmdscale(beta, 
-  #                k = 3, eig = TRUE, add = TRUE)
-  
-  # Create name to export
-  #out_name_ordination <- paste0(paste0(out_path, "/MDS_Brich_", type,".rds"))
-  #out_name_species <- paste0(paste0(out_path, "/species_Brich_", type,".rds"))
-  
-  # Ordination export
-  #saveRDS(NMDS, out_name_ordination)
-  
-  # Get weighted averages scores of species
-  #species_scores <- wascores(MDS$points, comm, expand = FALSE)
-  #species_names <- rownames(species_scores)
-  #species_scores <- cbind(Taxon2 = species_names, as.data.table(species_scores))
-  #colnames(species_scores) <- c("Taxon2", "pco1", "pco2", "pco3")
-  #saveRDS(species_scores, out_name_species)
-  
-  #rm(list = c("beta", "MDS", "out_name_ordination", "out_name_species",
-  #            "species_scores", "species_names"))
-  #gc()
+  saveRDS(MDS, paste0(paste0(out_path, "/PCoA_Btotal_", type,".rds")))
   
 }
 
@@ -147,21 +62,18 @@ root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 
 # Taxonomic
 beta <- paste0(root_path, "/03_diversity/beta_taxo_VOL.rds")
-stand <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
 out_path <- paste0(root_path, "/05_MDS")
-type <- "taxonomic"
-ordination(beta, stand, out_path, type)
+type <- "taxo"
+ordination(beta, out_path, type)
 
 # Phylogenetic
-beta <- paste0(root_path, "/03_diversity/beta_phylo-log_VOL.rds")
-stand <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
+beta <- paste0(root_path, "/03_diversity/beta_phylo_VOL.rds")
 out_path <- paste0(root_path, "/05_MDS")
-type <- "phylo-log"
-ordination(beta, stand, out_path, type)
+type <- "phylo"
+ordination(beta, out_path, type)
 
 # Functional
-beta <- paste0(root_path, "/03_diversity/beta_functional-log_VOL.rds")
-stand <- paste0(root_path, "/03_diversity/master_matched_comm_func-VOL.rds")
+beta <- paste0(root_path, "/03_diversity/beta_func_VOL.rds")
 out_path <- paste0(root_path, "/05_MDS")
 type <- "func"
-ordination(beta, stand, out_path, type)
+ordination(beta, out_path, type)

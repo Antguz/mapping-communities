@@ -156,22 +156,28 @@ traits <- fread(paste0(root_path, "/00_FIA/traits/fia_traits_res_nv.csv"))
 
 # Download BIEN (date: 2024-02-07)
 leaf_area <- BIEN_trait_mean(trait = "leaf area", species = traits$Taxon)
-LMA <- BIEN_trait_mean(trait = "leaf area per leaf dry mass", species = traits$Taxon)
+SLA <- BIEN_trait_mean(trait = "leaf area per leaf dry mass", species = traits$Taxon)
 N <- BIEN_trait_mean(trait = "leaf nitrogen content per leaf dry mass", species = traits$Taxon)
 
 # Export BIEN records
-bien <- rbind(leaf_area, LMA, N)
+bien <- rbind(leaf_area, SLA, N)
 fwrite(bien, paste0(root_path, "/00_FIA/traits/FIA_BIEN.csv")) 
 
 # Merge BIEN traits with existing traits
+leaf_area <- as.data.table(leaf_area)
+#leaf_area <- leaf_area[level_used == "Species", ]
 leaf_area <- leaf_area[, 1:2]
 colnames(leaf_area) <- c("Taxon", "leaf_area")
 traits <- merge(traits, leaf_area, by = "Taxon", all.x = TRUE, all.y = FALSE)
 
-LMA <- LMA[, 1:2]
-colnames(LMA) <- c("Taxon", "LMA")
-traits <- merge(traits, LMA, by = "Taxon", all.x = TRUE, all.y = FALSE)
+SLA <- as.data.table(SLA)
+#SLA <- SLA[level_used == "Species", ]
+SLA <- SLA[, 1:2]
+colnames(SLA) <- c("Taxon", "SLA")
+traits <- merge(traits, SLA, by = "Taxon", all.x = TRUE, all.y = FALSE)
 
+N <- as.data.table(N)
+#N <- N[level_used == "Species", ]
 N <- N[, 1:2]
 colnames(N) <- c("Taxon", "N")
 traits <- merge(traits, N, by = "Taxon", all.x = TRUE, all.y = FALSE)
