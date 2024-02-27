@@ -50,34 +50,46 @@ apply_model <- function(scene_path,
   rast_spectra <- rast(spectra)
   names(rast_spectra) <- EMIT_bands
   rast_mask <- rast(mask)
+  names(rast_mask)[8] <- "mask"
   
   #---------------------------------------------------------
-  # Mask reflectance
+  # Define mask
   
-  # Mask for quality
-  rast_spectra <- mask(rast_spectra, 
-                       rast_mask$EMIT_L2A_MASK_001_20230527T194414_2314713_001_mask_8,
-                       maskvalues = 1)
+  # Quality mask
+  rast_mask <- rast_mask$mask
+  rast_mask[rast_mask != 1] <- 0
+  rast_mask[rast_mask == 1] <- 1
   
   # Mask for NDVI
   NDVI <- (rast_spectra$`805.361755371093` - rast_spectra$`686.010314941406`) / 
           (rast_spectra$`805.361755371093` + rast_spectra$`686.010314941406`)
-  NDVI[NDVI == Inf] <- NA
+  NDVI[NDVI == Inf] <- 0
+  NDVI[NDVI >= 0.50] <- 2
   NDVI[NDVI < 0.50] <- 0
-  NDVI[NDVI >= 0.50] <- 1
-  rast_spectra <- mask(rast_spectra, NDVI, maskvalues = 1, inverse = TRUE)
+  NDVI[NDVI == 0] <- 1
+  NDVI[NDVI == 2] <- 0
   
   # Mask for NIR
   NIR <- rast_spectra$`805.361755371093`
-  NIR[NIR == Inf] <- NA
-  NIR[NIR < 0.3] <- 0
-  NIR[NIR >= 0.3 & NIR <= 0.8] <- 1
+  NIR[NIR < 0.3] <- 1
+  NIR[NIR >= 0.3 & NIR <= 0.8] <- 0
   NIR[NIR > 0.8] <- 1
-  rast_spectra <- mask(rast_spectra, NIR, maskvalues = 1, inverse = TRUE)
+  
+  # Final mask 
+  rast_mask <- sum(rast_mask, NDVI, NIR, na.rm = TRUE)
+  rast_mask[rast_mask >= 1] <- 1
+  rast_mask[rast_mask < 1] <- 0
+  
+  # Mask spectra
+  rast_spectra <- mask(rast_spectra, rast_mask, maskvalues = 1)
   
   # As frame
   data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE, na.rm = TRUE))
   colnames(data_spectra)[2:ncol(data_spectra)] <- as.character(EMIT_bands)
+  
+  # To predict
+  predicted_scene <- subset(rast_spectra, 1:7)
+  predicted_scene[] <- NA
   
   # Release memory
   rm(list = c('rast_spectra', 'rast_mask','NDVI', 'NIR'))
@@ -86,29 +98,31 @@ apply_model <- function(scene_path,
   # Transform raster files
   
   cell <- data_spectra$cell
-  spectra <- data_spectra[, .SD, .SDcols = 2:ncol(data_spectra)]
   
   sw <- EMIT_transform(spectra = data_spectra[, .SD, .SDcols = 2:ncol(data_spectra)], 
-                       bands = EMIT_bands,
+                       EMIT_bands = EMIT_bands,
                        cell = cell,
                        new_bands = seq(min(EMIT_bands), max(EMIT_bands), by = 7.43),
                        threads = threads)
   
+  # Subset bands
   cell <- sw$cell
   coef_bands <- colnames(coefficients)[4:ncol(coefficients)]
   sw <- sw[, ..coef_bands]
+  
+  # Release memory
+  rm(list = c('data_spectra'))
   
   #--------------------------------------------------------
   # Predict raster files
   
   # As matrices
-  spectra <- as.matrix(sw)
   MDS1 <- as.matrix(coefficients[MDS == "1", .SD, .SDcols = 3:ncol(coefficients)])
   MDS2 <- as.matrix(coefficients[MDS == "2", .SD, .SDcols = 3:ncol(coefficients)])
   MDS3 <- as.matrix(coefficients[MDS == "3", .SD, .SDcols = 3:ncol(coefficients)])
   
   # Predict
-  predicted_ordination <- predict_pls(spectra,
+  predicted_ordination <- predict_pls(as.matrix(sw),
                                       MDS1,
                                       MDS2,
                                       MDS3)
@@ -120,7 +134,7 @@ apply_model <- function(scene_path,
   
   #--------------------------------------------------------
   #Get a scene frame
-  predicted_scene <- subset(rast_spectra, 1:7)
+  predicted_scene[] <- NA
   predicted_scene[cell] <- as.matrix(predicted_ordination)
   names(predicted_scene) <- c("MDS1", "MDS2", "MDS3",
                               "amp-MDS1", "amp-MDS2", "amp-MDS3", 
@@ -128,6 +142,8 @@ apply_model <- function(scene_path,
   
   #-----------------------------------------------------------
   # Scene export
+  
+  output_raster <- paste0(scene_path, "/EMIT_L3_", scene_frame$time[1], "_predicted.tif")
   
   #Export
   writeRaster(x = predicted_scene,
@@ -139,15 +155,18 @@ apply_model <- function(scene_path,
               overwrite= TRUE,
               datatype = "INT4S")
   
+  tmpFiles(current=TRUE, orphan = TRUE, old = TRUE, remove = TRUE)
+  
 }
 
 #'------------------------------------------------------------------------------
 #' @example 
 
 # Scenes path
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
-scene_path <- paste0(root_path, "/00_imagery/EMIT", "")
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+scene_path <- paste0(root_path, "/00_imagery/EMIT")
+scene_path <- "/media/antonio/Extreme_SSD/Imagery/EMIT-envi"
 
 # List scenes
 files <- list.files(scene_path)
@@ -166,7 +185,8 @@ list_scenes <- data.table(time = unique(frame$time))
 list_scenes$ID <- 1:nrow(list_scenes)
 frame <- merge(frame, list_scenes, by = "time", all.x = TRUE, all.y = TRUE)
 
-output_raster <- paste0(scene_main_path, "_predicted.tif")
+coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/EMIT/EMIT_", "coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/EMIT")
 threads <- 28
 
 # Apply in a single scene
@@ -177,17 +197,16 @@ apply_model(scene_path,
             threads = 28)
 
 # Apply in a batch of scenes
-root_path <- "/media/antonio/Work/Projects/EMIT_mapping"
-scenes <- list.dirs(path = paste0(root_path, "/00_imagery"),
-                    recursive = FALSE)
-coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/EMIT/EMIT_", "coefficients.csv"))
-output_scenes <- paste0(scenes, "_predicted.tif")
+ID_scene <- unique(frame$ID)
 
-for(i in 1:length(scenes)) {
+for(i in 1:length(ID_scene)) {
   
-  apply_model(scenes[i], 
+  scene_frame <- frame[ID == ID_scene[i], ]
+  
+  apply_model(scene_path,
+              scene_frame = scene_frame, 
               coefficients, 
-              output_scenes[i],
+              output_path,
               threads = 28)
   
 }

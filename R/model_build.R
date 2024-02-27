@@ -1,9 +1,8 @@
 model_build <- function(meta, 
                         ordination, 
                         spectra, 
+                        iscv,
                         split, 
-                        weigths, 
-                        method = "gaussprRadial",
                         tune_optimal, 
                         ntimes = 100, 
                         threads = 26) {
@@ -12,84 +11,45 @@ model_build <- function(meta,
   ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
   meta_training <- meta[split,]
-  dimentions <- ncol(ordination_training)
-  data_weigths <- weigths[split]
   
   #Results collector
-  final_collector <- list()
+  collector <- list()
+  
+  # Parallel implementation
+  if(threads > 1) {
+    if(.Platform$OS.type == "unix") {
+      pls.options(parallel = threads)
+    } else {
+      pls.options(parallel = quote(makeCluster(threads, type = "PSOCK")))
+    }
+  }
   
   #Progress bar
   pb <- txtProgressBar(min = 1, max = ntimes, style = 3) 
   
-  #Loop of dimensions
-  for(q in 1:dimentions) {
+  # Loop of repeated
+  for(t in 1:ntimes) {
     
-    #Train set
-    train_master <- cbind(ordination_training[, .SD, .SDcols = c(q)],
-                          spectra_training)
-    colnames(train_master)[1] <- "MDS"
+    # Progress
+    setTxtProgressBar(pb, t)
     
-    #Progress bar
-    print(paste0("MDS", q))
-    pb <- txtProgressBar(min = 1, max = ntimes, style = 3) 
+    # Model
+    ml_model <- plsr(cbind(MDS1 = ordination_training$MDS1, 
+                           MDS2 = ordination_training$MDS2, 
+                           MDS3 = ordination_training$MDS3) ~ ., 
+                     data = spectra_training, 
+                     validation = "CV",
+                     segments = iscv[[t]],
+                     ncomp = max(tune_optimal),
+                     center = TRUE,
+                     method = "oscorespls",
+                     jackknife = TRUE,
+                     maxit = 1000)
     
-    #Model collector
-    model_collector <- list()
-    
-    if(threads > 1) {
-      cl <- makePSOCKcluster(threads)
-      registerDoParallel(cl)
-    }
-    
-    #Loop over repetitions
-    for(t in 1:ntimes) {
-      
-      #Progress
-      setTxtProgressBar(pb, t)
-      
-      # Homogeneous segmentation
-      segmentation <- mds_segmentation(train_master$MDS, proportions = 0.80)
-      sub_master <- train_master[segmentation, ]
-      sub_weigths <- data_weigths[segmentation]
-      sub_meta <- meta_training[segmentation, ]
-      
-      # Create spatial folds
-      folds <- CreateSpacetimeFolds(x = sub_meta,
-                                    spacevar = "STATECD", 
-                                    seed = sample(1:10000, 1))
-      folds <- folds$index
-      
-      #Control
-      cfitControl <- trainControl(method = "cv",
-                                  number = 10,
-                                  index = folds,
-                                  classProbs = FALSE,
-                                  savePredictions = TRUE,
-                                  allowParallel = TRUE)
-      
-      #Model
-      ml_model <- train(MDS ~ ., 
-                        data = sub_master, 
-                        method = method, 
-                        trControl = cfitControl,
-                        weights = sub_weigths,
-                        tuneGrid = tune_optimal[[q]])
-      
-      model_collector[[t]] <- ml_model
-      
-    }
-    
-    if(threads > 1) {
-      stopCluster(cl)
-      Sys.sleep(2)
-      gc()
-    }
-    
-    #Collect model
-    final_collector[[q]] <- model_collector
+    collector[[t]] <- ml_model
     
   }
   
-  return(final_collector)
+  return(collector)
   
 }

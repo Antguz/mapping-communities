@@ -1,101 +1,129 @@
-model_tune <- function(meta, 
+model_tune <- function(meta,
                        ordination, 
                        spectra, 
-                       split, 
-                       weigths,
-                       method = "pls",
-                       tune_range,
-                       ntimes = 10,
-                       threads = 24) {
+                       split,
+                       ncomp_max,
+                       ntimes,
+                       threads) {
   
   # Creates partition for training and testing-------------
+  meta_training <- meta[split,]
   ordination_training <- ordination[split,]
   spectra_training <- spectra[split,]
-  meta_training <- meta[split,]
-  dimentions <- ncol(ordination_training)
-  data_weigths <- weigths[split]
- 
-  #Results collector
-  results <- data.table()
   
-  #Loop of repeated
-  for(q in 1:dimentions) {
+  # Loop of repeated
+  application <- function(X, 
+                          meta_training, 
+                          ordination_training, 
+                          spectra_training,
+                          ncomp_max) {
     
-    #Train set
-    train_master <- cbind(ordination_training[, .SD, .SDcols = c(q)],
-                          spectra_training)
-    colnames(train_master)[1] <- "MDS"
+    t <- X
     
-    #Print progress
-    print(paste0("MDS", q))
-    pb <- txtProgressBar(min = 0, max = ntimes, style = 3)
+    # Segmentation
+    segmentation <- data_split(meta = meta_training, ptraining = 0.9)
     
-    #Parallel implementation
-    if(threads > 1) {
-      cl <- makePSOCKcluster(threads)
-      registerDoParallel(cl)
-    }
+    # Homogeneous segmentation
+    sub_meta <- meta_training[segmentation, ]
+    sub_ordination <- ordination_training[segmentation,]
+    ncol_ord <- ncol(sub_ordination)
+    sub_spectra <- spectra_training[segmentation,]
     
-    for(t in 1:ntimes) {
-      
-      #Progress
-      setTxtProgressBar(pb, t)
-      
-      # Homogeneous segmentation
-      segmentation <- mds_segmentation(MDS = train_master$MDS, 
-                                       proportions = 0.80)
-      sub_master <- train_master[segmentation, ]
-      sub_weigths <- data_weigths[segmentation]
-      sub_meta <- meta_training[segmentation, ]
-      
-      # Create spatial folds
-      folds <- CreateSpacetimeFolds(x = sub_meta,
-                                    spacevar = "STATECD", 
-                                    seed = sample(1:10000, 1))
-      folds <- folds$index
-      
-      #Control
-      cfitControl <- trainControl(method = "cv",
-                                  number = 10,
-                                  index = folds,
-                                  classProbs = FALSE,
-                                  savePredictions = TRUE,
-                                  allowParallel = TRUE)
-      
-      #Model
-      ml_model <- train(MDS ~ ., 
-                        data = sub_master, 
-                        method = method, 
-                        trControl = cfitControl,
-                        weights = sub_weigths,
-                        metric = "RMSE",
-                        tuneGrid = tune_range)
-      
-      ncomp <- ml_model$bestTune$ncomp
-      ml_model <- as.data.table(ml_model$results)
-      ml_model$MDS <- paste0("MDS", q)
-      ml_model$iteration <- t
-      ml_model$bestTune <- ncomp
-      
-      #Collect results
-      results <- rbind(results, ml_model)
-      
-      rm(list = c("ml_model", "segmentation", "sub_master",
-                  "sub_weigths", "sub_meta", "folds",
-                  "cfitControl"))
-      gc()
-      
-    }
+    # Create spatial folds
+    folds <- CreateSpacetimeFolds(x = sub_meta,
+                                  spacevar = "STATECD", 
+                                  class = "COUNTYCD",
+                                  k = length(unique(sub_meta$STATECD)),
+                                  seed = sample(1:10000, 1))
+    folds <- folds$index
     
-    #Close parallel
-    if(threads > 1) {
-      stopCluster(cl)
-      Sys.sleep(2)
-      gc()
-    }
+    # Model
+    model_frame <- data.frame(axes = I(as.matrix(sub_ordination)),
+                              bands = I(as.matrix(sub_spectra)))
+    ml_model <- plsr(axes ~ bands, 
+                     data = model_frame,
+                     validation = "CV",
+                     segments = folds,
+                     ncomp = ncomp_max,
+                     center = TRUE,
+                     method = "oscorespls",
+                     maxit = 1000)
+    
+    # Performance 
+    RMSEP_train <- pls::RMSEP(object = ml_model,
+                              estimate = "train")
+    
+    RMSEP_CV <- pls::RMSEP(object = ml_model,
+                           estimate = "CV")
+    
+    R2_train <- pls::R2(object = ml_model,
+                        estimate = "train")
+    
+    R2_CV <- pls::R2(object = ml_model,
+                     estimate = "CV")
+    
+    # Reshape
+    RMSEP_train <- cbind(data.table(iteration = rep(t, ncol_ord),
+                                    type = rep("RMSEP", ncol_ord),
+                                    estimate = rep("train", ncol_ord),
+                                    Axes = paste0("PCoA", 1:ncol_ord)),
+                         as.data.table(RMSEP_train$val[1,1:ncol_ord,]))
+    
+    RMSEP_CV <- cbind(data.table(iteration = rep(t, ncol_ord),
+                                 type = rep("RMSEP", ncol_ord),
+                                 estimate = rep("CV", ncol_ord),
+                                 Axes = paste0("PCoA", 1:ncol_ord)),
+                      as.data.table(RMSEP_CV$val[1,1:ncol_ord,]))
+    
+    R2_train <- cbind(data.table(iteration = rep(t, ncol_ord),
+                                 type = rep("R2", ncol_ord),
+                                 estimate = rep("train", ncol_ord),
+                                 Axes = paste0("PCoA", 1:ncol_ord)),
+                      as.data.table(R2_train$val[1,1:ncol_ord,]))
+    
+    R2_CV <- cbind(data.table(iteration = rep(t, ncol_ord),
+                              type = rep("R2", ncol_ord),
+                              estimate = rep("CV", ncol_ord),
+                              Axes = paste0("PCoA", 1:ncol_ord)),
+                   as.data.table(R2_CV$val[1,1:ncol_ord,]))
+    
+    # Collect results
+    results <- rbind(RMSEP_train, RMSEP_CV,
+                     R2_train, R2_CV)
+    
+    # Clean memory
+    #rm(list = c("segmentation", 
+    #            "sub_meta", "sub_ordination", "ncol_ord", "sub_spectra", 
+    #            "folds", "ml_model", 
+    #            "RMSEP_train", "RMSEP_CV", "R2_train", "R2_CV"))
+    
+    return(results)
     
   }
   
-  return(results)
-    
+  # Parallel processing
+  complete <- mclapply(X = 1:ntimes, 
+                       FUN = application, 
+                       meta_training = meta_training, 
+                       ordination_training = ordination_training, 
+                       spectra_training = spectra_training,
+                       ncomp_max = ncomp_max,
+                       mc.preschedule = TRUE, 
+                       mc.set.seed = FALSE,
+                       mc.silent = FALSE, 
+                       mc.cores = threads,
+                       mc.cleanup = TRUE, 
+                       mc.allow.recursive = TRUE, 
+                       affinity.list = NULL)
+  
+  frame <- data.table()
+  
+  for(i in 1:length(complete)) {
+    frame <- rbind(frame, complete[[i]], fill = TRUE)
+  }
+  
+  return(frame)
+  
 }
+
+
