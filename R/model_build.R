@@ -1,55 +1,62 @@
-model_build <- function(meta, 
-                        ordination, 
-                        spectra, 
+model_build <- function(meta_training, 
+                        ordination_training, 
+                        spectra_training,
+                        segments,
                         iscv,
-                        split, 
                         tune_optimal, 
                         ntimes = 100, 
                         threads = 26) {
   
-  # Creates partition for training and testing-------------
-  ordination_training <- ordination[split,]
-  spectra_training <- spectra[split,]
-  meta_training <- meta[split,]
-  
-  #Results collector
-  collector <- list()
-  
-  # Parallel implementation
-  if(threads > 1) {
-    if(.Platform$OS.type == "unix") {
-      pls.options(parallel = threads)
-    } else {
-      pls.options(parallel = quote(makeCluster(threads, type = "PSOCK")))
-    }
-  }
-  
-  #Progress bar
-  pb <- txtProgressBar(min = 1, max = ntimes, style = 3) 
-  
-  # Loop of repeated
-  for(t in 1:ntimes) {
+  # Application loop
+  application_build <- function(X, 
+                                meta_training, 
+                                ordination_training, 
+                                spectra_training,
+                                segments,
+                                iscv,
+                                tune_optimal) {
     
-    # Progress
-    setTxtProgressBar(pb, t)
+    t <- X
+    
+    # Homogeneous segments
+    sub_ordination <- ordination_training[segments[[t]],]
+    ncol_ord <- ncol(sub_ordination)
+    sub_spectra <- spectra_training[segments[[t]],]
     
     # Model
-    ml_model <- plsr(cbind(MDS1 = ordination_training$MDS1, 
-                           MDS2 = ordination_training$MDS2, 
-                           MDS3 = ordination_training$MDS3) ~ ., 
-                     data = spectra_training, 
+    model_frame <- data.frame(axes = I(as.matrix(sub_ordination)),
+                              bands = I(as.matrix(sub_spectra)))
+    ml_model <- plsr(axes ~ bands, 
+                     data = model_frame,
                      validation = "CV",
                      segments = iscv[[t]],
-                     ncomp = max(tune_optimal),
+                     ncomp = tune_optimal,
                      center = TRUE,
                      method = "oscorespls",
-                     jackknife = TRUE,
                      maxit = 1000)
     
-    collector[[t]] <- ml_model
+    return(ml_model)
     
   }
   
-  return(collector)
+  # Parallel processing
+  complete <- mclapply(X = 1:ntimes, 
+                       FUN = application_build, 
+                       meta_training = meta_training, 
+                       ordination_training = ordination_training, 
+                       spectra_training = spectra_training,
+                       tune_optimal = tune_optimal,
+                       segments = segments,
+                       iscv = iscv,
+                       mc.preschedule = TRUE, 
+                       mc.set.seed = FALSE,
+                       mc.silent = FALSE, 
+                       mc.cores = threads,
+                       mc.cleanup = TRUE, 
+                       mc.allow.recursive = TRUE, 
+                       affinity.list = NULL)
+  
+  
+  return(complete)
   
 }
