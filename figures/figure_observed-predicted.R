@@ -18,8 +18,8 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 sensor <- "EMIT"
 folder <- paste0(root_path, "/06_model/SW_beta_PLS/", sensor)
 
@@ -100,7 +100,7 @@ point_alpha <- 0.9
 
 plot_function <- function(performance, 
                           predicted, 
-                          limits_range = c(-0.60, 0.60),
+                          limits_range = c(-1.5, 1.5),
                           breaks = c(-0.5, 0, 0.5),
                           axis = 1) {
   
@@ -181,56 +181,56 @@ plot_function <- function(performance,
 
 taxo1 <- plot_function(performance[dimension == "Taxonomic" & Axes == "PCoA1",], 
                        predicted[dimension == "Taxonomic" & Axes == "PCoA1",], 
-                       limits_range = c(-0.6, 0.75),
+                       limits_range = c(-0.52, 0.83),
                        breaks = c(-0.5, 0, 0.5),
                        axis = 1)
 
 phylo1 <- plot_function(performance[dimension == "Phylogenetic" & Axes == "PCoA1",], 
                         predicted[dimension == "Phylogenetic" & Axes == "PCoA1",], 
-                        limits_range = c(-0.6, 0.75),
+                        limits_range = c(-0.52, 0.83),
                         breaks = c(-0.5, 0, 0.5),
                         axis = 1)
 
 func1 <- plot_function(performance[dimension == "Functional" & Axes == "PCoA1",], 
                        predicted[dimension == "Functional" & Axes == "PCoA1",], 
-                       limits_range = c(-0.6, 0.75),
+                       limits_range = c(-0.52, 0.83),
                        breaks = c(-0.5, 0, 0.5),
                        axis = 1)
 
 taxo2 <- plot_function(performance[dimension == "Taxonomic" & Axes == "PCoA2",], 
                        predicted[dimension == "Taxonomic" & Axes == "PCoA2",], 
-                       limits_range = c(-0.53, 0.42),
-                       breaks = c(-0.3, 0, 0.3),
+                       limits_range = c(-0.56, 0.56),
+                       breaks = c(-0.5, 0, 0.5),
                        axis = 2)
 
 phylo2 <- plot_function(performance[dimension == "Phylogenetic" & Axes == "PCoA2",], 
                         predicted[dimension == "Phylogenetic" & Axes == "PCoA2",], 
-                        limits_range = c(-0.53, 0.42),
-                        breaks = c(-0.3, 0, 0.3),
+                        limits_range = c(-0.56, 0.56),
+                        breaks = c(-0.5, 0, 0.5),
                         axis = 2)
 
 func2 <- plot_function(performance[dimension == "Functional" & Axes == "PCoA2",], 
                        predicted[dimension == "Functional" & Axes == "PCoA2",], 
-                       limits_range = c(-0.53, 0.42),
-                       breaks = c(-0.3, 0, 0.3),
+                       limits_range = c(-0.56, 0.56),
+                       breaks = c(-0.5, 0, 0.5),
                        axis = 2)
 
 taxo3 <- plot_function(performance[dimension == "Taxonomic" & Axes == "PCoA3",], 
                        predicted[dimension == "Taxonomic" & Axes == "PCoA3",], 
-                       limits_range = c(-0.41, 0.41),
-                       breaks = c(-0.3, 0, 0.3),
+                       limits_range = c(-0.30, 0.47),
+                       breaks = c(-0.2, 0, 0.2, 0.4),
                        axis = 3)
 
 phylo3 <- plot_function(performance[dimension == "Phylogenetic" & Axes == "PCoA3",], 
                         predicted[dimension == "Phylogenetic" & Axes == "PCoA3",], 
-                        limits_range = c(-0.41, 0.41),
-                        breaks = c(-0.3, 0, 0.3),
+                        limits_range = c(-0.30, 0.47),
+                        breaks = c(-0.2, 0, 0.2, 0.4),
                         axis = 3)
 
 func3 <- plot_function(performance[dimension == "Functional" & Axes == "PCoA3",], 
                        predicted[dimension == "Functional" & Axes == "PCoA3",], 
-                       limits_range = c(-0.41, 0.41),
-                       breaks = c(-0.3, 0, 0.3),
+                       limits_range = c(-0.30, 0.47),
+                       breaks = c(-0.2, 0, 0.2, 0.4),
                        axis = 3)
 
 # Merge plots
@@ -255,7 +255,7 @@ axis3 <- ggarrange(taxo3, phylo3, func3, ncol=3, nrow=1,
                    label.y = 1.05)
 
 # Export
-jpeg(paste0(root_path, "/figures/", sensor, "_predicted_testing.jpeg"), width = 210, height = 190, units = "mm", res = 300, bg = "transparent")
+jpeg(paste0(root_path, "/figures/", sensor, "_predicted_testing.jpeg"), width = 210, height = 190, units = "mm", res = 300, bg = "white")
 
 annotate_figure(ggarrange(axis1, axis2, axis3, ncol= 1, nrow=3),
                 top = text_grob("Taxonomic                        Phylogenetic                        Functional", face = "bold", color = "black"),

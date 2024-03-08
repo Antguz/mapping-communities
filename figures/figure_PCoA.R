@@ -13,9 +13,9 @@ library(stringr)
 #'------------------------------------------------------------------------------
 #' Read data
 
-#' #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 
 taxo_comm <- fread(paste0(root_path, "/05_MDS/PCoA_scores_comm_taxo.csv"))
 taxo_comm <- taxo_comm[order(PCoA1, -PCoA2, PCoA3), ]
@@ -26,9 +26,9 @@ func_comm <- func_comm[order(PCoA1, -PCoA2, PCoA3), ]
 
 PCoA_taxo <- readRDS(paste0(root_path, "/05_MDS/PCoA_Btotal_taxo.rds"))
 eigen_taxo <- PCoA_taxo$eig
-eigen_taxo <- round(eigen_taxo/sum(eigen_taxo) * 100, 2) 
+eigen_taxo <- round(eigen_taxo/sum(eigen_taxo), 2) 
 
-PCoA_phylo <- readRDS(paste0(root_path, "/05_MDS/PCoA_Btotal_phylo.rds"))
+PCoA_phylo <- readRDS(paste0(root_path, "/05_MDS/PCoA_Btotal_phylo-log.rds"))
 eigen_phylo <- PCoA_phylo$eig
 eigen_phylo <- round(eigen_phylo/sum(eigen_phylo) * 100, 2) 
 
@@ -46,7 +46,7 @@ func_sp <- func_sp[order(PCoA1, -PCoA2, PCoA3), ]
 
 #'------------------------------------------------------------------------------
 #' Functions
-RGB <- function(X, Y, Z, min_range = -0.60, max_range = 0.6) {
+RGB <- function(X, Y, Z, min_range = -0.66, max_range = 0.66) {
   
   x_new <-  ((X - min_range) / (max_range - min_range)) * (255 - 0) + 0
   y_new <-  ((Y - min_range) / (max_range - min_range)) * (255 - 0) + 0
@@ -81,16 +81,20 @@ ordination_3d <- function(ordination,
                           title = "Taxonomic", 
                           phi = 20, 
                           theta = 45,
-                          comm = TRUE) {
+                          comm = TRUE,
+                          axis_range = c(-0.66, 0.66)) {
   
   if(comm == TRUE) {
     
     point_shape <- 20
     point_size_shade <- 0.1
     point_size <- 0.1
-    xlab <- paste0("Axis 1 (", variance[1], "%)")
-    ylab <- paste0("Axis 2 (", variance[2], "%)")
-    zlab <- paste0("Axis 3 (", variance[3], "%)")
+    #xlab <- paste0("Axis 1 (", variance[1], "%)")
+    #ylab <- paste0("Axis 2 (", variance[2], "%)")
+    #zlab <- paste0("Axis 3 (", variance[3], "%)")
+    xlab <- paste0("Axis 1")
+    ylab <- paste0("Axis 2")
+    zlab <- paste0("Axis 3")
     shade_color <- "grey75"
     col_RGB <- RGB(ordination$PCoA1, ordination$PCoA2, ordination$PCoA3)
     alpha_color <- 0.5
@@ -98,9 +102,9 @@ ordination_3d <- function(ordination,
     
   } else if(comm == FALSE) {
     
-    point_shape <- 20
+    point_shape <- 18
     point_size_shade <- 0.5
-    point_size <- 1
+    point_size <- 0.5
     xlab <- paste0("Axis 1")
     ylab <- paste0("Axis 2")
     zlab <- paste0("Axis 3")
@@ -120,9 +124,9 @@ ordination_3d <- function(ordination,
             xlab = xlab,
             ylab = ylab,
             zlab = zlab,
-            xlim = c(-0.60, 0.60),
-            ylim = c(-0.60, 0.60),
-            zlim = c(-0.60, 0.60),
+            xlim = axis_range,
+            ylim = axis_range,
+            zlim = axis_range,
             nticks = 3,
             col = shade_color,
             alpha.col = 0.2,
@@ -143,9 +147,9 @@ ordination_3d <- function(ordination,
             xlab = xlab,
             ylab = ylab,
             zlab = zlab,
-            xlim = c(-0.60, 0.60),
-            ylim = c(-0.60, 0.60),
-            zlim = c(-0.60, 0.60),
+            xlim = axis_range,
+            ylim = axis_range,
+            zlim = axis_range,
             nticks = 3,
             col = shade_color,
             add = TRUE,
@@ -164,9 +168,9 @@ ordination_3d <- function(ordination,
             xlab = xlab,
             ylab = ylab,
             zlab = zlab,
-            xlim = c(-0.60, 0.60),
-            ylim = c(-0.60, 0.60),
-            zlim = c(-0.60, 0.60),
+            xlim = axis_range,
+            ylim = axis_range,
+            zlim = axis_range,
             nticks = 3,
             col = shade_color,
             add = TRUE,
@@ -186,9 +190,9 @@ ordination_3d <- function(ordination,
             xlab = xlab,
             ylab = ylab,
             zlab = zlab,
-            xlim = c(-0.60, 0.60),
-            ylim = c(-0.60, 0.60),
-            zlim = c(-0.60, 0.60),
+            xlim = axis_range,
+            ylim = axis_range,
+            zlim = axis_range,
             nticks = 3,
             col = col_RGB,
             add = TRUE,
@@ -200,7 +204,7 @@ ordination_3d <- function(ordination,
 }
 
 
-png(paste0(root_path, "/figures/", "3D-ordination.jpeg"),
+jpeg(paste0(root_path, "/figures/", "3D-ordination.jpeg"),
     width = 210, 
     height = 160, 
     units = "mm", 
@@ -212,8 +216,8 @@ par(mfrow=c(2,3))
 ordination_3d(taxo_comm, eigen_taxo, title = "Taxonomic")
 ordination_3d(phylo_comm, eigen_phylo, title = "Phylogenetic")
 ordination_3d(func_comm, eigen_func, title = "Functional")
-ordination_3d(taxo_sp, eigen_func, title = " ", comm = FALSE)
-ordination_3d(phylo_sp, eigen_func, title = " ", comm = FALSE)
+ordination_3d(taxo_sp, eigen_func, title = "Communities", comm = FALSE)
+ordination_3d(phylo_sp, eigen_func, title = "Species", comm = FALSE)
 ordination_3d(func_sp, eigen_func, title = " ", comm = FALSE)
 dev.off()
 
@@ -239,7 +243,7 @@ scatter3D(x = taxo_comm$PCoA1,
           z = func_comm$PCoA1, 
           colvar = NULL,
           phi = 20, 
-          theta = 290,
+          theta = 315,
           bty = "g", 
           pch = 20, 
           cex = 0.5, 
@@ -274,7 +278,7 @@ scatter3D(x = taxo_sp$PCoA1,
           z = func_sp$PCoA1, 
           colvar = NULL,
           phi = 20, 
-          theta = 290,
+          theta = 45,
           bty = "g", 
           pch = 20, 
           cex = 0.5, 

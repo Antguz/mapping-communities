@@ -21,7 +21,7 @@ library(misc3d)
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -90,7 +90,6 @@ data <- merge(ordination,
 # New frames
 data <- na.exclude(data)
 data <- data[order(PLT_CN)]
-#data <- data[outlier[remove == FALSE, sample],] #Outlier
 
 # Save order for other simulations
 if(type == "taxo") {
@@ -103,8 +102,8 @@ if(type == "taxo") {
 }
 
 # Outliers
-#outliers <- fread(paste0(out_path, "/DESIS_outliers.csv"))
-#data <- data[outliers$remove == FALSE, ]
+outliers <- fread(paste0(out_path, "/DESIS_outliers.csv"))
+data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
@@ -184,7 +183,6 @@ if(sensor == "DESIS") {
   
 }
 
-
 # Cross-validation strategy
 iscv <- list()
 
@@ -193,7 +191,6 @@ for(i in 1:iterations) {
   scv <- CreateSpacetimeFolds(x = meta[split, ][segments[[i]],],
                               spacevar = "STATECD",
                               k = 10,
-                              #k = length(unique(meta$STATECD)),
                               class = "COUNTYCD")
   
   iscv[[i]] <- scv$index
@@ -213,9 +210,9 @@ models <- model_tune(meta_training = meta[split,],
                      spectra_training = spectra[split,],
                      segments = segments,
                      iscv = iscv,
-                     ncomp_max = 40,
+                     ncomp_max = 30,
                      ntimes = iterations,
-                     threads = 24)
+                     threads = 20)
 
 # Export for inspection
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
@@ -226,16 +223,14 @@ plot(colMeans(models[type == "R2" & estimate == "train" & Axes == "PCoA3", 6:nco
 #' @note Do a manual checking of the optimal number of components
 
 ### DESIS 
-# Taxonomic 23
-# Phylogenetic 26
-# Phylogenetic-log 26
-# Functional 26
+# Taxonomic 19
+# Phylogenetic-log 20
+# Functional 22
 
 ### EMIT
-# Taxonomic 14
-# Phylogenetic 20
+# Taxonomic 20
 # Phylogenetic-log 20
-# Functional 18
+# Functional 19
 
 
 # Manual checked
@@ -281,9 +276,9 @@ fwrite(performance, paste0(out_path, "/", sensor, "_", type, "_performance.csv")
 
 predicted_training <- training$predicted
 predicted_training$type <- "Training"
+fwrite(predicted_training, paste0(out_path, "/", sensor, "_", type, "_predicted_training.csv"))
 predicted_testing <- testing$predicted
 predicted_testing$type <- "Testing"
-fwrite(predicted_training, paste0(out_path, "/", sensor, "_", type, "_predicted_training.csv"))
 fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_testing.csv"))
 
 #-------------------------------------------------------------------------------
