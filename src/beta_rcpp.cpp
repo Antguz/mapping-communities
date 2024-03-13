@@ -109,7 +109,7 @@ arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, bool ta
   
   //Matrix of beta
   int ncomm = comm.n_rows;
-  arma:cube distance(ncomm, ncomm, 3);
+  arma::cube distance(ncomm, ncomm, 3);
   
   //create progress
   Progress p(ncomm*ncomm, progress);

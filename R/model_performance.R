@@ -4,128 +4,171 @@ model_performance <- function(meta,
                               ordination, 
                               spectra,
                               models,
-                              tune_optimal,
-                              threads = 28) {
+                              threads) {
   
-  # Functions for loops --------------------------------------------------------
-  # Apply prediction
-  apply_predict <- function(i,
-                            model_t = models[[i]],
-                            spectra = spectra,
-                            tune_optimal) {
+  # Secure I()
+  ord <- as.matrix(ordination)
+  model_frame <- data.frame(bands = I(as.matrix(spectra)))
+  
+  #-----------------------------------------------------------------------------
+  # Apply prediction function
+  application_predict <- function(X,
+                                  models,
+                                  spectra,
+                                  tune_optimal) {
     # Predict new values
-    predicted <- predict(model_t, ncomp = tune_optimal, newdata = spectra)
-    predicted <- as.data.table(cbind(MDS1 = predicted[,1,1],
-                                     MDS2 = predicted[,2,2],
-                                     MDS3 = predicted[,3,3]))
+    predicted <- predict(models[[X]], 
+                         newdata = model_frame,
+                         ncom = tune_optimal)
+    predicted <- predicted[,,1]
+    
     return(predicted)
     
   }
   
-  # Apply metrics
-  apply_performance <- function(i,
-                                obs,
-                                pred) {
+  # Predicted in parallel
+  predicted <- mclapply(X = 1:length(models), 
+                        FUN = application_predict, 
+                        models = models,
+                        spectra = spectra,
+                        tune_optimal = tune_optimal,
+                        mc.preschedule = TRUE, 
+                        mc.set.seed = FALSE,
+                        mc.silent = FALSE, 
+                        mc.cores = threads,
+                        mc.cleanup = TRUE, 
+                        mc.allow.recursive = TRUE, 
+                        affinity.list = NULL)
+
+  #-----------------------------------------------------------------------------
+  # Evaluate performance
+  application_performance <- function(X,
+                                      ordination,
+                                      predicted) {
+    # Predict new values
+    iteration <- predicted[[X]]
+    collector <- data.table()
     
-    # Get metrics
-    MDS1 <- parameters(obs$MDS1, pred$MDS1)
-    MDS2 <- parameters(obs$MDS2, pred$MDS2)
-    MDS3 <- parameters(obs$MDS3, pred$MDS3)
-    MDS <- rbind(MDS1, MDS2, MDS3)
-    results <- cbind(data.table(iteration = c(i, i, i),
-                                Axes = c("MDS1", "MDS2", "MDS3")),
-                     MDS)
+    for(i in 1:ncol(ordination)) {
+      per <- parameters(obs = ord[, i], pred = iteration[,i])
+      per <- cbind(Axes = paste0("PCoA", i),
+                   iteration = X,
+                   per)
+      collector <- rbind(collector, per)
+    }
     
-    return(results)
-    
+    return(collector)
   }
   
-  # Parameters for predicting --------------------------------------------------
-  # Number of models
-  nMDS <- length(models)
+  # Performance in parallel
+  performance <- mclapply(X = 1:length(models),
+                          FUN = application_performance,
+                          ordination = ordination,
+                          predicted = predicted,
+                          mc.preschedule = TRUE, 
+                          mc.set.seed = FALSE,
+                          mc.silent = FALSE, 
+                          mc.cores = threads,
+                          mc.cleanup = TRUE, 
+                          mc.allow.recursive = TRUE, 
+                          affinity.list = NULL)
   
-  #Performance descriptors
-  metrics_feature <- c("R2", "MAE", "RMAE", "RMSE", "RRMSE", "B0", "B1", "MBE")
+  frame <- data.table()
   
-  # Collectors
-  final_predicted <- data.table()
-  final_performance <- data.table()
-  
-  # Loop over axes
-  for(q in 1:nMDS) {
-    
-    # Repeated
-    repeated <- length(models[[q]])
-    
-    # Get predictions in parallel ----------------------------------------------
-    predictions <- mclapply(X = 1:repeated, 
-                            FUN = apply_predict,
-                            model_q = models[[q]],
-                            spectra = spectra,
-                            mc.cores = threads,
-                            mc.preschedule = TRUE,
-                            mc.cleanup = TRUE)
-    
-    # Arrange the observed and predicted values
-    predictions <- data.table(do.call(cbind, predictions))  
-    colnames(predictions) <- paste0("iteration_", 1:ncol(predictions))
-    frame <- ordination[, .SD, .SDcols = q]
-    colnames(frame)[1] <- "observed"
-    frame <- cbind(meta, 
-                   data.table(MDS = paste0("MDS", q),
-                              MDS_observed = frame$observed,
-                              MDS_predicted_mean = rowMeans(predictions),
-                              MDS_predicted_sd = apply(predictions, 1, sd)),
-                   predictions)
-    
-    # Export from loop
-    final_predicted <- rbind(final_predicted, frame)
-    
-    # Get performance in parallel ----------------------------------------------
-    performance <- mclapply(X = 1:repeated, 
-                            FUN = apply_performance,
-                            observed = frame$MDS_observed,
-                            predicted = frame[, .SD, .SDcols = c((ncol(frame) - repeated + 1):ncol(frame))],
-                            metrics = metrics_feature,
-                            mc.cores = threads,
-                            mc.preschedule = TRUE,
-                            mc.cleanup = TRUE)
-    
-    # Arrange the performance
-    performance <- data.table(do.call(rbind, performance))
-    performance <- cbind(data.table(MDS = paste0("MDS", q),
-                                    iteration = 1:nrow(performance)),
-                         performance)
-    
-    # Export from loop
-    final_performance <- rbind(final_performance, performance)
-    
-    # Remove elements
-    rm(list = c("repeated", "predictions", "frame"))
-    
+  for(i in 1:length(performance)) {
+    frame <- rbind(frame, performance[[i]], fill = TRUE)
   }
   
-  # Export from the function
-  return(list(performance = final_performance,
-              predicted = final_predicted))
+  #-----------------------------------------------------------------------------
+  # Get residuals
+  # Apply prediction function
+  predicted <- array(unlist(predicted), dim = c(dim(predicted[[1]])[1],
+                                                dim(predicted[[1]])[2],
+                                                length(predicted)))
+  
+  application_residuals <- function(ordination, predicted) {
+    
+    collector <- data.table()
+    
+    for(i in 1:ncol(ordination)) {
+      
+      axis <- as.matrix(ordination)[, i]
+      predictions <- predicted[,i,]
+      
+      # Predictions
+      predictions_means <- rowMeans(predictions)
+      predictions_sd <- apply(predictions, 1, sd)
+      
+      # Residuals
+      residuals <- predictions - matrix(axis, 
+                                        ncol = dim(predictions)[2],
+                                        nrow = dim(predictions)[1])
+      residuals_means <- rowMeans(residuals)
+      residuals_sd <- apply(residuals, 1, sd)
+      
+      results <- data.table(Axes = paste0("PCoA", i),
+                            sample = 1:length(predictions_means),
+                            observed = axis,
+                            predicted = predictions_means,
+                            predicted_sd = predictions_sd,
+                            residuals = residuals_means,
+                            residuals_sd = residuals_sd)
+      
+      collector <- rbind(collector, results)
+      
+    }
+    
+    return(collector)
+    
+  }
+    
+  predicted_summary <- application_residuals(ordination, predicted)
+  
+  #-----------------------------------------------------------------------------
+  # Return results
+  return(list(performance = frame,
+              predicted = predicted_summary))
   
 }
 
+#parameters <- function(obs, pred) {
+#  
+#  R2 <- 1 - (sum(((obs-pred)^2))/sum(((obs-mean(obs))^2)))
+#  MAE <- sum(abs(obs-pred))/length(obs)
+#  RMSE <- sqrt(sum(((obs-pred)^2))/length(obs))
+#  perRMSE <- sqrt(sum(((obs-pred)^2))/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
+#  names(perRMSE) <- NULL
+#  B1 <- sqrt(sum(((obs - mean(obs))^2))/length(obs)) / sqrt(sum(((pred - mean(pred))^2))/length(pred))
+#  B0 <- mean(obs) - (B1*mean(pred))
+#  
+#  return(round(data.table(R2 = R2,
+#                          MAE = MAE,
+#                          RMSE = RMSE,
+#                          perRMSE = perRMSE,
+#                          B1 = B1,
+#                          B0 = B0), 4))
+#  
+#}
+
 parameters <- function(obs, pred) {
   
-  R2 <- 1 - (sum((obs-pred)^2)/sum((obs-mean(obs))^2))
-  MAE <- sum(abs(obs-pred))/length(obs)
-  RMSE <- sqrt(sum((obs-pred)^2)/length(obs))
-  perRMSE <- sqrt(sum((obs-pred)^2)/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
-  names(perRMSE) <- NULL
-  B1 <- sqrt(sum((obs - mean(obs))^2)/length(obs)) / sqrt(sum((pred - mean(pred))^2)/length(pred))
-  B0 <- mean(obs) - (B1*mean(pred))
+  linear <- lm(obs ~ pred)
+  linear_summary <- summary(linear)
   
-  return(round(c(R2 = R2,
-           MAE = MAE,
-           RMSE = RMSE,
-           perRMSE = perRMSE,
-           B1 = B1,
-           B0 = B0), 4))
+  R2 <- linear_summary$r.squared
+  intercept <- linear_summary$coefficients[1,1]
+  slope <- linear_summary$coefficients[2,1]
+  MAE <- sum(abs(obs-pred))/length(obs)
+  RMSE <- sqrt(sum(((obs-pred)^2))/length(obs))
+  perRMSE <- sqrt(sum(((obs-pred)^2))/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
+  names(perRMSE) <- NULL
+  
+  
+  return(round(data.table(R2 = R2,
+                          MAE = MAE,
+                          RMSE = RMSE,
+                          perRMSE = perRMSE,
+                          intercept = intercept,
+                          slope = slope), 4))
   
 }

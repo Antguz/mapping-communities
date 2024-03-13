@@ -18,16 +18,18 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "EMIT"
+root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+sensor <- "DESIS"
+type <- "taxo"
 folder <- paste0(root_path, "/06_model/SW_beta_PLS/", sensor)
 
 #'------------------------------------------------------------------------------
 #' Read information
 
-performance <- fread(paste0(folder, "/", sensor, "_performance.csv"))
-predicted_training <- fread(paste0(folder, "/", sensor, "_predicted_training.csv"))
-predicted_testing <- fread(paste0(folder, "/", sensor, "_predicted_testing.csv"))
+performance <- fread(paste0(folder, "/", sensor, "_", type, "_performance.csv"))
+predicted_training <- fread(paste0(folder, "/", sensor, "_", type, "_predicted_training.csv"))
+predicted_testing <- fread(paste0(folder, "/", sensor, "_", type, "_predicted_testing.csv"))
 
 #'------------------------------------------------------------------------------
 #' Data reshaping
@@ -38,7 +40,7 @@ work <- "Training"
 testing <- performance[type == work]
 testing <- testing[, .(B0 = mean(B0),
                            B1 = mean(B1)),
-                       by = c("MDS")]
+                       by = c("Axes")]
 
 # Predict slopes and intercepts
 values <- seq(-0.6, 0.6, by = 0.001)

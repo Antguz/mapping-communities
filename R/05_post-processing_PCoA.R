@@ -55,8 +55,8 @@ type <- "taxo"
 postprocessing(ordination, species, type)
 
 # Phylogenetic
-ordination <- paste0(root_path, "/05_MDS/PCoA_Btotal_phylo.rds")
-species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
+ordination <- paste0(root_path, "/05_MDS/PCoA_Btotal_phylo-log.rds")
+species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-log-VOL.rds")
 out_path <- paste0(root_path, "/05_MDS")
 type <- "phylo"
 postprocessing(ordination, species, type)
