@@ -32,40 +32,38 @@ postprocessing <- function(ordination, fia_environment, species, type) {
   
   # Get community scores
   comm <- ord_new$points
+  colnames(comm) <- paste0("Axis", 1:ncol(comm))
   comm <- cbind(data.table(PLT_CN = as.integer64(rownames(comm))), comm)
   fwrite(comm, paste0(out_path, "/NDMS_scores_comm_", type, ".csv"))
   
-  # Read species relative abundance
-  spec <- readRDS(species)
-  
-  # Get species scores
-  sp <- wascores(comm[, -1], spec, expand = FALSE)
-  sp <- cbind(data.table(Taxon2 = rownames(sp)), sp)
-  fwrite(sp, paste0(out_path, "/scores_sp_", type, ".csv"))
-  
-  sp <- wascores(comm[, -1], spec, expand = TRUE)
-  sp <- cbind(data.table(Taxon2 = rownames(sp)), sp)
-  fwrite(sp, paste0(out_path, "/scores-exp_sp_", type, ".csv"))
-
 }
 
 #'------------------------------------------------------------------------------
 #' @example
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
 
 # Taxonomic
-ordination <- paste0(root_path, "/05_ordination/NMDS_taxo.rds")
+ordination <- paste0(root_path, "/05_NMDS/NMDS_taxo.rds")
 fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
 species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
-out_path <- paste0(root_path, "/05_ordination")
+out_path <- paste0(root_path, "/05_NMDS")
 type <- "taxo"
 postprocessing(ordination, fia_environment, species, type)
 
 # Phylogenetic
-ordination <- paste0(root_path, "/05_ordination/NMDS_phylo.rds")
+ordination <- paste0(root_path, "/05_NMDS/NMDS_phylo-log.rds")
 fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
-species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
-out_path <- paste0(root_path, "/05_ordination")
-type <- "phylo"
+species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-log-VOL.rds")
+out_path <- paste0(root_path, "/05_NMDS")
+type <- "phylo-log"
+postprocessing(ordination, fia_environment, species, type)
+
+# Functional
+ordination <- paste0(root_path, "/05_NMDS/NMDS_func.rds")
+fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
+species <- paste0(root_path, "/03_diversity/master_matched_comm_func-VOL.rds")
+out_path <- paste0(root_path, "/05_NMDS")
+type <- "func"
 postprocessing(ordination, fia_environment, species, type)
