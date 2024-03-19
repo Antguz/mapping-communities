@@ -11,8 +11,6 @@ library(bit64)
 options(scipen = 100)
 library(ggrepel)
 library(rcartocolor)
-
-
 library(ggpubr)
 library(plot3D)
 library(plot3Drgl)
@@ -25,13 +23,14 @@ library(ggpubr)
 #'------------------------------------------------------------------------------
 #' Read information
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
-#root_path <- "F:/Projects/DESIS_mapping"
-species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_BA.rds"))
-dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/communities_scores_BA.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
-proportions <- fread(paste0(root_path, "/00_FIA/proportions_BA.csv"))
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
+species_scores <- readRDS(paste0(root_path, "/05_MDS/species_scores_phylo.rds"))
+dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/communities_scores_phylo.rds"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
+SPCD <- SPCD[, c("SPCD", "Taxon2", "growth_form", "mycorrhizal_association")]
+proportions <- fread(paste0(root_path, "/03_diversity/proportions.csv"))
 
 #'------------------------------------------------------------------------------
 #' Arrange information
@@ -64,7 +63,7 @@ rNMDS1 <- ggplot() +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-0.55, 0.40), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-0.47, 0.40), expand = c(0, 0)) +
-  scale_size(range = plot_range) +
+  scale_size(range = plot_range) 
   geom_text_repel(data = species, aes(x = MDS1, y = MDS2),
                   label= species$`PLANTS-Code-new`, 
                   direction = "both", 
@@ -82,7 +81,7 @@ rNMDS2 <- ggplot() +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-0.55, 0.40), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-0.53, 0.35), expand = c(0, 0)) +
-  scale_size(range = plot_range) + 
+  scale_size(range = plot_range) 
   geom_text_repel(data = species, aes(x = MDS1, y = MDS3),
                   label= species$`PLANTS-Code-new`, 
                   direction = "both", 
@@ -100,7 +99,7 @@ rNMDS3 <- ggplot() +
   theme_bw(base_size = tam) + th +
   #scale_x_continuous(limits = c(-0.47, 0.40), expand = c(0, 0)) +
   #scale_y_continuous(limits = c(-0.53, 0.35), expand = c(0, 0)) +
-  scale_size(range = plot_range) + 
+  scale_size(range = plot_range) 
   geom_text_repel(data = species, aes(x = MDS2, y = MDS3),
                   label= species$`PLANTS-Code-new`, 
                   direction = "both", 
@@ -209,7 +208,7 @@ c <- ggarrange(mNMDS1, mNMDS2, mNMDS3, ncol=3, nrow=1, common.legend = TRUE)
 p <- ggarrange(a,b,c, ncol=1, nrow=3)
 
 
-jpeg("figures/NMDS_betaB.jpg", width = 210, height = 210, units = "mm", res = 300)
+jpeg("figures/NMDS_beta_phylogenetic.jpg", width = 210, height = 210, units = "mm", res = 300)
 p
 dev.off()
 
