@@ -18,8 +18,8 @@ library(colorspace)
 #' Read data
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
 
 # Communities
 taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
@@ -27,7 +27,10 @@ taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
 phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
 #phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
 func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+func_comm$Axis3 <- -func_comm$Axis3
 #func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
+#fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+
 
 # Get proportions
 proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
@@ -96,6 +99,12 @@ ordination_3d <- function(ordination,
   zlab <- paste0("Axis 3")
   shade_color <- "grey75"
   alpha_color <- alpha
+  side <- 1
+  dist <- -0.05
+  null_colkey <- list(plot = FALSE, 
+                      side = side, 
+                      side.clab = 1,
+                      dist = dist)
   
   if(cRGB == TRUE) {
     col <- RGB(ordination$Axis1, 
@@ -104,14 +113,23 @@ ordination_3d <- function(ordination,
                min_range = axis_range[1], 
                max_range = axis_range[2])
     colvar <- NULL
-    colkey <- list(plot = FALSE, side = 1)
+    colkey <- list(plot = FALSE, 
+                   side = side, 
+                   side.clab = 1,
+                   dist = dist)
     clab <- NULL
     
   } else if(cRGB == FALSE) {
     if(key == TRUE) {
-      colkey <- list(plot = TRUE, side = 1)
+      colkey <- list(plot = TRUE, 
+                     side = side, 
+                     side.clab = 1,
+                     dist = dist)
     } else {
-      colkey <- list(plot = FALSE, side = 1)
+      colkey <- list(plot = FALSE, 
+                     side = side, 
+                     side.clab = 1,
+                     dist = dist)
     }
   }
   
@@ -119,7 +137,7 @@ ordination_3d <- function(ordination,
   scatter3D(x = rep(axis_range[1], length(ordination$Axis1)), y = ordination$Axis2, z = ordination$Axis3, 
             phi = phi,
             theta = theta,
-            bty = "g", 
+            bty = "u", 
             pch = 16, 
             cex = point_size_shade, 
             ticktype = "detailed",
@@ -132,12 +150,12 @@ ordination_3d <- function(ordination,
             nticks = 3,
             col = shade_color,
             colvar = NULL,
-            colkey = list(plot = FALSE, side = 1),
+            colkey = null_colkey,
             clab = clab,
             alpha.col = 0.2,
             #col.panel = "black",
-            #col.grid = "white",
-            #col.axis = "black",
+            col.grid = "grey75",
+            col.axis = "white",
             main = title,
             cex.axis = 0.65,
             cex.lab = 0.8)
@@ -158,7 +176,7 @@ ordination_3d <- function(ordination,
             nticks = 3,
             col = shade_color,
             colvar = NULL,
-            colkey = list(plot = FALSE, side = 1),
+            colkey = null_colkey,
             clab = clab,
             alpha.col = 0.2,
             add = TRUE)
@@ -179,7 +197,7 @@ ordination_3d <- function(ordination,
             nticks = 3,
             col = shade_color,
             colvar = NULL,
-            colkey = list(plot = FALSE, side = 1),
+            colkey = null_colkey,
             clab = clab,
             alpha.col = 0.2,
             add = TRUE)
@@ -594,19 +612,19 @@ png(paste0(root_path, "/figures/", "NMDS_shade.png"),
 par(mfrow=c(1,3))
 ordination_3d(taxo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "magma", direction = -1),
+              col = viridis(100, option = "magma", direction = 1),
               colvar = proportions$CWM_shade,
               key = FALSE,
               clab = " ")
 ordination_3d(phylo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "magma", direction = -1),
+              col = viridis(100, option = "magma", direction = 1),
               colvar = proportions$CWM_shade,
               key = TRUE,
               clab = "CWM of shade tolerance index")
 ordination_3d(func_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "magma", direction = -1),
+              col = viridis(100, option = "magma", direction = 1),
               colvar = proportions$CWM_shade,
               key = FALSE,
               clab = " ")
@@ -627,25 +645,24 @@ png(paste0(root_path, "/figures/", "NMDS_drought.png"),
 par(mfrow=c(1,3))
 ordination_3d(taxo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "inferno", direction = -1),
+              col = viridis(100, option = "inferno", direction = 1),
               colvar = proportions$CWM_drought,
               key = FALSE,
               clab = " ")
 ordination_3d(phylo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "inferno", direction = -1),
+              col = viridis(100, option = "inferno", direction = 1),
               colvar = proportions$CWM_drought,
               key = TRUE,
               clab = "CWM of drought tolerance index")
 ordination_3d(func_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "inferno", direction = -1),
+              col = viridis(100, option = "inferno", direction = 1),
               colvar = proportions$CWM_drought,
               key = FALSE,
               clab = " ")
 
 dev.off()
-
 
 #-------------------------------------------------------------------------------
 # CMW of waterlogging tolerance
@@ -660,19 +677,19 @@ png(paste0(root_path, "/figures/", "NMDS_waterlogging.png"),
 par(mfrow=c(1,3))
 ordination_3d(taxo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "mako", direction = -1),
+              col = viridis(100, option = "mako", direction = 1),
               colvar = proportions$CWM_waterlogging,
               key = FALSE,
               clab = " ")
 ordination_3d(phylo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "mako", direction = -1),
+              col = viridis(100, option = "mako", direction = 1),
               colvar = proportions$CWM_waterlogging,
               key = TRUE,
               clab = "CWM of waterlogging tolerance index")
 ordination_3d(func_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "mako", direction = -1),
+              col = viridis(100, option = "mako", direction = 1),
               colvar = proportions$CWM_waterlogging,
               key = FALSE,
               clab = " ")
@@ -693,19 +710,19 @@ png(paste0(root_path, "/figures/", "NMDS_leaf-area.png"),
 par(mfrow=c(1,3))
 ordination_3d(taxo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "cividis", direction = -1),
+              col = viridis(100, option = "cividis", direction = 1),
               colvar = proportions$CWM_leaf_area,
               key = FALSE,
               clab = " ")
 ordination_3d(phylo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "cividis", direction = -1),
+              col = viridis(100, option = "cividis", direction = 1),
               colvar = proportions$CWM_leaf_area,
               key = TRUE,
               clab = "CWM of leaf area")
 ordination_3d(func_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "cividis", direction = -1),
+              col = viridis(100, option = "cividis", direction = 1),
               colvar = proportions$CWM_leaf_area,
               key = FALSE,
               clab = " ")
@@ -725,20 +742,237 @@ png(paste0(root_path, "/figures/", "NMDS_LMA.png"),
 par(mfrow=c(1,3))
 ordination_3d(taxo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "turbo", direction = -1),
+              col = viridis(100, option = "viridis", direction = 1),
               colvar = proportions$CWM_LMA,
               key = FALSE,
               clab = " ")
 ordination_3d(phylo_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "turbo", direction = -1),
+              col = viridis(100, option = "viridis", direction = 1),
               colvar = proportions$CWM_LMA,
               key = TRUE,
               clab = "CWM of LMA")
 ordination_3d(func_comm, 
               cRGB = FALSE,
-              col = viridis(100, option = "turbo", direction = -1),
+              col = viridis(100, option = "viridis", direction = 1),
               colvar = proportions$CWM_LMA,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# CMW of Genus
+png(paste0(root_path, "/figures/", "NMDS_genus.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(length(unique(genus_max$Genus)), option = "turbo", direction = -1),
+              colvar = as.integer(as.factor(genus_max$Genus)),
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(length(unique(genus_max$Genus)), option = "turbo", direction = -1),
+              colvar = as.integer(as.factor(genus_max$Genus)),
+              key = FALSE,
+              clab = " ")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(length(unique(genus_max$Genus)), option = "turbo", direction = -1),
+              colvar = as.integer(as.factor(genus_max$Genus)),
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# CMW of Families
+png(paste0(root_path, "/figures/", "NMDS_families.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(length(unique(family_max$Family)), option = "turbo", direction = -1),
+              colvar = as.integer(as.factor(family_max$Family)),
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(length(unique(family_max$Family)), option = "turbo", direction = -1),
+              colvar = as.integer(as.factor(family_max$Family)),
+              key = FALSE,
+              clab = " ")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(length(unique(family_max$Family)), option = "turbo", direction = -1),
+              colvar = as.integer(as.factor(family_max$Family)),
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Domains
+
+domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
+domain <- domain[mat, ]
+
+png(paste0(root_path, "/figures/", "NMDS_domains.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = qualitative_hcl(length(unique(domain$DomainName)), palette = "Dark3"),
+              colvar = as.integer(as.factor(domain$DomainName)),
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = qualitative_hcl(length(unique(domain$DomainName)), palette = "Dark3"),
+              colvar = as.integer(as.factor(domain$DomainName)),
+              key = FALSE,
+              clab = " ")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = qualitative_hcl(length(unique(domain$DomainName)), palette = "Dark3"),
+              colvar = as.integer(as.factor(domain$DomainName)),
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# Elevation from sea level
+
+domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
+domain <- domain[mat, ]
+all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
+
+png(paste0(root_path, "/figures/", "NMDS_elevation.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$ELEV,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$ELEV,
+              key = TRUE,
+              clab = "Elevation from sea level")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$ELEV,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# Latitude
+
+domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
+domain <- domain[mat, ]
+
+png(paste0(root_path, "/figures/", "NMDS_latitude.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$LAT,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$LAT,
+              key = TRUE,
+              clab = "Latitude")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$LAT,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# Longitude
+
+domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
+domain <- domain[mat, ]
+
+png(paste0(root_path, "/figures/", "NMDS_longitude.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$LON,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$LON,
+              key = TRUE,
+              clab = "Longitude")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = 1),
+              colvar = domain$LON,
               key = FALSE,
               clab = " ")
 

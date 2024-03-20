@@ -66,7 +66,35 @@ aggregate_species <- function(meta, community) {
 
 root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 
+# Genus
 meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
 meta <- meta[, c(9, 4)]
 #meta <- meta[, c(9, 10)]
 community <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL-log.rds"))
+genus <- aggregate_species(meta, community)
+genus_max <- data.table(PLT_CN = genus$PLT_CN, Genus = "A")
+genus_names <- colnames(genus)[-1]
+
+for(i in 1:nrow(genus_max)) {
+  
+  plot <- genus[i, -1]
+  genus_max[i, 2] <- names(which.max(plot))
+  
+}
+
+
+# Families
+meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
+meta <- meta[, c(9, 3)]
+#meta <- meta[, c(9, 10)]
+community <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL-log.rds"))
+family <- aggregate_species(meta, community)
+family_max <- data.table(PLT_CN = genus$PLT_CN, Family = "A")
+family_names <- colnames(family)[-1]
+
+for(i in 1:nrow(family_max)) {
+  
+  plot <- family[i, -1]
+  family_max[i, 2] <- names(which.max(plot))
+  
+}
