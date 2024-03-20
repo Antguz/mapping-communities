@@ -1,9 +1,10 @@
 #'------------------------------------------------------------------------------
-#' @title Three-dimensional figure of Axis for RGB
+#' @title Three-dimensional figure for NMDS
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
 #' Library
+
 library(bit64)
 library(plot3D)
 library(data.table)
@@ -11,14 +12,14 @@ library(schemr)
 library(stringr)
 library(rcartocolor)
 library(viridis)
-library(RColorBrewer)
+library(colorspace)
 
 #'------------------------------------------------------------------------------
 #' Read data
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 
 # Communities
 taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
@@ -83,7 +84,8 @@ ordination_3d <- function(ordination,
                           colvar = NULL,
                           key = TRUE,
                           clab = " ",
-                          axis_range = c(-0.55, 0.55)) {
+                          axis_range = c(-0.55, 0.55),
+                          alpha = 1.0) {
   
   # Plot features
   point_shape <- 20
@@ -93,7 +95,7 @@ ordination_3d <- function(ordination,
   ylab <- paste0("Axis 2")
   zlab <- paste0("Axis 3")
   shade_color <- "grey75"
-  alpha_color <- 0.5
+  alpha_color <- alpha
   
   if(cRGB == TRUE) {
     col <- RGB(ordination$Axis1, 
@@ -205,8 +207,9 @@ ordination_3d <- function(ordination,
   
 }
 
+#-------------------------------------------------------------------------------
 # RGB
-png(paste0(root_path, "/figures/", "ordination_RGB.png"),
+png(paste0(root_path, "/figures/", "NMDS_RGB.png"),
     width = 210, 
     height = 80, 
     units = "mm", 
@@ -221,8 +224,9 @@ ordination_3d(func_comm, title = "Functional", cRGB = TRUE)
 
 dev.off()
 
+#-------------------------------------------------------------------------------
 # Proportion of angiosperms
-png(paste0(root_path, "/figures/", "proportion_angiosperms.png"),
+png(paste0(root_path, "/figures/", "NMDS_angiosperms.png"),
     width = 210, 
     height = 80, 
     units = "mm", 
@@ -233,19 +237,19 @@ png(paste0(root_path, "/figures/", "proportion_angiosperms.png"),
 par(mfrow=c(1,3))
 ordination_3d(taxo_comm, 
               cRGB = FALSE,
-              col = viridis(100),
+              col = carto_pal(n = 100, "Fall"),
               colvar = proportions$proportion_angiosperm,
               key = FALSE,
               clab = "Proportion of angiosperms")
 ordination_3d(phylo_comm, 
               cRGB = FALSE,
-              col = viridis(100),
+              col = carto_pal(n = 100, "Fall"),
               colvar = proportions$proportion_angiosperm,
               key = TRUE,
               clab = "Proportion of angiosperms")
 ordination_3d(func_comm, 
               cRGB = FALSE,
-              col = viridis(100),
+              col = carto_pal(n = 100, "Fall"),
               colvar = proportions$proportion_angiosperm,
               key = FALSE,
               clab = "Proportion of angiosperms")
@@ -253,9 +257,489 @@ ordination_3d(func_comm,
 dev.off()
 
 
+#-------------------------------------------------------------------------------
+# Proportion of AM
+png(paste0(root_path, "/figures/", "NMDS_AM.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "Tropic"),
+              colvar = proportions$proportion_AM,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "Tropic"),
+              colvar = proportions$proportion_AM,
+              key = TRUE,
+              clab = "Proportion of AM-associated trees")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "Tropic"),
+              colvar = proportions$proportion_AM,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Proportion of broadleaf
+png(paste0(root_path, "/figures/", "NMDS_broadleaf.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = rev(carto_pal(n = 100, "Earth")),
+              colvar = proportions$proportion_broadleaf,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = rev(carto_pal(n = 100, "Earth")),
+              colvar = proportions$proportion_broadleaf,
+              key = TRUE,
+              clab = "Proportion of broadleaf trees")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = rev(carto_pal(n = 100, "Earth")),
+              colvar = proportions$proportion_broadleaf,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Proportion of compound leaf
+png(paste0(root_path, "/figures/", "NMDS_compound.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "TealRose"),
+              colvar = proportions$proportion_compound,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "TealRose"),
+              colvar = proportions$proportion_compound,
+              key = TRUE,
+              clab = "Proportion of compound-leaf trees")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "TealRose"),
+              colvar = proportions$proportion_compound,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
 
 
+#-------------------------------------------------------------------------------
+# Proportion of deciduous trees
+png(paste0(root_path, "/figures/", "NMDS_deciduous.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "ArmyRose"),
+              colvar = proportions$proportion_deciduous,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "ArmyRose"),
+              colvar = proportions$proportion_deciduous,
+              key = TRUE,
+              clab = "Proportion of deciduous trees")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = carto_pal(n = 100, "ArmyRose"),
+              colvar = proportions$proportion_deciduous,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# CMW of tree height
+png(paste0(root_path, "/figures/", "NMDS_HTq.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdYlGn"),
+              colvar = proportions$CWM_HTq,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdYlGn"),
+              colvar = proportions$CWM_HTq,
+              key = TRUE,
+              clab = "CWM of maximun tree height (m)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdYlGn"),
+              colvar = proportions$CWM_HTq,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# CMW of tree slenderness
+png(paste0(root_path, "/figures/", "NMDS_SL.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdYlBu"),
+              colvar = proportions$CWM_SLq,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdYlBu"),
+              colvar = proportions$CWM_SLq,
+              key = TRUE,
+              clab = "CWM tree slenderness")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdYlBu"),
+              colvar = proportions$CWM_SLq,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# CMW of CCLCD
+png(paste0(root_path, "/figures/", "NMDS_CCLCD.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdGy"),
+              colvar = proportions$CWM_CCLCD_mode,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdGy"),
+              colvar = proportions$CWM_CCLCD_mode,
+              key = TRUE,
+              clab = "CWM of CCLCD")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "RdGy"),
+              colvar = proportions$CWM_CCLCD_mode,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
 
 
+#-------------------------------------------------------------------------------
+# CMW of gravity
+png(paste0(root_path, "/figures/", "NMDS_gravity.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "BrBG"),
+              colvar = proportions$CWM_WOOD_SPGR_GREENVOL_DRYWT,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "BrBG"),
+              colvar = proportions$CWM_WOOD_SPGR_GREENVOL_DRYWT,
+              key = TRUE,
+              clab = "CWM of specific gravity of wood")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "BrBG"),
+              colvar = proportions$CWM_WOOD_SPGR_GREENVOL_DRYWT,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
 
 
+#-------------------------------------------------------------------------------
+# CMW of moisture content of green wood
+png(paste0(root_path, "/figures/", "NMDS_moisture-green.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "PRGn"),
+              colvar = proportions$CWM_MC_PCT_GREEN_WOOD,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "PRGn"),
+              colvar = proportions$CWM_MC_PCT_GREEN_WOOD,
+              key = TRUE,
+              clab = "CWM of moisture content of green wood")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "PRGn"),
+              colvar = proportions$CWM_MC_PCT_GREEN_WOOD,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# CMW of wood carbon fraction
+png(paste0(root_path, "/figures/", "NMDS_carbon-fraction.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "PuOr"),
+              colvar = proportions$CWM_CARBON_RATIO_LIVE,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "PuOr"),
+              colvar = proportions$CWM_CARBON_RATIO_LIVE,
+              key = TRUE,
+              clab = "CWM of wood carbon fraction")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = divergingx_hcl(100, palette = "PuOr"),
+              colvar = proportions$CWM_CARBON_RATIO_LIVE,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# CMW of shade tolerance
+png(paste0(root_path, "/figures/", "NMDS_shade.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "magma", direction = -1),
+              colvar = proportions$CWM_shade,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "magma", direction = -1),
+              colvar = proportions$CWM_shade,
+              key = TRUE,
+              clab = "CWM of shade tolerance index")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "magma", direction = -1),
+              colvar = proportions$CWM_shade,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# CMW of drought tolerance
+png(paste0(root_path, "/figures/", "NMDS_drought.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "inferno", direction = -1),
+              colvar = proportions$CWM_drought,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "inferno", direction = -1),
+              colvar = proportions$CWM_drought,
+              key = TRUE,
+              clab = "CWM of drought tolerance index")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "inferno", direction = -1),
+              colvar = proportions$CWM_drought,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# CMW of waterlogging tolerance
+png(paste0(root_path, "/figures/", "NMDS_waterlogging.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "mako", direction = -1),
+              colvar = proportions$CWM_waterlogging,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "mako", direction = -1),
+              colvar = proportions$CWM_waterlogging,
+              key = TRUE,
+              clab = "CWM of waterlogging tolerance index")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "mako", direction = -1),
+              colvar = proportions$CWM_waterlogging,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# CMW of leaf area
+png(paste0(root_path, "/figures/", "NMDS_leaf-area.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "cividis", direction = -1),
+              colvar = proportions$CWM_leaf_area,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "cividis", direction = -1),
+              colvar = proportions$CWM_leaf_area,
+              key = TRUE,
+              clab = "CWM of leaf area")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "cividis", direction = -1),
+              colvar = proportions$CWM_leaf_area,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# CMW of LMA
+png(paste0(root_path, "/figures/", "NMDS_LMA.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = -1),
+              colvar = proportions$CWM_LMA,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = -1),
+              colvar = proportions$CWM_LMA,
+              key = TRUE,
+              clab = "CWM of LMA")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "turbo", direction = -1),
+              colvar = proportions$CWM_LMA,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
