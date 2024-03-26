@@ -52,25 +52,25 @@ model_tune <- function(meta_training,
     RMSEP_train <- cbind(data.table(iteration = rep(t, ncol_ord),
                                     type = rep("RMSEP", ncol_ord),
                                     estimate = rep("train", ncol_ord),
-                                    Axes = paste0("PCoA", 1:ncol_ord)),
+                                    Axes = paste0("Axis", 1:ncol_ord)),
                          as.data.table(RMSEP_train$val[1,1:ncol_ord,]))
     
     RMSEP_CV <- cbind(data.table(iteration = rep(t, ncol_ord),
                                  type = rep("RMSEP", ncol_ord),
                                  estimate = rep("CV", ncol_ord),
-                                 Axes = paste0("PCoA", 1:ncol_ord)),
+                                 Axes = paste0("Axis", 1:ncol_ord)),
                       as.data.table(RMSEP_CV$val[1,1:ncol_ord,]))
     
     R2_train <- cbind(data.table(iteration = rep(t, ncol_ord),
                                  type = rep("R2", ncol_ord),
                                  estimate = rep("train", ncol_ord),
-                                 Axes = paste0("PCoA", 1:ncol_ord)),
+                                 Axes = paste0("Axis", 1:ncol_ord)),
                       as.data.table(R2_train$val[1,1:ncol_ord,]))
     
     R2_CV <- cbind(data.table(iteration = rep(t, ncol_ord),
                               type = rep("R2", ncol_ord),
                               estimate = rep("CV", ncol_ord),
-                              Axes = paste0("PCoA", 1:ncol_ord)),
+                              Axes = paste0("Axis", 1:ncol_ord)),
                    as.data.table(R2_CV$val[1,1:ncol_ord,]))
     
     # Collect results
@@ -86,21 +86,21 @@ model_tune <- function(meta_training,
   }
   
   # Parallel processing
-  complete <- mclapply(X = 1:ntimes, 
-                       FUN = application_tune, 
-                       meta_training = meta_training, 
-                       ordination_training = ordination_training, 
-                       spectra_training = spectra_training,
-                       ncomp_max = ncomp_max,
-                       segments = segments,
-                       iscv = iscv,
-                       mc.preschedule = TRUE, 
-                       mc.set.seed = FALSE,
-                       mc.silent = FALSE, 
-                       mc.cores = threads,
-                       mc.cleanup = TRUE, 
-                       mc.allow.recursive = TRUE, 
-                       affinity.list = NULL)
+  complete <- pbmclapply(X = 1:ntimes, 
+                         FUN = application_tune, 
+                         meta_training = meta_training, 
+                         ordination_training = ordination_training, 
+                         spectra_training = spectra_training,
+                         ncomp_max = ncomp_max,
+                         segments = segments,
+                         iscv = iscv,
+                         mc.preschedule = TRUE, 
+                         mc.set.seed = FALSE,
+                         mc.silent = FALSE, 
+                         mc.cores = threads,
+                         mc.cleanup = TRUE, 
+                         mc.allow.recursive = TRUE, 
+                         affinity.list = NULL)
   
   frame <- data.table()
   

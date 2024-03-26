@@ -27,18 +27,18 @@ model_performance <- function(meta,
   }
   
   # Predicted in parallel
-  predicted <- mclapply(X = 1:length(models), 
-                        FUN = application_predict, 
-                        models = models,
-                        spectra = spectra,
-                        tune_optimal = tune_optimal,
-                        mc.preschedule = TRUE, 
-                        mc.set.seed = FALSE,
-                        mc.silent = FALSE, 
-                        mc.cores = threads,
-                        mc.cleanup = TRUE, 
-                        mc.allow.recursive = TRUE, 
-                        affinity.list = NULL)
+  predicted <- pbmclapply(X = 1:length(models), 
+                          FUN = application_predict, 
+                          models = models,
+                          spectra = spectra,
+                          tune_optimal = tune_optimal,
+                          mc.preschedule = TRUE, 
+                          mc.set.seed = FALSE,
+                          mc.silent = FALSE, 
+                          mc.cores = threads,
+                          mc.cleanup = TRUE, 
+                          mc.allow.recursive = TRUE, 
+                          affinity.list = NULL)
 
   #-----------------------------------------------------------------------------
   # Evaluate performance
@@ -51,7 +51,7 @@ model_performance <- function(meta,
     
     for(i in 1:ncol(ordination)) {
       per <- parameters(obs = ord[, i], pred = iteration[,i])
-      per <- cbind(Axes = paste0("PCoA", i),
+      per <- cbind(Axes = paste0("Axis", i),
                    iteration = X,
                    per)
       collector <- rbind(collector, per)
@@ -106,7 +106,7 @@ model_performance <- function(meta,
       residuals_means <- rowMeans(residuals)
       residuals_sd <- apply(residuals, 1, sd)
       
-      results <- data.table(Axes = paste0("PCoA", i),
+      results <- data.table(Axes = paste0("Axis", i),
                             sample = 1:length(predictions_means),
                             observed = axis,
                             predicted = predictions_means,
