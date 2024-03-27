@@ -1,14 +1,14 @@
-PCoA_segmentation <- function(ordination, 
+axes_segmentation <- function(ordination, 
                               nsegments = 50, 
-                              lower.p = 0.01, 
+                              lower.p = 0.5, 
                               proportion = 0.8,
                               ...) {
   
-  densities <- kde3d(ordination$PCoA1, 
-                     ordination$PCoA2,
-                     ordination$PCoA3,
+  densities <- kde3d(ordination$Axis1, 
+                     ordination$Axis2,
+                     ordination$Axis3,
                      n = nsegments)
-
+  
   # Divide data by quantiles
   x_bins <- cut(as.matrix(ordination)[,1], 
                 breaks = densities$x, 
@@ -44,6 +44,7 @@ PCoA_segmentation <- function(ordination,
   frame$total <- (1 - lower.p) * frame$total + lower.p
   
   # Get sample
+  set.seed(sample(1:1000, 1))
   sub_sample <- sample(frame$row, 
                        ceiling(nrow(frame)*proportion), 
                        prob = frame$total)
@@ -55,5 +56,3 @@ PCoA_segmentation <- function(ordination,
   return(sub_sample)
   
 }
-
-

@@ -36,7 +36,7 @@ model_predict <- function(meta = meta,
   
   # Parameters for predicting --------------------------------------------------
   # Number of models
-  nMDS <- length(models)
+  nAxes <- length(models)
   
   #Performance descriptors
   metrics_feature <- c("R2", "MAE", "RMAE", "RMSE", "RRMSE", "B0", "B1", "MBE")
@@ -46,7 +46,7 @@ model_predict <- function(meta = meta,
   final_performance <- data.table()
   
   # Loop over axes
-  for(q in 1:nMDS) {
+  for(q in 1:nAxes) {
     
     # Repeated
     repeated <- length(models[[q]])
@@ -66,10 +66,10 @@ model_predict <- function(meta = meta,
     frame <- ordination[, .SD, .SDcols = q]
     colnames(frame)[1] <- "observed"
     frame <- cbind(meta, 
-                   data.table(MDS = paste0("MDS", q),
-                              MDS_observed = frame$observed,
-                              MDS_predicted_mean = rowMeans(predictions),
-                              MDS_predicted_sd = apply(predictions, 1, sd)),
+                   data.table(Axis = paste0("Axis", q),
+                              Axis_observed = frame$observed,
+                              Axis_predicted_mean = rowMeans(predictions),
+                              Axis_predicted_sd = apply(predictions, 1, sd)),
                    predictions)
     
     # Export from loop
@@ -78,7 +78,7 @@ model_predict <- function(meta = meta,
     # Get performance in parallel ----------------------------------------------
     performance <- mclapply(X = 1:repeated, 
                             FUN = apply_performance,
-                            observed = frame$MDS_observed,
+                            observed = frame$Axis_observed,
                             predicted = frame[, .SD, .SDcols = c((ncol(frame) - repeated + 1):ncol(frame))],
                             metrics = metrics_feature,
                             mc.cores = threads,
@@ -87,7 +87,7 @@ model_predict <- function(meta = meta,
     
     # Arrange the performance
     performance <- data.table(do.call(rbind, performance))
-    performance <- cbind(data.table(MDS = paste0("MDS", q),
+    performance <- cbind(data.table(Axis = paste0("Axis", q),
                                     iteration = 1:nrow(performance)),
                          performance)
     

@@ -4,7 +4,7 @@ model_build <- function(meta_training,
                         segments,
                         iscv,
                         tune_optimal, 
-                        ntimes = 100, 
+                        ntimes,
                         threads = 26) {
   
   # Application loop

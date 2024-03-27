@@ -3,7 +3,8 @@
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
-#' Library
+#' @Libraries
+#-------------------------------------------------------------------------------
 
 library(bit64)
 library(plot3D)
@@ -15,11 +16,18 @@ library(viridis)
 library(colorspace)
 
 #'------------------------------------------------------------------------------
-#' Read data
+#' @Source_code
+#-------------------------------------------------------------------------------
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+sourceCpp("src/probability_rcpp.cpp")
+
+#'------------------------------------------------------------------------------
+#' @Read-Information
+#-------------------------------------------------------------------------------
+
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
 
 # Communities
 taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
@@ -31,23 +39,46 @@ func_comm$Axis3 <- -func_comm$Axis3
 #func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
 #fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
 
-
 # Get proportions
 proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
 plot <- taxo_comm$PLT_CN
 match_proportions <- match.integer64(plot, proportions$PLT_CN)
 proportions <- proportions[match_proportions,]
 
-# Species
-#taxo_sp <- fread(paste0(root_path, "/05_MDS/scores_sp_taxo.csv"))
-#taxo_sp <- taxo_sp[order(Axis1, -Axis2, Axis3), ]
-#phylo_sp <- fread(paste0(root_path, "/05_MDS/scores_sp_phylo-log.csv"))
-#phylo_sp <- phylo_sp[order(Axis1, -Axis2, Axis3), ]
-#func_sp <- fread(paste0(root_path, "/05_MDS/scores_sp_func.csv"))
-#func_sp <- func_sp[order(Axis1, -Axis2, Axis3), ]
+# Get probabilities
+taxo_occurance <- fread(paste0(root_path, "/07_model_occurrence/taxo_model-occurrence.csv"))
+taxo_occurance <- taxo_occurance[dataset == "training", ]
+phylo_occurance <- fread(paste0(root_path, "/07_model_occurrence/phylo-log_model-occurrence.csv"))
+phylo_occurance <- phylo_occurance[dataset == "training", ]
+func_occurance <- fread(paste0(root_path, "/07_model_occurrence/func_model-occurrence.csv"))
+func_occurance <- func_occurance[dataset == "training", ]
+
+taxo_prob <- multi_probability(as.matrix(taxo_comm[,-1]),
+                               as.matrix(taxo_occurance[, c(14:17)]))
+taxo_prob <- as.data.table(taxo_prob)/10000
+colnames(taxo_prob) <- taxo_occurance$plant
+
+phylo_prob <- multi_probability(as.matrix(phylo_comm[,-1]),
+                                as.matrix(phylo_occurance[, c(14:17)]))
+phylo_prob <- as.data.table(phylo_prob)/10000
+colnames(phylo_prob) <- phylo_occurance$plant
+
+func_prob <- multi_probability(as.matrix(func_comm[,-1]),
+                               as.matrix(func_occurance[, c(14:17)]))
+func_prob <- as.data.table(func_prob)/10000
+colnames(func_prob) <- func_occurance$plant
+
+# Get domains
+domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
+domain <- domain[mat, ]
+all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
 
 #'------------------------------------------------------------------------------
-#' Functions
+#' @Plot-functions
+#-------------------------------------------------------------------------------
+
+# RGB color
 RGB <- function(X, Y, Z, min_range = -0.66, max_range = 0.66) {
   
   x_new <-  ((X - min_range) / (max_range - min_range)) * (255 - 0) + 0
@@ -78,6 +109,7 @@ RGB <- function(X, Y, Z, min_range = -0.66, max_range = 0.66) {
   
 }
 
+# Ordination figure
 ordination_3d <- function(ordination, 
                           title = " ", 
                           phi = 20, 
@@ -227,6 +259,7 @@ ordination_3d <- function(ordination,
 
 #-------------------------------------------------------------------------------
 # RGB
+
 png(paste0(root_path, "/figures/", "NMDS_RGB.png"),
     width = 210, 
     height = 80, 
@@ -244,6 +277,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Proportion of angiosperms
+
 png(paste0(root_path, "/figures/", "NMDS_angiosperms.png"),
     width = 210, 
     height = 80, 
@@ -277,6 +311,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Proportion of AM
+
 png(paste0(root_path, "/figures/", "NMDS_AM.png"),
     width = 210, 
     height = 80, 
@@ -309,6 +344,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Proportion of broadleaf
+
 png(paste0(root_path, "/figures/", "NMDS_broadleaf.png"),
     width = 210, 
     height = 80, 
@@ -341,6 +377,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Proportion of compound leaf
+
 png(paste0(root_path, "/figures/", "NMDS_compound.png"),
     width = 210, 
     height = 80, 
@@ -374,6 +411,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Proportion of deciduous trees
+
 png(paste0(root_path, "/figures/", "NMDS_deciduous.png"),
     width = 210, 
     height = 80, 
@@ -406,6 +444,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of tree height
+
 png(paste0(root_path, "/figures/", "NMDS_HTq.png"),
     width = 210, 
     height = 80, 
@@ -438,6 +477,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of tree slenderness
+
 png(paste0(root_path, "/figures/", "NMDS_SL.png"),
     width = 210, 
     height = 80, 
@@ -470,6 +510,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of CCLCD
+
 png(paste0(root_path, "/figures/", "NMDS_CCLCD.png"),
     width = 210, 
     height = 80, 
@@ -503,6 +544,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of gravity
+
 png(paste0(root_path, "/figures/", "NMDS_gravity.png"),
     width = 210, 
     height = 80, 
@@ -536,6 +578,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of moisture content of green wood
+
 png(paste0(root_path, "/figures/", "NMDS_moisture-green.png"),
     width = 210, 
     height = 80, 
@@ -569,6 +612,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of wood carbon fraction
+
 png(paste0(root_path, "/figures/", "NMDS_carbon-fraction.png"),
     width = 210, 
     height = 80, 
@@ -601,6 +645,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of shade tolerance
+
 png(paste0(root_path, "/figures/", "NMDS_shade.png"),
     width = 210, 
     height = 80, 
@@ -634,6 +679,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of drought tolerance
+
 png(paste0(root_path, "/figures/", "NMDS_drought.png"),
     width = 210, 
     height = 80, 
@@ -666,6 +712,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of waterlogging tolerance
+
 png(paste0(root_path, "/figures/", "NMDS_waterlogging.png"),
     width = 210, 
     height = 80, 
@@ -699,6 +746,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of leaf area
+
 png(paste0(root_path, "/figures/", "NMDS_leaf-area.png"),
     width = 210, 
     height = 80, 
@@ -731,6 +779,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of LMA
+
 png(paste0(root_path, "/figures/", "NMDS_LMA.png"),
     width = 210, 
     height = 80, 
@@ -763,6 +812,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of Genus
+
 png(paste0(root_path, "/figures/", "NMDS_genus.png"),
     width = 210, 
     height = 80, 
@@ -796,6 +846,7 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # CMW of Families
+
 png(paste0(root_path, "/figures/", "NMDS_families.png"),
     width = 210, 
     height = 80, 
@@ -828,10 +879,6 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Domains
-
-domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
-mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
-domain <- domain[mat, ]
 
 png(paste0(root_path, "/figures/", "NMDS_domains.png"),
     width = 210, 
@@ -867,11 +914,6 @@ dev.off()
 #-------------------------------------------------------------------------------
 # Elevation from sea level
 
-domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
-mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
-domain <- domain[mat, ]
-all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
-
 png(paste0(root_path, "/figures/", "NMDS_elevation.png"),
     width = 210, 
     height = 80, 
@@ -905,10 +947,6 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Latitude
-
-domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
-mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
-domain <- domain[mat, ]
 
 png(paste0(root_path, "/figures/", "NMDS_latitude.png"),
     width = 210, 
@@ -944,10 +982,6 @@ dev.off()
 #-------------------------------------------------------------------------------
 # Longitude
 
-domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
-mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
-domain <- domain[mat, ]
-
 png(paste0(root_path, "/figures/", "NMDS_longitude.png"),
     width = 210, 
     height = 80, 
@@ -973,6 +1007,304 @@ ordination_3d(func_comm,
               cRGB = FALSE,
               col = viridis(100, option = "turbo", direction = 1),
               colvar = domain$LON,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Quercus)
+
+png(paste0(root_path, "/figures/", "NMDS_quercus.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Quercus,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Quercus,
+              key = TRUE,
+              clab = "Probability of occurrence (Quercus)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Quercus,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Acer)
+
+png(paste0(root_path, "/figures/", "NMDS_acer.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Acer,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Acer,
+              key = TRUE,
+              clab = "Probability of occurrence (Acer)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Acer,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Pinus)
+
+png(paste0(root_path, "/figures/", "NMDS_pinus.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Pinus,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Pinus,
+              key = TRUE,
+              clab = "Probability of occurrence (Pinus)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Pinus,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Liquidambar)
+
+png(paste0(root_path, "/figures/", "NMDS_liquidambar.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Liquidambar,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Liquidambar,
+              key = TRUE,
+              clab = "Probability of occurrence (Liquidambar)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Liquidambar,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+
+#-------------------------------------------------------------------------------
+# Probabilities (Carya)
+
+png(paste0(root_path, "/figures/", "NMDS_carya.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Carya,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Carya,
+              key = TRUE,
+              clab = "Probability of occurrence (Carya)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Carya,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Nyssa)
+
+png(paste0(root_path, "/figures/", "NMDS_nyssa.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Nyssa,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Nyssa,
+              key = TRUE,
+              clab = "Probability of occurrence (Nyssa)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Nyssa,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Ulmus)
+
+png(paste0(root_path, "/figures/", "NMDS_ulmus.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Ulmus,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Ulmus,
+              key = TRUE,
+              clab = "Probability of occurrence (Ulmus)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Ulmus,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Prunus)
+
+png(paste0(root_path, "/figures/", "NMDS_prunus.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Prunus,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Prunus,
+              key = TRUE,
+              clab = "Probability of occurrence (Prunus)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Prunus,
+              key = FALSE,
+              clab = " ")
+
+dev.off()
+
+#-------------------------------------------------------------------------------
+# Probabilities (Juniperus)
+
+png(paste0(root_path, "/figures/", "NMDS_juniperus.png"),
+    width = 210, 
+    height = 80, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "transparent",  
+    res = 600)
+
+par(mfrow=c(1,3))
+ordination_3d(taxo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = taxo_prob$Juniperus,
+              key = FALSE,
+              clab = " ")
+ordination_3d(phylo_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = phylo_prob$Juniperus,
+              key = TRUE,
+              clab = "Probability of occurrence (Juniperus)")
+ordination_3d(func_comm, 
+              cRGB = FALSE,
+              col = viridis(100, option = "viridis", direction = 1),
+              colvar = func_prob$Juniperus,
               key = FALSE,
               clab = " ")
 
