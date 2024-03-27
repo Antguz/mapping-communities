@@ -46,6 +46,6 @@ approximation <- function(communities_projections,
     
   }
   
-  return(fraction)
+  return(distance)
   
 }
