@@ -50,51 +50,18 @@ taxonomic_diversity <- function(fia,
 #'------------------------------------------------------------------------------
 #' @example 
 
-# Taxonomic
 #root_path <- "E:/Projects/DESIS_mapping"
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
+root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
+#root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
+
+# Fia matched communities from phylo or functional
 fia <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds"))
 out_path <- paste0(root_path, "/03_diversity")
 progress <- TRUE
-threads <- 120
+threads <- 28
 
 taxonomic_diversity(fia, 
                     outpath, 
                     progress,
                     threads)
-
-# Phylogenetic
-#root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-fia <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"), na.strings="NA")
-out_path <- paste0(root_path, "/03_diversity")
-progress <- TRUE
-threads <- 120
-
-phylogenetic_diversity(fia, 
-                       SPCD, 
-                       outpath, 
-                       progress,
-                       threads)
-
-# Functional
-#root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-fia <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"), na.strings="NA")
-out_path <- paste0(root_path, "/03_diversity")
-progress <- TRUE
-threads <- 120
-
-functional_diversity(fia, 
-                     SPCD, 
-                     outpath, 
-                     progress,
-                     threads)
