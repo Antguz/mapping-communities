@@ -18,9 +18,9 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-#root_path <- "E:/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "EMIT"
+root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+sensor <- "DESIS"
 folder <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
 
 #'------------------------------------------------------------------------------
@@ -89,15 +89,16 @@ col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 th_black <- theme_bw() + 
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
-        #legend.position = c(0.93, 0.90),
+        #legend.position.inside = c(0.90, 0.90), 
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill= "transparent"),
-        rect = element_rect(fill = "transparent"))
+        rect = element_rect(fill = "transparent"),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"))
 
 th_trans <- dark_theme_bw(base_size = 11) +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
-        legend.position.inside = c(0.90, 0.90), 
+        #legend.position.inside = c(0.90, 0.90), 
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill = "transparent"),
         rect = element_rect(fill = "transparent"),
@@ -106,7 +107,8 @@ th_trans <- dark_theme_bw(base_size = 11) +
         axis.text = element_text(color="white"),
         plot.background = element_rect(colour = "transparent",
                                        fill = "transparent",
-                                       linewidth=0))
+                                       linewidth=0),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"))
 
 #th <- th_trans
 th <- th_black
@@ -117,26 +119,23 @@ point_size <- 2
 point_shape <- 20
 point_alpha <- 0.9
 
+
 #'------------------------------------------------------------------------------
 #' Plot function
 
 #Test
-#performance <- performance[type == "Testing" & dimension == "Phylogenetic" & Axes == "Axis1",]
-#predicted <- predicted[type == "Testing" & dimension == "Phylogenetic" & Axes == "Axis1",]
+#performance <- performance[type == "Training" & dimension == "Phylogenetic" & Axes == "Axis1",]
+#predicted <- predicted[type == "Training" & dimension == "Phylogenetic" & Axes == "Axis1",]
 
 
 plot_function <- function(performance, 
                           predicted, 
-                          limits_range = c(-1.5, 1.5),
+                          limits_range = c(-0.55, 0.55),
                           breaks = c(-0.5, 0, 0.5),
                           axis = 1) {
   
   print(paste0("Minimun: ", round(min(range(predicted$observed), range(predicted$predicted)), 2),
                " Maximun: ", round(max(range(predicted$observed), range(predicted$predicted)), 2)))
-  
-  #xval <- limits_range[2] * 0.95
-  #yval <- limits_range[1] * 0.95
-  
   
   p <- ggplot() +
     geom_abline(aes(intercept = 0, slope = 1),
@@ -153,7 +152,7 @@ plot_function <- function(performance,
                       alpha = point_alpha) +
     geom_abline(data = performance,
                 aes(intercept = intercept, slope = slope),
-                colour = "grey", alpha = 0.5) +
+                colour = "grey", alpha = 0.25) +
     geom_abline(data = performance,
                 aes(intercept = mean(intercept), slope = mean(slope)),
                 colour = line_col) +
@@ -163,17 +162,19 @@ plot_function <- function(performance,
     #xlab("Predicted") +
     geom_text(data = performance,
               aes(label = paste("R2 = ", round(mean(performance$R2), 2), "\n",
-                                "MAE = ", round(mean(performance$MAE), 2), "\n",
+                                "BIAS = ", round(mean(performance$MAE), 2), "\n",
                                 "RMSE = ", round(mean(performance$RMSE), 2), "\n",
-                                "%RMSE = ", round(mean(performance$perRMSE), 2)),
+                                "RMSE = ", round(mean(performance$perRMSE), 2)),
                   x = Inf, 
                   y = -Inf, 
                   hjust = 1.1, 
                   vjust = -0.2),
-              colour = "grey25",
-              size = 2.5) +
-    #labs(subtitle = paste0("PCoA", axis)) + 
+              colour = line_col,
+              size = 2.5,
+              parse = FALSE) +
     th
+    
+  p
   
   if(is.null(limits_range) == FALSE) {
     p <- p + coord_cartesian(xlim = limits_range, ylim = limits_range, expand = FALSE) +
@@ -264,23 +265,23 @@ func3 <- plot_function(performance[dimension == "Functional" & Axes == "Axis3",]
 axis1 <- ggarrange(taxo1, phylo1, func1, 
                    ncol=3, nrow=1,
                    labels = c("A", "B", "C"),
-                   font.label =  list(size = 9, face = "plain", color ="grey25"),
+                   font.label =  list(size = 9, face = "plain", color = line_col),
                    label.x = 0.08,
                    label.y = 1.05)
 
 axis2 <- ggarrange(taxo2, phylo2, func2, ncol=3, nrow=1,
                    labels = c("D", "E", "F"),
-                   font.label =  list(size = 9, face = "plain", color ="grey25"),
+                   font.label =  list(size = 9, face = "plain", color = line_col),
                    label.x = 0.08,
                    label.y = 1.05)
 
 axis3 <- ggarrange(taxo3, phylo3, func3, ncol=3, nrow=1,
                    labels = c("G", "H", "I"),
-                   font.label =  list(size = 9, face = "plain", color ="grey25"),
+                   font.label =  list(size = 9, face = "plain", color = line_col),
                    label.x = 0.08,
                    label.y = 1.05)
 
-# Export
+# Export JPEG
 jpeg(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, ".jpeg"), 
      width = 210, 
      height = 190, 
@@ -289,10 +290,27 @@ jpeg(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, ".jpeg"),
      bg = "white")
 
 annotate_figure(ggarrange(axis1, axis2, axis3, ncol= 1, nrow=3),
-                top = text_grob("Taxonomic                        Phylogenetic                        Functional", face = "bold", color = "black"),
-                left = "Observed",
-                right = text_grob("Axis 1                        Axis 2                        Axis 3", face = "bold", color = "black", rot = -90),
-                bottom = "Predicted")
+                top = text_grob("Taxonomic                                      Phylogenetic                                      Functional", face = "plain", color = line_col),
+                left = text_grob("Observed", face = "plain", color = line_col, rot = 90),
+                right = text_grob("Axis 1                                      Axis 2                                      Axis 3", face = "plain", color = line_col, rot = -90),
+                bottom = text_grob("Predicted", face = "plain", color = line_col))
+
+dev.off()
+
+# PNG
+
+png(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, ".png"), 
+     width = 210, 
+     height = 190, 
+     units = "mm", 
+     res = 300, 
+     bg = "transparent")
+
+annotate_figure(ggarrange(axis1, axis2, axis3, ncol= 1, nrow=3),
+                top = text_grob("Taxonomic                                      Phylogenetic                                      Functional", face = "plain", color = line_col),
+                left = text_grob("Observed", face = "plain", color = line_col, rot = 90),
+                right = text_grob("Axis 1                                      Axis 2                                      Axis 3", face = "plain", color = line_col, rot = -90),
+                bottom = text_grob("Predicted", face = "plain", color = line_col))
 
 dev.off()
 
