@@ -14,67 +14,115 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "DESIS"
-out_path <- paste0(root_path, "/06_model/SW_beta_PLS/", sensor)
+root_path <- "E:/Projects/DESIS_mapping"
 
 #'------------------------------------------------------------------------------
 #' Read information
 
-# Get coefficients
-coefficients <- fread(paste0(out_path, "/", sensor, "_coefficients.csv"))
+# DESIS
+sensor <- "DESIS"
+out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+DESIS_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
+DESIS_taxo_coefficients$type <- "Taxonomic"
+DESIS_phylo_coefficients <- fread(paste0(out_path, "phylo-log", "_coefficients.csv"))
+DESIS_phylo_coefficients$type <- "Phylogenetic"
+DESIS_func_coefficients <- fread(paste0(out_path, "func", "_coefficients.csv"))
+DESIS_func_coefficients$type <- "Functional"
 
-#'------------------------------------------------------------------------------
-#' Data reshaping
+DESIS <- rbind(DESIS_taxo_coefficients, 
+               DESIS_phylo_coefficients,
+               DESIS_func_coefficients)
+DESIS$sensor <- sensor
 
-# Get bands names
-bands <- colnames(coefficients)
-bands <- bands[4:length(bands)]
-bands <- as.numeric(bands)
+DESIS$Axis1 <- DESIS$Axis1*10000
+DESIS$Axis2 <- DESIS$Axis2*10000
+DESIS$Axis3 <- DESIS$Axis3*10000
 
-# Get summary of coefficients
-coef_melt <- melt(coefficients, id.vars = c("MDS", "iteration"), 
-                  variable.name = "wavelength",
-                  value.name = "coefficients")
+# EMIT
+sensor <- "EMIT"
+out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+EMIT_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
+EMIT_taxo_coefficients$type <- "Taxonomic"
+EMIT_phylo_coefficients <- fread(paste0(out_path, "phylo-log", "_coefficients.csv"))
+EMIT_phylo_coefficients$type <- "Phylogenetic"
+EMIT_func_coefficients <- fread(paste0(out_path, "func", "_coefficients.csv"))
+EMIT_func_coefficients$type <- "Functional"
 
-coef_melt <- coef_melt[wavelength != "Intercept"]
-coef_melt$coefficients <- coef_melt$coefficients*10000
+EMIT <- rbind(EMIT_taxo_coefficients, 
+              EMIT_phylo_coefficients,
+              EMIT_func_coefficients)
+EMIT$sensor <- sensor
 
-coef_summary <- coef_melt[, .(mean = mean(coefficients), sd = sd(coefficients)), 
-                        by = c("MDS", "wavelength")]
+#EMIT$Axis1 <- EMIT$Axis1/10000
+#EMIT$Axis2 <- EMIT$Axis2/10000
+#EMIT$Axis3 <- EMIT$Axis3/10000
 
-coef_summary$wavelength <- as.numeric(as.character(coef_summary$wavelength))
-coef_summary$MDS <- paste0("Axis ", coef_summary$MDS)
+# Merge
+coefficients <- rbind(DESIS, EMIT)
+coefficients <- coefficients[bands != "(Intercept)",]
+coefficients <- coefficients[,-1]
+coefficients <- melt(coefficients, 
+                     id.vars = c("bands", "type", "sensor"),
+                     measure.vars = c("Axis1", "Axis2", "Axis3"),
+                     variable.name = "Axes",
+                     value.name = "Coefficients")
 
-if(sensor == "EMIT") {
-  
-  add_na <- data.table(MDS = rep(c("Axis 1", "Axis 2", "Axis 3"), 2),
-                       wavelength = c(1300, 1300, 1300, 1800, 1800, 1800),
-                       mean = rep(c(NA, NA, NA), 2),
-                       sd = rep(c(NA, NA, NA), 2))
-  
-  coef_summary <- rbind(coef_summary, add_na)
-  coef_summary <- coef_summary[order(MDS, wavelength)]
-  
-}
+# Summary 
+coef_summary <- coefficients[, .(Coefficients = mean(Coefficients), 
+                                 Coefficients_sd = sd(Coefficients)),
+                             by = c("bands", "type", "sensor", "Axes")]
+coef_summary$bands <- as.numeric(coef_summary$bands)
+add_na <- data.table(bands = c(1300, 1300, 1300, 1800, 1800, 1800,
+                               1300, 1300, 1300, 1800, 1800, 1800,
+                               1300, 1300, 1300, 1800, 1800, 1800),
+                     sensor = rep("EMIT", 18),
+                     type = c(rep("Taxonomic", 6),
+                              rep("Phylogenetic", 6), 
+                              rep("Functional", 6)),
+                     Axes = c("Axis1", "Axis2", "Axis3",
+                              "Axis1", "Axis2", "Axis3",
+                              "Axis1", "Axis2", "Axis3"),
+                     Coefficients = rep(NA, 18),
+                     Coefficients_sd = rep(NA, 18))
+
+coef_summary <- rbind(coef_summary, add_na)
+coef_summary <- coef_summary[order(bands)]
+
+coef_summary$Axes <- factor(coef_summary$Axes, labels = c("Axis 1",
+                                                          "Axis 2",
+                                                          "Axis 3"))
+
+coef_summary$type <- as.factor(coef_summary$type)
+coef_summary$type <- factor(coef_summary$type, levels = c("Taxonomic",
+                                                          "Phylogenetic",
+                                                          "Functional"))
 
 #-------------------------------------------------------------------------------
 # Plot details
 
-col <- c("#fc8d62", "#66c2a5", "#8da0cb")
+col <- c("#1b7837", "#762a83")
 
 th_black <- theme_bw() + 
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        legend.position = c(0.93, 0.90),
-        legend.background = element_rect(fill= "transparent"),
-        panel.background = element_rect(fill= "transparent"),
-        rect = element_rect(fill = "transparent"))
+  theme(plot.background = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(color = "black"),
+        axis.text.y = element_text(color = "black"),
+        plot.margin = margin(4, 4, 0, 1, "pt"),
+        legend.position= c("top"), 
+        legend.direction = "horizontal", 
+        legend.background = element_rect(fill = "transparent"), 
+        legend.box.background = element_blank(),
+        strip.background = element_rect(color="black", 
+                                        fill="black", 
+                                        linewidth=1.5, 
+                                        linetype="solid"),
+        strip.text = element_text(color = "white"))
 
 th_trans <- dark_theme_bw(base_size = 11) +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
-        legend.position = c(0.90, 0.90), 
+        #legend.position = c(0.90, 0.90), 
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill = "transparent"),
         rect = element_rect(fill = "transparent"),
@@ -85,29 +133,40 @@ th_trans <- dark_theme_bw(base_size = 11) +
                                        fill = "transparent",
                                        linewidth = 0))
 
+th <- th_black
+
 
 #-------------------------------------------------------------------------------
 # Get plot
 
 plot <- ggplot(coef_summary) +
-  geom_ribbon(aes(x = wavelength, ymin = mean - sd, ymax = mean + sd, fill = MDS), alpha = 0.25) +
-  geom_line(aes(x = wavelength, y = mean, colour = MDS), linewidth = 0.5) +
-  coord_cartesian(xlim = c(450, 900), ylim = c(-1.25, 1.25), expand = FALSE) +
-  #coord_cartesian(xlim = c(447, 2425), ylim = c(-25, 25), expand = FALSE) +
+  geom_ribbon(aes(x = bands, 
+                  ymin = Coefficients - Coefficients_sd, 
+                  ymax = Coefficients + Coefficients_sd, 
+                  fill = sensor), 
+              alpha = 0.25) +
+  geom_line(aes(x = bands, 
+                y = Coefficients, 
+                colour = sensor), 
+            linewidth = 0.5) +
+  coord_cartesian(xlim = c(440, 2425), ylim = c(-19, 19), expand = FALSE) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab("Wavelength (nm)") +
   ylab("PLS coefficients") +
-  labs(subtitle = "PLS coefficients") +
-  th_trans
+  #labs(subtitle = "PLS coefficients") +
+  facet_grid(Axes ~ type) +
+  th
 
-png(paste0(root_path, "/figures/", sensor, "_coefficients_transparent.png"), 
-    width = 180, 
-    height = 90, 
-    pointsize = 12, 
-    units = "mm", 
-    res = 300, 
-    bg = "transparent")
+plot
+
+jpeg(paste0(root_path, "/figures/PLSR_coefficients.jpeg"), 
+     width = 210, 
+     height = 110, 
+     pointsize = 12, 
+     units = "mm", 
+     res = 300, 
+     bg = "transparent")
 
 plot
 
