@@ -22,30 +22,30 @@ options(scipen = 100)
 
 # Folder root
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 
 # Get tree
-phylo <- readRDS(paste0(root_path, "/03_diversity/master_matched_phylo-tree.rds"))
-features <- fread(paste0(root_path, "//00_FIA/SPCD_features2.csv"))
-features <- features[, c("Taxon2", "Evergreen", "Gymnosperm", "mycorrhizal_association")]
+phylo <- readRDS(paste0(root_path, "/03_diversity/master_matched_phylo.rds"))
+features <- fread(paste0(root_path, "/00_FIA/SPCP_meta.csv"))
+features <- features[, c("Taxon2", "growth_form", "mycorrhizal_association", "leaf_habit")]
 
 frame <- data.table(species = phylo$tip.label)
 frame$ID <- 1:nrow(frame)
 frame <- merge(frame, features, by.x= "species", by.y = "Taxon2", all.x = TRUE, all.y = FALSE)
 frame <- frame[order(ID)]
 frame <- unique(frame)
-frame[Gymnosperm == "Y", Gymnosperm := "Gymnosperm"]
-frame[Gymnosperm == "N", Gymnosperm := "Angiosperms"]
+frame[growth_form == "gymnosperm", growth_form := "Gymnosperm"]
+frame[growth_form == "angiosperm", growth_form := "Angiosperms"]
 frame[mycorrhizal_association == "AM", mycorrhizal_association := "Arbuscular mycorrhizal"]
 frame[mycorrhizal_association == "ECM", mycorrhizal_association := "Ectomycorrhizal"]
+frame[mycorrhizal_association == "ERM", mycorrhizal_association := "Ectomycorrhizal"]
 
-colnames(frame)[4] <- "Group"
-
-p <- ggtree(phylo, layout="circular", branch.length = "branch.length", colour = "white")  
+p <- ggtree(phylo, layout="circular", branch.length = "branch.length", colour = "black")  
 
 p1 <- p + geom_fruit(data = frame,
                geom = geom_tile,
                mapping = aes(y=species,
-                             fill=Group),
+                             fill=growth_form),
                offset = 0.1,
                width=15) +
   scale_fill_manual("Plant group", values = c("#ca562c", "#3d5941"))
@@ -58,7 +58,7 @@ p2 <- p1 +
                            fill=mycorrhizal_association),
              offset = 0.1,
              width = 15) +
-  scale_fill_manual("Mycorrhizal association", values = c("#009392", "#d0587e")) +
+  scale_fill_manual("Mycorrhizal association", values = c("#009392", "#d0587e")) 
   theme(legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill = "transparent"),
         rect = element_rect(fill = "transparent"),

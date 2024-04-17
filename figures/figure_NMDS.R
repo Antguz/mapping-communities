@@ -14,6 +14,8 @@ library(stringr)
 library(rcartocolor)
 library(viridis)
 library(colorspace)
+library(Rcpp)
+library(RcppArmadillo)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -35,7 +37,7 @@ taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
 phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
 #phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
 func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
-func_comm$Axis3 <- -func_comm$Axis3
+#func_comm$Axis3 <- -func_comm$Axis3
 #func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
 #fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
 
@@ -79,11 +81,21 @@ all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
 #-------------------------------------------------------------------------------
 
 # RGB color
-RGB <- function(X, Y, Z, min_range = -0.66, max_range = 0.66) {
+RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
   
-  x_new <-  ((X - min_range) / (max_range - min_range)) * (255 - 0) + 0
-  y_new <-  ((Y - min_range) / (max_range - min_range)) * (255 - 0) + 0
-  z_new <-  ((Z - min_range) / (max_range - min_range)) * (255 - 0) + 0
+  if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
+    
+    x_new <-  ((X - min(X)) / ((max(X)) - (min(X)))) * (255 - 0) + 0
+    y_new <-  ((Y - min(Y)) / ((max(Y)) - (min(Y)))) * (255 - 0) + 0
+    z_new <-  ((Z - min(Z)) / ((max(Z)) - (min(Z)))) * (255 - 0) + 0
+    
+  } else {
+    
+    x_new <-  ((X - min_range) / (max_range - min_range)) * (255 - 0) + 0
+    y_new <-  ((Y - min_range) / (max_range - min_range)) * (255 - 0) + 0
+    z_new <-  ((Z - min_range) / (max_range - min_range)) * (255 - 0) + 0
+    
+  }
   
   # Convert colour channels to hex
   hex_value <- paste0(
@@ -137,6 +149,8 @@ ordination_3d <- function(ordination,
                       side = side, 
                       side.clab = 1,
                       dist = dist)
+  axis_leter <- 1
+  axis_label <- 1.2
   
   if(cRGB == TRUE) {
     col <- RGB(ordination$Axis1, 
@@ -189,8 +203,8 @@ ordination_3d <- function(ordination,
             col.grid = "grey75",
             col.axis = "white",
             main = title,
-            cex.axis = 0.65,
-            cex.lab = 0.8)
+            cex.axis = axis_leter,
+            cex.lab = axis_label)
   
   scatter3D(x = ordination$Axis1, y = rep(axis_range[2], length(ordination$Axis2)), z = ordination$Axis3, 
             phi = phi, 
@@ -257,18 +271,21 @@ ordination_3d <- function(ordination,
   
 }
 
+par(mar = c(0,0,1,0))
+par(oma = c(0,0,0,0))
+
 #-------------------------------------------------------------------------------
 # RGB
 
 png(paste0(root_path, "/figures/", "NMDS_RGB.png"),
     width = 210, 
-    height = 80, 
+    height = 90, 
     units = "mm", 
     pointsize = 12,
     bg = "transparent",  
     res = 600)
 
-par(mfrow=c(1,3))
+par(mfrow=c(1,3), mar = c(0,1.1,1,0), oma = c(0,0,0,0))
 ordination_3d(taxo_comm, title = "Taxonomic", cRGB = TRUE)
 ordination_3d(phylo_comm, title = "Phylogenetic", cRGB = TRUE)
 ordination_3d(func_comm, title = "Functional", cRGB = TRUE)
@@ -277,6 +294,9 @@ dev.off()
 
 #-------------------------------------------------------------------------------
 # Proportion of angiosperms
+
+par(mar = c(1,1,1,1))
+par(oma = c(0,0,0,0))
 
 png(paste0(root_path, "/figures/", "NMDS_angiosperms.png"),
     width = 210, 

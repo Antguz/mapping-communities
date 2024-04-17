@@ -9,12 +9,13 @@ library(ggplot2)
 library(data.table)
 library(bit64)
 library(ggdark)
+library(ggpubr)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -34,9 +35,12 @@ DESIS <- rbind(DESIS_taxo_coefficients,
                DESIS_func_coefficients)
 DESIS$sensor <- sensor
 
-DESIS$Axis1 <- DESIS$Axis1*10000
-DESIS$Axis2 <- DESIS$Axis2*10000
-DESIS$Axis3 <- DESIS$Axis3*10000
+DESIS <- melt(DESIS, id.vars = c("sensor", "type", "iteration", "Axes"),
+              variable.name = "wavelength", value.name = "Coefficient")
+
+DESIS <- DESIS[wavelength != "(Intercept)",]
+DESIS$wavelength <- as.numeric(as.character(DESIS$wavelength))
+DESIS$Coefficient <- DESIS$Coefficient*10000
 
 # EMIT
 sensor <- "EMIT"
@@ -53,32 +57,31 @@ EMIT <- rbind(EMIT_taxo_coefficients,
               EMIT_func_coefficients)
 EMIT$sensor <- sensor
 
+EMIT <- melt(EMIT, id.vars = c("sensor", "type", "iteration", "Axes"),
+              variable.name = "wavelength", value.name = "Coefficient")
+
+EMIT <- EMIT[wavelength != "(Intercept)",]
+EMIT$wavelength <- as.numeric(as.character(EMIT$wavelength))
+
 #EMIT$Axis1 <- EMIT$Axis1/10000
 #EMIT$Axis2 <- EMIT$Axis2/10000
 #EMIT$Axis3 <- EMIT$Axis3/10000
 
 # Merge
 coefficients <- rbind(DESIS, EMIT)
-coefficients <- coefficients[bands != "(Intercept)",]
-coefficients <- coefficients[,-1]
-coefficients <- melt(coefficients, 
-                     id.vars = c("bands", "type", "sensor"),
-                     measure.vars = c("Axis1", "Axis2", "Axis3"),
-                     variable.name = "Axes",
-                     value.name = "Coefficients")
 
 # Summary 
-coef_summary <- coefficients[, .(Coefficients = mean(Coefficients), 
-                                 Coefficients_sd = sd(Coefficients)),
-                             by = c("bands", "type", "sensor", "Axes")]
-coef_summary$bands <- as.numeric(coef_summary$bands)
-add_na <- data.table(bands = c(1300, 1300, 1300, 1800, 1800, 1800,
+coef_summary <- coefficients[, .(Coefficients = mean(Coefficient), 
+                                 Coefficients_sd = sd(Coefficient)),
+                             by = c("wavelength", "type", "sensor", "Axes")]
+coef_summary$wavelength <- as.numeric(coef_summary$wavelength)
+add_na <- data.table(wavelength = c(1300, 1300, 1300, 1800, 1800, 1800,
                                1300, 1300, 1300, 1800, 1800, 1800,
                                1300, 1300, 1300, 1800, 1800, 1800),
-                     sensor = rep("EMIT", 18),
                      type = c(rep("Taxonomic", 6),
                               rep("Phylogenetic", 6), 
                               rep("Functional", 6)),
+                     sensor = rep("EMIT", 18),
                      Axes = c("Axis1", "Axis2", "Axis3",
                               "Axis1", "Axis2", "Axis3",
                               "Axis1", "Axis2", "Axis3"),
@@ -86,7 +89,7 @@ add_na <- data.table(bands = c(1300, 1300, 1300, 1800, 1800, 1800,
                      Coefficients_sd = rep(NA, 18))
 
 coef_summary <- rbind(coef_summary, add_na)
-coef_summary <- coef_summary[order(bands)]
+coef_summary <- coef_summary[order(wavelength)]
 
 coef_summary$Axes <- factor(coef_summary$Axes, labels = c("Axis 1",
                                                           "Axis 2",
@@ -100,19 +103,17 @@ coef_summary$type <- factor(coef_summary$type, levels = c("Taxonomic",
 #-------------------------------------------------------------------------------
 # Plot details
 
-col <- c("#1b7837", "#762a83")
+col <- c("#fc8d62", "#66c2a5", "#8da0cb")
+
 
 th_black <- theme_bw() + 
-  theme(plot.background = element_blank(), 
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(color = "black"),
-        axis.text.y = element_text(color = "black"),
-        plot.margin = margin(4, 4, 0, 1, "pt"),
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        legend.background = element_rect(fill= "transparent"),
+        panel.background = element_rect(fill= "transparent"),
+        rect = element_rect(fill = "transparent"),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"),
         legend.position= c("top"), 
-        legend.direction = "horizontal", 
-        legend.background = element_rect(fill = "transparent"), 
-        legend.box.background = element_blank(),
         strip.background = element_rect(color="black", 
                                         fill="black", 
                                         linewidth=1.5, 
@@ -122,7 +123,7 @@ th_black <- theme_bw() +
 th_trans <- dark_theme_bw(base_size = 11) +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
-        #legend.position = c(0.90, 0.90), 
+        legend.position= c("top"),
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill = "transparent"),
         rect = element_rect(fill = "transparent"),
@@ -131,47 +132,98 @@ th_trans <- dark_theme_bw(base_size = 11) +
         axis.text = element_text(color="white"),
         plot.background = element_rect(colour = "transparent",
                                        fill = "transparent",
-                                       linewidth = 0))
+                                       linewidth=0),
+        plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"),
+        strip.background = element_rect(color="white", 
+                                        fill="white", 
+                                        linewidth=1.5, 
+                                        linetype="solid"),
+        strip.text = element_text(color = "black"))
 
-th <- th_black
-
+th <- th_trans
+#th <- th_black
+line_col <- "white"
+#line_col <- "black"
 
 #-------------------------------------------------------------------------------
 # Get plot
 
-plot <- ggplot(coef_summary) +
-  geom_ribbon(aes(x = bands, 
+DESIS_plot <- ggplot(coef_summary[sensor == "DESIS",]) +
+  geom_ribbon(aes(x = wavelength, 
                   ymin = Coefficients - Coefficients_sd, 
                   ymax = Coefficients + Coefficients_sd, 
-                  fill = sensor), 
+                  fill = Axes), 
               alpha = 0.25) +
-  geom_line(aes(x = bands, 
+  geom_line(aes(x = wavelength, 
                 y = Coefficients, 
-                colour = sensor), 
+                colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 2425), ylim = c(-19, 19), expand = FALSE) +
+  coord_cartesian(xlim = c(440, 970), ylim = c(-3, 3), expand = FALSE) +
+  scale_y_continuous(breaks = c(-2, 0, 2)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
-  xlab("Wavelength (nm)") +
-  ylab("PLS coefficients") +
+  xlab(" ") +
+  ylab(" ") +
   #labs(subtitle = "PLS coefficients") +
-  facet_grid(Axes ~ type) +
+  facet_grid(type ~ sensor) +
   th
 
-plot
+DESIS_plot
+
+EMIT_plot <- ggplot(coef_summary[sensor == "EMIT",]) +
+  geom_ribbon(aes(x = wavelength, 
+                  ymin = Coefficients - Coefficients_sd, 
+                  ymax = Coefficients + Coefficients_sd, 
+                  fill = Axes), 
+              alpha = 0.25) +
+  geom_line(aes(x = wavelength, 
+                y = Coefficients, 
+                colour = Axes), 
+            linewidth = 0.5) +
+  coord_cartesian(xlim = c(440, 2425), ylim = c(-8, 8), expand = FALSE) +
+  scale_y_continuous(breaks = c(-5, 0, 5)) +
+  scale_colour_manual(name = "", values = col) +
+  scale_fill_manual(name = "", values = col) +
+  xlab(" ") +
+  ylab(" ") +
+  #labs(subtitle = "PLS coefficients") +
+  facet_grid(type ~ sensor) +
+  th
+
+EMIT_plot
+
+# Export JPEG
 
 jpeg(paste0(root_path, "/figures/PLSR_coefficients.jpeg"), 
-     width = 210, 
+     width = 220, 
+     height = 110, 
+     pointsize = 12, 
+     units = "mm", 
+     res = 300, 
+     bg = "white")
+
+annotate_figure(ggarrange(DESIS_plot, EMIT_plot, ncol= 2, nrow=1, widths = c(0.3, 0.7)),
+                left = text_grob("PLS coefficients", face = "plain", color = line_col, rot = 90),
+                bottom = text_grob("Wavelength (nm)", face = "plain", color = line_col))
+
+dev.off()
+
+
+# Export PNG
+
+png(paste0(root_path, "/figures/PLSR_coefficients.png"), 
+     width = 220, 
      height = 110, 
      pointsize = 12, 
      units = "mm", 
      res = 300, 
      bg = "transparent")
 
-plot
+annotate_figure(ggarrange(DESIS_plot, EMIT_plot, ncol= 2, nrow=1, widths = c(0.3, 0.7)),
+                left = text_grob("PLS coefficients", face = "plain", color = line_col, rot = 90),
+                bottom = text_grob("Wavelength (nm)", face = "plain", color = line_col))
 
 dev.off()
-
 
 
 

@@ -1,5 +1,8 @@
 library(gg3D)
 library(stringr)
+library(bit64)
+library(plotly)
+library(plot3D)
 
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
@@ -318,3 +321,32 @@ for (i in 1:length(theta)) { #length(theta)
 
 #4000
 #3240
+
+
+
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+
+taxo_comm <- fread(paste0(root_path, "/05_MDS/PCoA_scores_comm_taxo.csv"))
+phylo_comm <- fread(paste0(root_path, "/05_MDS/PCoA_scores_comm_phylo-log.csv"))
+func_comm <- fread(paste0(root_path, "/05_MDS/PCoA_scores_comm_func.csv"))
+
+species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_BA.rds"))
+dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/communities_scores_BA.rds"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
+proportions <- fread(paste0(root_path, "/00_FIA/proportions_BA.csv"))
+
+
+fig <- plot_ly(taxo_comm, x = ~PCoA1, y = ~PCoA2, z = ~PCoA3)
+
+scatter3D(x = taxo_comm$PCoA1, y = taxo_comm$PCoA2, z = taxo_comm$PCoA3, 
+          data = taxo_comm, 
+          colvar = taxo_comm$PCoA1,
+          phi = 20, bty = "g", 
+          pch = 20, cex = 0.5, ticktype = "detailed",
+          xlab = "PCoA1",
+          ylab = "PCoA2",
+          zlab = "PCoA3",
+          xlim = c(-0.60, 0.60),
+          ylim = c(-0.60, 0.60),
+          zlim = c(-0.60, 0.60),
+          nticks = 3)

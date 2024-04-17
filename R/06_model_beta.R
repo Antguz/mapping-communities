@@ -38,7 +38,7 @@ source("R/pls_coefficients.R")
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -112,14 +112,13 @@ if(type == "taxo") {
 }
 
 # Outliers
-#outliers <- fread(paste0(out_path, "/DESIS_outliers.csv"))
-#data <- data[outliers$remove != TRUE, ]
+outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
+data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
   
   saveRDS(data, paste0(out_path, "/DESIS_", type,"_data.rds"))
-  #data <- readRDS(paste0(out_path, "/DESIS_", type,"_data.rds"))
   meta <- data[, .SD, .SDcols = 1:18]
   ordination <- data[, .SD, .SDcols = 19:(18+ncol_ordination)]
   ordination <- ordination[, 1:3]
@@ -237,28 +236,29 @@ models <- model_tune(meta_training = meta[split,],
                      iscv = iscv,
                      ncomp_max = 30,
                      ntimes = iterations,
-                     threads = 25)
+                     threads = 20)
 
 # Export for inspection
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
-plot(colMeans(models[type == "RMSEP" & estimate == "train" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
-plot(colMeans(models[type == "RMSEP" & estimate == "CV" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
-plot(colMeans(models[type == "R2" & estimate == "train" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
+#plot(colMeans(models[type == "RMSEP" & estimate == "train" & Axes == "Axis2", 6:ncol(models)], na.rm = TRUE))
+plot(colMeans(models[type == "RMSEP" & estimate == "CV" & Axes == "Axis1", 6:ncol(models)], na.rm = TRUE))
+#plot(colMeans(models[type == "R2" & estimate == "train" & Axes == "Axis2", 6:ncol(models)], na.rm = TRUE))
+#plot(colMeans(models[type == "PRESS" & estimate == "CV" & Axes == "Axis2", 6:ncol(models)], na.rm = TRUE))
 
 #' @note Do a manual checking of the optimal number of components
 
 ### DESIS 
-# Taxonomic 24
-# Phylogenetic-log 24
-# Functional 25
+# Taxonomic c(23, 20, 17)
+# Phylogenetic-log c(26, 12, 24)
+# Functional c(25, 25, 25)
 
 ### EMIT
-# Taxonomic 20
-# Phylogenetic-log 20
-# Functional 20
+# Taxonomic c(10, 15, 12)
+# Phylogenetic-log c(15, 16, 10)
+# Functional c(12, 14, 9)
 
 # Manual checked
-tune_optimal <- c(20)
+tune_optimal <- c(25, 25, 25)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -271,7 +271,7 @@ final_models <- model_build(meta_training = meta[split,],
                             iscv = iscv,
                             tune_optimal = tune_optimal,
                             ntimes = iterations,
-                            threads = 25)
+                            threads = 20)
 
 #saveRDS(final_models, paste0(out_path, "/", sensor, "_final_models.rds")) # Do it if you really need it
 
@@ -283,12 +283,14 @@ training <- model_performance(meta = meta[split,],
                               ordination = ordination[split,],
                               spectra = spectra[split,],
                               models = final_models,
+                              tune_optimal = tune_optimal,
                               threads = 25)
 
 testing <- model_performance(meta = meta[!split,],
                              ordination = ordination[!split,],
                              spectra = spectra[!split,],
                              models = final_models,
+                             tune_optimal = tune_optimal,
                              threads = 25)
 
 performance_training <- training$performance
@@ -309,14 +311,16 @@ fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_t
 #' @Model_coefficients
 #-------------------------------------------------------------------------------
 
-coefficients <- pls_coefficients(models = final_models)
+coefficients <- pls_coefficients(models = final_models,
+                                 tune_optimal = tune_optimal)
 fwrite(coefficients, paste0(out_path, "/", sensor, "_", type, "_coefficients.csv"))
 
 #-------------------------------------------------------------------------------
 #' @Model_VIP
 #-------------------------------------------------------------------------------
 
-vip <- pls_vip(models = final_models)
+vip <- pls_vip(models = final_models,
+               tune_optimal = tune_optimal)
 fwrite(vip, paste0(out_path, "/", sensor, "_", type, "_vip.csv"))
 
 #-------------------------------------------------------------------------------

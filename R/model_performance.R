@@ -4,6 +4,7 @@ model_performance <- function(meta,
                               ordination, 
                               spectra,
                               models,
+                              tune_optimal,
                               threads) {
   
   # Secure I()
@@ -20,7 +21,11 @@ model_performance <- function(meta,
     predicted <- predict(models[[X]], 
                          newdata = model_frame,
                          ncom = tune_optimal)
-    predicted <- predicted[,,1]
+    predicted <- cbind(predicted[,1,1],
+                       predicted[,2,2],
+                       predicted[,3,3])
+    predicted <- as.data.frame(predicted)
+    colnames(predicted) <- c("Axis1", "Axis2", "Axis3")
     
     return(predicted)
     
@@ -131,25 +136,8 @@ model_performance <- function(meta,
   
 }
 
-#parameters <- function(obs, pred) {
-#  
-#  R2 <- 1 - (sum(((obs-pred)^2))/sum(((obs-mean(obs))^2)))
-#  MAE <- sum(abs(obs-pred))/length(obs)
-#  RMSE <- sqrt(sum(((obs-pred)^2))/length(obs))
-#  perRMSE <- sqrt(sum(((obs-pred)^2))/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
-#  names(perRMSE) <- NULL
-#  B1 <- sqrt(sum(((obs - mean(obs))^2))/length(obs)) / sqrt(sum(((pred - mean(pred))^2))/length(pred))
-#  B0 <- mean(obs) - (B1*mean(pred))
-#  
-#  return(round(data.table(R2 = R2,
-#                          MAE = MAE,
-#                          RMSE = RMSE,
-#                          perRMSE = perRMSE,
-#                          B1 = B1,
-#                          B0 = B0), 4))
-#  
-#}
-
+#-------------------------------------------------------------------------------
+# Parameters to estimate
 parameters <- function(obs, pred) {
   
   linear <- lm(obs ~ pred)
@@ -158,14 +146,14 @@ parameters <- function(obs, pred) {
   R2 <- linear_summary$r.squared
   intercept <- linear_summary$coefficients[1,1]
   slope <- linear_summary$coefficients[2,1]
-  MAE <- sum(abs(obs-pred))/length(obs)
+  BIAS <- mean(obs-pred)
   RMSE <- sqrt(sum(((obs-pred)^2))/length(obs))
   perRMSE <- sqrt(sum(((obs-pred)^2))/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
   names(perRMSE) <- NULL
   
   
   return(round(data.table(R2 = R2,
-                          MAE = MAE,
+                          BIAS = BIAS,
                           RMSE = RMSE,
                           perRMSE = perRMSE,
                           intercept = intercept,

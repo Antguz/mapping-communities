@@ -30,7 +30,7 @@ model_build <- function(meta_training,
                      data = model_frame,
                      validation = "CV",
                      segments = iscv[[t]],
-                     ncomp = tune_optimal,
+                     ncomp = max(tune_optimal),
                      center = TRUE,
                      method = "oscorespls",
                      maxit = 1000)

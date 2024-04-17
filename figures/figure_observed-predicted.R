@@ -18,8 +18,8 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 sensor <- "DESIS"
 folder <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
 
@@ -33,7 +33,7 @@ phylo_performance$dimension <- "Phylogenetic"
 func_performance <- fread(paste0(folder, "/", sensor, "_", "func", "_performance.csv"))
 func_performance$dimension <- "Functional"
 
-dataset <- "training"
+dataset <- "testing"
 
 if(dataset == "training") {
   
@@ -110,15 +110,14 @@ th_trans <- dark_theme_bw(base_size = 11) +
                                        linewidth=0),
         plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"))
 
-#th <- th_trans
-th <- th_black
-#line_col <- "white"
-line_col <- "black"
+th <- th_trans
+#th <- th_black
+line_col <- "white"
+#line_col <- "black"
 
 point_size <- 2
 point_shape <- 20
 point_alpha <- 0.9
-
 
 #'------------------------------------------------------------------------------
 #' Plot function
@@ -126,7 +125,6 @@ point_alpha <- 0.9
 #Test
 #performance <- performance[type == "Training" & dimension == "Phylogenetic" & Axes == "Axis1",]
 #predicted <- predicted[type == "Training" & dimension == "Phylogenetic" & Axes == "Axis1",]
-
 
 plot_function <- function(performance, 
                           predicted, 
@@ -150,9 +148,9 @@ plot_function <- function(performance,
                       size = point_size,
                       shape = point_shape,
                       alpha = point_alpha) +
-    geom_abline(data = performance,
-                aes(intercept = intercept, slope = slope),
-                colour = "grey", alpha = 0.25) +
+    #geom_abline(data = performance,
+    #            aes(intercept = intercept, slope = slope),
+    #            colour = "grey", alpha = 0.25) +
     geom_abline(data = performance,
                 aes(intercept = mean(intercept), slope = mean(slope)),
                 colour = line_col) +
@@ -160,11 +158,11 @@ plot_function <- function(performance,
     xlab(" ") +
     #ylab("Observed") + 
     #xlab("Predicted") +
-    geom_text(data = performance,
-              aes(label = paste("R2 = ", round(mean(performance$R2), 2), "\n",
-                                "BIAS = ", round(mean(performance$MAE), 2), "\n",
-                                "RMSE = ", round(mean(performance$RMSE), 2), "\n",
-                                "RMSE = ", round(mean(performance$perRMSE), 2)),
+    geom_text(#data = performance,
+              aes(label = paste("R2 = ", format(round(mean(performance$R2), 2), nsmall = 2), "\n",
+                                "BIAS = ", format(round(mean(performance$BIAS), 2), nsmall = 2), "\n",
+                                "RMSE = ", format(round(mean(performance$RMSE), 2), nsmall = 2), "\n",
+                                "%RMSE = ", format(round(mean(performance$perRMSE), 2), nsmall = 2)),
                   x = Inf, 
                   y = -Inf, 
                   hjust = 1.1, 
@@ -299,7 +297,7 @@ dev.off()
 
 # PNG
 
-png(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, ".png"), 
+png(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, "_trans.png"), 
      width = 210, 
      height = 190, 
      units = "mm", 

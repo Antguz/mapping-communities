@@ -28,10 +28,13 @@ sourceCpp("src/approximation_sp.cpp")
 #'------------------------------------------------------------------------------
 #' Function
 
-apply_model <- function(predicted_scene, 
+apply_model <- function(predicted_scene_path, 
                         wascores, 
-                        output_raster,
+                        output_path,
                         threads = 28) {
+  
+  # Read predicted scene
+  predicted_scene <- rast(predicted_scene_path)
   
   #Ask data frame
   frame_scene <- as.data.table(as.data.frame(predicted_scene, cells = TRUE, na.rm = TRUE))
@@ -69,6 +72,12 @@ apply_model <- function(predicted_scene,
   #-----------------------------------------------------------
   # Scene export
   
+  scene_name <- strsplit(predicted_scene_path, "/")[[1]]
+  scene_name <- scene_name[length(scene_name)]
+  scene_name <- strsplit(scene_name, "_predicted.tif")[[1]][1]
+  scene_name <- paste0(scene_name, "_species.tif")
+  output_raster <- paste0(output_path, "/", scene_name)
+  
   #Export
   writeRaster(x = species_scene,
               filename = output_raster,
@@ -86,9 +95,9 @@ apply_model <- function(predicted_scene,
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-predicted_scene <- rast(paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0621221713_022-20220621T171230-V0217_predicted.tif"))
-wascores <- readRDS(paste0(root_path, "/05_ordination/species_scores_BA.rds"))
-output_raster <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0621221713_022-20220621T171230-V0217_species.tif")
+predicted_scene_path <- paste0(root_path, "/00_imagery/predicted/DESIS/", "DESIS_L3_DT0736758312_001-20220622T180119_predicted.tif")
+wascores <- readRDS(paste0(root_path, "/05_ordination/species_scores_VOL.rds"))
+output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
 threads <- 28
 
 apply_model(predicted_scene, 
@@ -98,7 +107,7 @@ apply_model(predicted_scene,
 
 # Run in a batch
 
-folder_path <- paste0(root_path, "/00_imagery/predicted")
+folder_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
 output_path <- paste0(root_path, "/00_imagery/species")
 
 files <- list.files(path = folder_path, 
@@ -108,12 +117,11 @@ files <- list.files(path = folder_path,
 
 for(i in 1:length(files)) {
   
-  species_name <- substr(files[i], 0, 52)
-  scene <- rast(paste0(folder_path, "/", files[i]))
+  scene_name <- paste0(root_path, "/00_imagery/predicted/DESIS/", files[i])  
   
-  apply_model(predicted_scene = scene, 
+  apply_model(predicted_scene_path = scene_name, 
               wascores = wascores, 
-              output_raster = paste0(output_path, "/", species_name, "_species.tif"),
+              output_path,
               threads = 28)
   
 }

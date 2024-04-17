@@ -15,16 +15,16 @@ options(scipen = 100)
 #' Working directory
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #'------------------------------------------------------------------------------
 #' Read information
 
-spectra_SG <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "_spectra_SG.csv"))
-spectra_VN <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "_spectra_VN.csv"))
-spectra_SW <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "_spectra_SW.csv"))
+spectra_SG <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor,  "/", sensor, "_spectra_SG.csv"))
+spectra_VN <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor,  "/", sensor, "_spectra_VN.csv"))
+spectra_SW <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor,  "/", sensor, "_spectra_SW.csv"))
 master_comm <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/", "SPCD.csv"))
+SPCD <- fread(paste0(root_path, "/00_FIA/", "SPCD_meta.csv"))
 
 #'------------------------------------------------------------------------------
 #' Data reshaping
@@ -46,6 +46,11 @@ species <- species[order(SPCD)]
 species <- merge(species, SPCD[, c("SPCD", "Family", "Genus", "Taxon2")])
 
 spectra_SG <- merge(species, spectra_SG, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+refl <- spectra_SG[, 33:267]
+refl <- refl[, 13:206]
+magnitudes <- sqrt(apply(refl^2, 1, sum, na.rm = TRUE))
+x <- refl / magnitudes
+spectra_SG <- cbind(spectra_SG[, 1:32], x)
 spectra_VN <- merge(species, spectra_VN, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
 spectra_SW <- merge(species, spectra_SW, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
 
