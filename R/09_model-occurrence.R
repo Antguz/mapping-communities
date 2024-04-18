@@ -51,7 +51,7 @@ ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"
 # FIA data for aggregation
 inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "-VOL.rds"))
 sp_meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
-aggregation <- aggregate_plants(sp_meta[,c(9, 4)], inventory)
+aggregation <- aggregate_batch(sp_meta[,c(9, 10)], inventory)
 #aggregation <- aggregation[, 1:2]
 
 # Test for match
@@ -65,7 +65,7 @@ aggregation <- aggregation[, names(aggregation)[-1] := lapply(.SD, function(x) a
                                  .SDcols = 2:ncol(aggregation)]
 presence <- colSums(aggregation[,-1])
 rpresence <- round(presence/nrow(aggregation)*100, 4)
-rpresence <- rpresence > 1.0
+rpresence <- rpresence > 5.0
 rpresence <- c(TRUE, rpresence)
 aggregation <- aggregation[ , .SD, .SDcols = c(1:ncol(aggregation))[rpresence]]
 

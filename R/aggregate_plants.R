@@ -66,3 +66,22 @@ aggregate_plants <- function(meta, communities) {
   return(complete)
   
 }
+
+# Apply in batch
+aggregate_batch <- function(meta, communities) {
+  
+  n_cols <- ncol(meta)
+  
+  results <- data.table(PLT_CN = as.integer64(rownames(communities)))
+  
+  for(i in 2:n_cols) {
+    
+    sub_meta <- meta[, .SD, .SDcols = c(1, i)]
+    sub_class <- aggregate_plants(sub_meta, communities)
+    results <- cbind(results,  sub_class[, -1])
+    
+  }
+  
+  return(results)
+  
+}
