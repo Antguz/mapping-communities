@@ -12,6 +12,7 @@
 library(data.table)
 library(bit64)
 library(parallel)
+library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
@@ -35,7 +36,7 @@ source("R/model_occurence.R")
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-type <- "func"
+type <- "taxo"
 out_path <- "/media/antonio/Work/Projects/DESIS_mapping/07_model_occurrence"
 
 #'------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"
 # FIA data for aggregation
 inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "-VOL.rds"))
 sp_meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
-aggregation <- aggregate_batch(sp_meta[,c(9, 10)], inventory)
+aggregation <- aggregate_batch(sp_meta[,c(9, 3, 4, 10, 11, 12, 13, 14)], inventory)
 #aggregation <- aggregation[, 1:2]
 
 # Test for match

@@ -74,19 +74,20 @@ get_probabilities <- function(predicted, coefficients) {
 performance_batch <- function(all_probabilities) {
   
   application_performance <- function(X,
-                                      obs,
-                                      pred) {
+                                      all_probabilities) {
+    
     # Predict new values
-    per <- parameters(obs = as.matrix(obs)[, X], pred = as.matrix(pred)[,X])
+    per <- parameters(obs = as.matrix(all_probabilities$obs)[, X], 
+                      pred = as.matrix(all_probabilities$pred)[,X])
+    
     return(per)
   }
   
   # Performance in parallel
   performance <- mclapply(X = 1:ncol(all_probabilities$obs),
                           FUN = application_performance,
-                          obs = all_probabilities$obs,
-                          pred = all_probabilities$pred,
-                          mc.cores = 4)
+                          all_probabilities = all_probabilities,
+                          mc.cores = 10)
   
   performance <- do.call(rbind.data.frame, performance)
   performance <- cbind(plants = colnames(all_probabilities$obs),
@@ -101,7 +102,7 @@ performance_batch <- function(all_probabilities) {
 #-------------------------------------------------------------------------------
 
 sensor <- "EMIT"
-dataset <- "testing"
+dataset <- "training"
 
 # Taxonomic
 type <- "taxo"
@@ -130,6 +131,8 @@ predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 phylo_probabilities <- get_probabilities(predicted, coefficients)
+phylo_probabilities$obs <- phylo_probabilities$obs[, c(-42, -47)]
+phylo_probabilities$pred <- phylo_probabilities$pred[, c(-42, -47)]
 phylo_perf <- performance_batch(phylo_probabilities)
 phylo_probabilities$perf <- phylo_perf
 saveRDS(phylo_probabilities, 
@@ -142,7 +145,6 @@ coefficients <- fread(paste0(root_path, "/07_model_occurrence/",
                              type, "_model-occurrence.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 14:17)]
-
 predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 

@@ -49,7 +49,7 @@ model_occurence <- function(fia_meta,
     # Model
     plsFit <- train(occurrence ~ .,
                     data = frame[split,],
-                    method = "bayesglm",
+                    method = "glm",
                     trControl = ctrl,
                     metric = "ROC")
     
@@ -95,15 +95,6 @@ model_occurence <- function(fia_meta,
                                        lev = levels(frame$occurrence)),
                              mnLogLoss(testing, 
                                        lev = levels(frame$occurrence)))
-    
-    #---------------------------------------------------------------------------
-    # Create plots
-    #p <- ggplot(plsFit$pred, 
-    #       aes(m = presence, d = factor(obs, levels = c("absence", "presence")))) + 
-    #  geom_roc(hjust = -0.4, vjust = 1.5, n.cuts = 10) + coord_equal() + style_roc()
-      
-    #p <- p + annotate("text", x= 0.05, y = 1.0, label=paste("AUC =", round((calc_auc(p))$AUC, 4)))
-    #p <- p + labs(subtitle = group_name)
     
     #---------------------------------------------------------------------------
     # Collect data
