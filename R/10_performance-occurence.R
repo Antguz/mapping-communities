@@ -101,8 +101,8 @@ performance_batch <- function(all_probabilities) {
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
-dataset <- "training"
+sensor <- "DESIS"
+dataset <- "testing"
 
 # Taxonomic
 type <- "taxo"
@@ -131,8 +131,8 @@ predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 phylo_probabilities <- get_probabilities(predicted, coefficients)
-phylo_probabilities$obs <- phylo_probabilities$obs[, c(-42, -47)]
-phylo_probabilities$pred <- phylo_probabilities$pred[, c(-42, -47)]
+phylo_probabilities$obs <- phylo_probabilities$obs[, c(-29, -33)]
+phylo_probabilities$pred <- phylo_probabilities$pred[, c(-29, -33)]
 phylo_perf <- performance_batch(phylo_probabilities)
 phylo_probabilities$perf <- phylo_perf
 saveRDS(phylo_probabilities, 

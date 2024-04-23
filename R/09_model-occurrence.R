@@ -36,7 +36,7 @@ source("R/model_occurence.R")
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-type <- "taxo"
+type <- "func"
 out_path <- "/media/antonio/Work/Projects/DESIS_mapping/07_model_occurrence"
 
 #'------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ aggregation <- aggregation[, names(aggregation)[-1] := lapply(.SD, function(x) a
                                  .SDcols = 2:ncol(aggregation)]
 presence <- colSums(aggregation[,-1])
 rpresence <- round(presence/nrow(aggregation)*100, 4)
-rpresence <- rpresence > 5.0
+rpresence <- rpresence > 10.0
 rpresence <- c(TRUE, rpresence)
 aggregation <- aggregation[ , .SD, .SDcols = c(1:ncol(aggregation))[rpresence]]
 

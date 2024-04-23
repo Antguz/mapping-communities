@@ -100,8 +100,8 @@ model_occurence <- function(fia_meta,
     # Collect data
     training <- as.data.table(training)
     testing <- as.data.table(testing)
-    training[obs == "presence",]
-    testing
+    #training[obs == "presence",]
+    #testing
     
     collect <- rbind(c(training_performance, plsFit$finalModel$coefficients),
                      c(testing_performance, plsFit$finalModel$coefficients))
@@ -109,7 +109,7 @@ model_occurence <- function(fia_meta,
     collect <- cbind(plant = c(group_name, group_name), 
                      dataset = c("training", "testing"),
                      psamples = c(nrow(training[obs == "presence",])/nrow(training)*100,
-                                 nrow(testing[obs == "presence",])/nrow(testing)*100),
+                                  nrow(testing[obs == "presence",])/nrow(testing)*100),
                      collect)
     
     return(collect)
