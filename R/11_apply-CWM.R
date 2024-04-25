@@ -29,10 +29,9 @@ sourceCpp("src/cwm_rcpp.cpp")
 #'------------------------------------------------------------------------------
 #' Function
 
-apply_model <- function(predicted_scene_path, 
-                        coefficients, 
-                        output_path,
-                        threads = 28) {
+apply_model_CWM <- function(predicted_scene_path, 
+                            coefficients, 
+                            output_path) {
   
   # Read predicted scene
   predicted_scene <- rast(predicted_scene_path)
@@ -51,7 +50,7 @@ apply_model <- function(predicted_scene_path,
   species_scene <- subset(predicted_scene, 1)
   species_scene[] <- NA
   species_scene <- rep(species_scene, nrow(coefficients))
-  species_scene[frame_scene$cell] <- plant_probabilities
+  species_scene[frame_scene$cell] <- plant_cwm
   names(species_scene) <- coefficients$plant
   
   #-----------------------------------------------------------
@@ -99,9 +98,8 @@ for(i in 1:length(files)) {
   
   scene_name <- paste0(folder_path, "/", files[i])  
   
-  apply_model(predicted_scene_path = scene_name, 
-              coefficients = coefficients,
-              output_path,
-              threads = 28)
+  apply_model_CWM(predicted_scene_path = scene_name, 
+                  coefficients = coefficients,
+                  output_path)
   
 }
