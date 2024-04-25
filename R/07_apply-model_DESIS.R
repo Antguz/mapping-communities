@@ -31,6 +31,7 @@ sourceCpp("src/model-application.cpp")
 #' Function
 
 apply_model <- function(scene_main_path, 
+                        type, 
                         coefficients, 
                         output_path,
                         threads = 28) {
@@ -139,26 +140,26 @@ apply_model <- function(scene_main_path,
   # Predict raster files
   
   # As matrices
-  MDS1 <- as.matrix(coefficients[MDS == "1", .SD, .SDcols = 3:ncol(coefficients)])
-  MDS2 <- as.matrix(coefficients[MDS == "2", .SD, .SDcols = 3:ncol(coefficients)])
-  MDS3 <- as.matrix(coefficients[MDS == "3", .SD, .SDcols = 3:ncol(coefficients)])
+  Axis1 <- as.matrix(coefficients[Axes == "Axis1", .SD, .SDcols = 3:ncol(coefficients)])
+  Axis2 <- as.matrix(coefficients[Axes == "Axis2", .SD, .SDcols = 3:ncol(coefficients)])
+  Axis3 <- as.matrix(coefficients[Axes == "Axis3", .SD, .SDcols = 3:ncol(coefficients)])
   
   # Predict
   predicted_ordination <- predict_pls(as.matrix(sw),
-                                      MDS1,
-                                      MDS2,
-                                      MDS3)
+                                      Axis1,
+                                      Axis2,
+                                      Axis3)
   
   predicted_ordination <- as.data.table(predicted_ordination)
-  colnames(predicted_ordination) <- c("MDS1", "MDS2", "MDS3",
-                                      "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+  colnames(predicted_ordination) <- c("Axis1", "Axis2", "Axis3",
+                                      "amp-Axis1", "amp-Axis2", "amp-Axis3", 
                                       "amp-total")
   
   #--------------------------------------------------------
   #Get a scene frame
   predicted_scene[cell] <- as.matrix(predicted_ordination)
-  names(predicted_scene) <- c("MDS1", "MDS2", "MDS3",
-                              "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+  names(predicted_scene) <- c("Axis1", "Axis2", "Axis3",
+                              "amp-Axis1", "amp-Axis2", "amp-Axis3", 
                               "amp-total")
   
   #-----------------------------------------------------------
@@ -166,15 +167,15 @@ apply_model <- function(scene_main_path,
   
   scene_name <- strsplit(frame$scene[1], "DESIS-HSI-L2A-")[[1]][2]
   scene_name <- strsplit(scene_name, "-V")[[1]][1]
-  scene_name <- paste0("DESIS_L3_", scene_name, "_predicted.tif")
+  scene_name <- paste0("DESIS_L3_", scene_name, "_", type, "_predicted.tif")
   
   output_raster <- paste0(output_path, "/", scene_name)
   
   #Export
   writeRaster(x = predicted_scene,
               filename = output_raster,
-              names = c("MDS1", "MDS2", "MDS3",
-                        "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+              names = c("Axis1", "Axis2", "Axis3",
+                        "amp-Axis1", "amp-Axis2", "amp-Axis3", 
                         "amp-total"),
               NAflag = -9999,
               overwrite= TRUE,
@@ -185,29 +186,66 @@ apply_model <- function(scene_main_path,
 #'------------------------------------------------------------------------------
 #' @example 
 
+# Apply in a batch of scenes
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
-scene_main_path <- paste0(root_path, "/00_imagery/", "DESIS-HSI-L2A-DT0621221713_022-20220621T171230-V0217")
+scenes <- list.dirs(path = "/media/antonio/Work/Projects/DESIS_mapping/00_imagery/DESIS",
+                    recursive = FALSE)
+type <- "taxo"
+coefficients <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/predicted/DESIS/", type)
 
-output_raster <- paste0(scene_main_path, "_predicted.tif")
-threads <- 28
+pb <- txtProgressBar(min = 0, max = length(scenes), style = 3)
 
-# Apply in a single scene
-apply_model(scene_main_path, 
-            coefficients, 
-            output_path,
-            threads = 28)
+for(i in 1:length(scenes)) {
+  
+  setTxtProgressBar(pb, i)
+  
+  apply_model(scenes[i], 
+              type,
+              coefficients, 
+              output_path,
+              threads = 28)
+  
+}
 
 # Apply in a batch of scenes
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-scenes <- list.dirs(path = "/media/antonio/Extreme_SSD/Imagery/DESIS/Set1",
+scenes <- list.dirs(path = "/media/antonio/Work/Projects/DESIS_mapping/00_imagery/DESIS",
                     recursive = FALSE)
-coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/DESIS/DESIS_", "coefficients.csv"))
-output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
+type <- "phylo-log"
+coefficients <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/predicted/DESIS/", type)
 
-for(i in 15:length(scenes)) {
+pb <- txtProgressBar(min = 0, max = length(scenes), style = 3)
+
+for(i in 1:length(scenes)) {
+  
+  setTxtProgressBar(pb, i)
   
   apply_model(scenes[i], 
+              type,
+              coefficients, 
+              output_path,
+              threads = 28)
+  
+}
+
+# Apply in a batch of scenes
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+scenes <- list.dirs(path = "/media/antonio/Work/Projects/DESIS_mapping/00_imagery/DESIS",
+                    recursive = FALSE)
+type <- "func"
+coefficients <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/predicted/DESIS/", type)
+
+pb <- txtProgressBar(min = 0, max = length(scenes), style = 3)
+
+for(i in 1:length(scenes)) {
+  
+  setTxtProgressBar(pb, i)
+  
+  apply_model(scenes[i], 
+              type,
               coefficients, 
               output_path,
               threads = 28)

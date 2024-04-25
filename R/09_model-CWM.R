@@ -18,7 +18,6 @@ library(Rcpp)
 library(vegan)
 library(CAST)
 library(sf)
-library(plotROC)
 
 #'------------------------------------------------------------------------------
 #' @Source_code

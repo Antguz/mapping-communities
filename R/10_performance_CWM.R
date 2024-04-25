@@ -102,7 +102,7 @@ performance_batch <- function(all_cwm) {
 #-------------------------------------------------------------------------------
 
 sensor <- "EMIT"
-dataset <- "training"
+dataset <- "testing"
 
 # Taxonomic
 type <- "taxo"

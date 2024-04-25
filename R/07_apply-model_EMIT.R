@@ -32,6 +32,7 @@ sourceCpp("src/model-application.cpp")
 
 apply_model <- function(scene_path,
                         scene_frame, 
+                        type,
                         coefficients, 
                         output_path,
                         threads = 28) {
@@ -79,20 +80,23 @@ apply_model <- function(scene_path,
   rast_mask <- sum(rast_mask, NDVI, NIR, na.rm = TRUE)
   rast_mask[rast_mask >= 1] <- 1
   rast_mask[rast_mask < 1] <- 0
-  
-  # Mask spectra
-  rast_spectra <- mask(rast_spectra, rast_mask, maskvalues = 1)
+  data_mask <- as.data.table(as.data.frame(rast_mask, cells = TRUE, na.rm = TRUE))
+  data_mask <- data_mask[mask == 0,]
   
   # As frame
   data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE, na.rm = TRUE))
   colnames(data_spectra)[2:ncol(data_spectra)] <- as.character(EMIT_bands)
+  
+  # Mask spectra
+  cells_match <- data_spectra$cell %in% data_mask$cell
+  data_spectra <- data_spectra[cells_match == TRUE,]
   
   # To predict
   predicted_scene <- subset(rast_spectra, 1:7)
   predicted_scene[] <- NA
   
   # Release memory
-  rm(list = c('rast_spectra', 'rast_mask','NDVI', 'NIR'))
+  rm(list = c('rast_spectra', 'rast_mask', 'data_mask','NDVI', 'NIR'))
   
   #---------------------------------------------------------
   # Transform raster files
@@ -117,39 +121,39 @@ apply_model <- function(scene_path,
   # Predict raster files
   
   # As matrices
-  MDS1 <- as.matrix(coefficients[MDS == "1", .SD, .SDcols = 3:ncol(coefficients)])
-  MDS2 <- as.matrix(coefficients[MDS == "2", .SD, .SDcols = 3:ncol(coefficients)])
-  MDS3 <- as.matrix(coefficients[MDS == "3", .SD, .SDcols = 3:ncol(coefficients)])
+  Axis1 <- as.matrix(coefficients[Axes == "Axis1", .SD, .SDcols = 3:ncol(coefficients)])
+  Axis2 <- as.matrix(coefficients[Axes == "Axis2", .SD, .SDcols = 3:ncol(coefficients)])
+  Axis3 <- as.matrix(coefficients[Axes == "Axis3", .SD, .SDcols = 3:ncol(coefficients)])
   
   # Predict
   predicted_ordination <- predict_pls(as.matrix(sw),
-                                      MDS1,
-                                      MDS2,
-                                      MDS3)
+                                      Axis1,
+                                      Axis2,
+                                      Axis3)
   
   predicted_ordination <- as.data.table(predicted_ordination)
-  colnames(predicted_ordination) <- c("MDS1", "MDS2", "MDS3",
-                                      "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+  colnames(predicted_ordination) <- c("Axis1", "Axis2", "Axis3",
+                                      "amp-Axis1", "amp-Axis2", "amp-Axis3", 
                                       "amp-total")
   
   #--------------------------------------------------------
   #Get a scene frame
   predicted_scene[] <- NA
   predicted_scene[cell] <- as.matrix(predicted_ordination)
-  names(predicted_scene) <- c("MDS1", "MDS2", "MDS3",
-                              "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+  names(predicted_scene) <- c("Axis1", "Axis2", "Axis3",
+                              "amp-Axis1", "amp-Axis2", "amp-Axis3", 
                               "amp-total")
   
   #-----------------------------------------------------------
   # Scene export
   
-  output_raster <- paste0(scene_path, "/EMIT_L3_", scene_frame$time[1], "_predicted.tif")
+  output_raster <- paste0(output_path, "/EMIT_L3_", scene_frame$time[1], "_", type,"_predicted.tif")
   
   #Export
   writeRaster(x = predicted_scene,
               filename = output_raster,
-              names = c("MDS1", "MDS2", "MDS3",
-                        "amp-MDS1", "amp-MDS2", "amp-MDS3", 
+              names = c("Axis1", "Axis2", "Axis3",
+                        "amp-Axis1", "amp-Axis2", "amp-Axis3", 
                         "amp-total"),
               NAflag = -9999,
               overwrite= TRUE,
@@ -164,9 +168,7 @@ apply_model <- function(scene_path,
 
 # Scenes path
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
 scene_path <- paste0(root_path, "/00_imagery/EMIT")
-scene_path <- "/media/antonio/Extreme_SSD/Imagery/EMIT-envi"
 
 # List scenes
 files <- list.files(scene_path)
@@ -185,16 +187,13 @@ list_scenes <- data.table(time = unique(frame$time))
 list_scenes$ID <- 1:nrow(list_scenes)
 frame <- merge(frame, list_scenes, by = "time", all.x = TRUE, all.y = TRUE)
 
-coefficients <- fread(paste0(root_path, "/06_model/SW_beta_PLS/EMIT/EMIT_", "coefficients.csv"))
-output_path <- paste0(root_path, "/00_imagery/EMIT")
+type <- "taxo"
+coefficients <- fread(paste0(root_path, 
+                             "/06_model_beta/SW_beta_PLS/EMIT/EMIT_", 
+                             type, 
+                             "_coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/predicted/EMIT/", type)
 threads <- 28
-
-# Apply in a single scene
-apply_model(scene_path,
-            scene_frame = frame, 
-            coefficients, 
-            output_path,
-            threads = 28)
 
 # Apply in a batch of scenes
 ID_scene <- unique(frame$ID)
@@ -205,8 +204,58 @@ for(i in 1:length(ID_scene)) {
   
   apply_model(scene_path,
               scene_frame = scene_frame, 
+              type,
               coefficients, 
               output_path,
               threads = 28)
   
 }
+
+type <- "phylo-log"
+coefficients <- fread(paste0(root_path, 
+                             "/06_model_beta/SW_beta_PLS/EMIT/EMIT_", 
+                             type, 
+                             "_coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/predicted/EMIT/", type)
+threads <- 28
+
+# Apply in a batch of scenes
+ID_scene <- unique(frame$ID)
+
+for(i in 1:length(ID_scene)) {
+  
+  scene_frame <- frame[ID == ID_scene[i], ]
+  
+  apply_model(scene_path,
+              scene_frame = scene_frame, 
+              type,
+              coefficients, 
+              output_path,
+              threads = 28)
+  
+}
+
+type <- "func"
+coefficients <- fread(paste0(root_path, 
+                             "/06_model_beta/SW_beta_PLS/EMIT/EMIT_", 
+                             type, 
+                             "_coefficients.csv"))
+output_path <- paste0(root_path, "/00_imagery/predicted/EMIT/", type)
+threads <- 28
+
+# Apply in a batch of scenes
+ID_scene <- unique(frame$ID)
+
+for(i in 1:length(ID_scene)) {
+  
+  scene_frame <- frame[ID == ID_scene[i], ]
+  
+  apply_model(scene_path,
+              scene_frame = scene_frame, 
+              type,
+              coefficients, 
+              output_path,
+              threads = 28)
+  
+}
+
