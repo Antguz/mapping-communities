@@ -34,9 +34,9 @@ source("R/model_occurence.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
-type <- "func"
+#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "E:/Projects/DESIS_mapping"
+type <- "taxo"
 out_path <- "/media/antonio/Work/Projects/DESIS_mapping/07_model_occurrence"
 
 #'------------------------------------------------------------------------------
