@@ -1,9 +1,9 @@
 #'------------------------------------------------------------------------------
-#' @title Model probabilities of plant groups based on NMDS and relative abundance
+#' @title Model occurrence probabilities of forest types based on NMDS
 #'------------------------------------------------------------------------------
 
-#' @description It models the probability of occurrence based on NMDS ordination 
-#' and relative abundance.
+#' @description It models the occurrence probability of forest types based on 
+#' NMDS ordination.
 
 #'------------------------------------------------------------------------------
 #' @Libraries
@@ -36,7 +36,7 @@ source("R/model_occurence.R")
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 root_path <- "E:/Projects/DESIS_mapping"
-type <- "taxo"
+type <- "phylo-log"
 out_path <- "/media/antonio/Work/Projects/DESIS_mapping/07_model_occurrence"
 
 #'------------------------------------------------------------------------------
@@ -49,26 +49,42 @@ fia_meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 # NMDS ordination values
 ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"))
 
-# FIA data for aggregation
-inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "-VOL.rds"))
-sp_meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
-aggregation <- aggregate_batch(sp_meta[,c(9, 3, 4, 10, 11, 12, 13, 14)], inventory)
-#aggregation <- aggregation[, 1:2]
-
 # Test for match
-all.equal(aggregation$PLT_CN, ordination$PLT_CN)
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match,]
-all.equal(aggregation$PLT_CN, fia_meta$PLT_CN)
+all.equal(ordination$PLT_CN, fia_meta$PLT_CN)
 
-# Select the most abundant genus
-aggregation <- aggregation[, names(aggregation)[-1] := lapply(.SD, function(x) as.integer(x!=0)), 
-                                 .SDcols = 2:ncol(aggregation)]
-presence <- colSums(aggregation[,-1])
-rpresence <- round(presence/nrow(aggregation)*100, 4)
-rpresence <- rpresence > 10.0
-rpresence <- c(TRUE, rpresence)
-aggregation <- aggregation[ , .SD, .SDcols = c(1:ncol(aggregation))[rpresence]]
+# FIA forest type
+forest_type <- fread(paste0(root_path, "/00_FIA/ENTIRE_COND.csv"))
+forest_type <- forest_type[, c("PLT_CN", "FORTYPCD")]
+FORTYPCD <- fread(paste0(root_path, "/00_FIA/ENTIRE_REF_FOREST_TYPE.csv"))
+FORTYPCD <- FORTYPCD[, c("VALUE", "MEANING")]
+forest_type <- merge(forest_type, FORTYPCD, 
+                     by.x = "FORTYPCD", by.y = "VALUE",
+                     all.x = TRUE, all.y = TRUE)
+colnames(forest_type)[3] <- "FORTYP"
+
+# Match plot order
+FORTYP_match <- match.integer64(fia_meta$PLT_CN, forest_type$PLT_CN)
+forest_type <- forest_type[FORTYP_match, ]
+all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
+
+# Clean forest type
+to_remove <- c(181, 183, 223, 380, 382, 383, 803, 807, 925, 926, 
+               932, 950, 951, 952, 953, 954, 955, 981, 999)
+forest_type <- forest_type[!forest_type$FORTYPCD %in% to_remove, ]
+forest_type <- forest_type[!is.na(FORTYP),]
+forest_type <- forest_type[, c("PLT_CN", "FORTYP")]
+
+# Match meta, NMDS, and forest type
+fia_meta_match <- match.integer64(forest_type$PLT_CN, fia_meta$PLT_CN)
+fia_meta <- fia_meta[fia_meta_match, ]
+ordination_match <- match.integer64(forest_type$PLT_CN, ordination$PLT_CN)
+ordination <- ordination[ordination_match, ]
+
+all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
+all.equal(fia_meta$PLT_CN, ordination$PLT_CN)
+all.equal(ordination$PLT_CN, forest_type$PLT_CN)
 
 #-------------------------------------------------------------------------------
 #' @Data-split
