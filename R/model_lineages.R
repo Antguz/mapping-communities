@@ -1,7 +1,7 @@
-model_lineages <- function(fia_meta = fia_meta,
-                           ordination = ordination,
-                           aggregation = aggregation,
-                           data_split = data_split,
+model_lineages <- function(fia_meta,
+                           ordination,
+                           aggregation,
+                           data_split,
                            threads = 4) {
   
   # Get number of plant groups
@@ -120,8 +120,7 @@ model_lineages <- function(fia_meta = fia_meta,
                          fia_meta = fia_meta,
                          ordination = ordination,
                          aggregation = aggregation,
-                         split = split,
-                         knndm_folds = knndm_folds,
+                         data_split = data_split,
                          mc.preschedule = TRUE, 
                          mc.set.seed = FALSE,
                          mc.silent = FALSE, 

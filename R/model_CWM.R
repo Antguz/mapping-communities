@@ -1,8 +1,7 @@
 model_CWM <- function(fia_meta,
                       ordination,
                       aggregation,
-                      split,
-                      knndm_folds,
+                      data_split = data_split,
                       threads = 4) {
   
   # Get number of plant groups
@@ -13,17 +12,16 @@ model_CWM <- function(fia_meta,
                                fia_meta,
                                ordination,
                                aggregation,
-                               split,
-                               knndm_folds) {
-    
-    # Group name fir future reference
-    group_name <- colnames(aggregation)[X]
+                               data_split) {
     
     #---------------------------------------------------------------------------
     # Match databases
     if(all.equal(aggregation$PLT_CN, ordination$PLT_CN) == FALSE) {
       stop("Files most match")
     }
+    
+    # Group name fir future reference
+    group_name <- colnames(aggregation)[X]
     
     #---------------------------------------------------------------------------
     # Reshape data
@@ -34,32 +32,31 @@ model_CWM <- function(fia_meta,
     # Perform model
     
     # Model features
-    ctrl <- trainControl(method = "cv", 
-                         #classProbs = TRUE,
-                         #summaryFunction = twoClassSummary,
-                         savePredictions = TRUE,
-                         index = knndm_folds$indx_train)
+    ctrl <- trainControl(method = "repeatedcv", 
+                         number = 10,
+                         repeats = 10,
+                         savePredictions = TRUE)
     
     # Model
     plsFit <- train(trait ~ .,
-                    data = frame[split,],
+                    data = frame[as.matrix(data_split)[,(X-1)] == 1,],
                     method = "glm",
                     trControl = ctrl)
     
     #---------------------------------------------------------------------------
     # Performance on training
     
-    training <- data.frame(obs = frame$trait[split],
+    training <- data.frame(obs = frame$trait[as.matrix(data_split)[,(X-1)] == 1],
                            pred = predict(plsFit, 
-                                          newdata = frame[split,]))
+                                          newdata = frame[as.matrix(data_split)[,(X-1)] == 1,]))
     
     training_performance <- parameters(training$obs, training$pred)
     
     #---------------------------------------------------------------------------
     # Performance on testing
     
-    testing <- data.frame(obs = frame[!split, ]$trait,
-                          pred = predict(plsFit, newdata = frame[!split,]))
+    testing <- data.frame(obs = frame[as.matrix(data_split)[,(X-1)] == 0, ]$trait,
+                          pred = predict(plsFit, newdata = frame[as.matrix(data_split)[,(X-1)] == 0,]))
     
     testing_performance <- parameters(testing$obs, testing$pred)
     
@@ -87,8 +84,7 @@ model_CWM <- function(fia_meta,
                          fia_meta = fia_meta,
                          ordination = ordination,
                          aggregation = aggregation,
-                         split = split,
-                         knndm_folds = knndm_folds,
+                         data_split = data_split,
                          mc.preschedule = TRUE, 
                          mc.set.seed = FALSE,
                          mc.silent = FALSE, 
