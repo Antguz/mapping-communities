@@ -1,9 +1,8 @@
-model_occurence <- function(fia_meta,
-                            ordination,
-                            aggregation,
-                            split,
-                            knndm_folds,
-                            threads = 4) {
+model_lineages <- function(fia_meta = fia_meta,
+                           ordination = ordination,
+                           aggregation = aggregation,
+                           data_split = data_split,
+                           threads = 4) {
   
   # Get number of plant groups
   groups <- ncol(aggregation) - 1
@@ -13,18 +12,16 @@ model_occurence <- function(fia_meta,
                                fia_meta,
                                ordination,
                                aggregation,
-                               split,
-                               knndm_folds) {
-                               #out_path) {
-    
-    # Group name fir future reference
-    group_name <- colnames(aggregation)[X]
+                               data_split) {
     
     #---------------------------------------------------------------------------
     # Match databases
     if(all.equal(aggregation$PLT_CN, ordination$PLT_CN) == FALSE) {
       stop("Files most match")
     }
+    
+    # Group name for future reference
+    group_name <- colnames(aggregation)[X]
     
     #---------------------------------------------------------------------------
     # Reshape data
@@ -40,15 +37,16 @@ model_occurence <- function(fia_meta,
     # Perform model
     
     # Model features
-    ctrl <- trainControl(method = "cv", 
+    ctrl <- trainControl(method = "repeatedcv", 
+                         number = 10,
+                         repeats = 10,
                          classProbs = TRUE,
                          summaryFunction = twoClassSummary,
-                         savePredictions = TRUE,
-                         index = knndm_folds$indx_train)
+                         savePredictions = TRUE)
     
     # Model
     plsFit <- train(occurrence ~ .,
-                    data = frame[split,],
+                    data = frame[as.matrix(data_split)[,(X-1)] == 1,],
                     method = "glm",
                     trControl = ctrl,
                     metric = "ROC")
@@ -56,14 +54,14 @@ model_occurence <- function(fia_meta,
     #---------------------------------------------------------------------------
     # Performance on training
     
-    training <- data.frame(obs = frame$occurrence[split],
+    training <- data.frame(obs = frame$occurrence[as.matrix(data_split)[,(X-1)] == 1],
                            pred = predict(plsFit, 
-                                          newdata = frame[split,]),
+                                          newdata = frame[as.matrix(data_split)[,(X-1)] == 1,]),
                            presence = predict(plsFit, 
-                                              newdata = frame[split,], 
+                                              newdata = frame[as.matrix(data_split)[,(X-1)] == 1,], 
                                               type = "prob")[,2],
                            absence = predict(plsFit, 
-                                             newdata = frame[split,], 
+                                             newdata = frame[as.matrix(data_split)[,(X-1)] == 1,], 
                                              type = "prob")[,1])
     
     training_performance <- c(defaultSummary(training, 
@@ -78,13 +76,13 @@ model_occurence <- function(fia_meta,
     #---------------------------------------------------------------------------
     # Performance on testing
     
-    testing <- data.frame(obs = frame[!split, ]$occurrence,
-                          pred = predict(plsFit, newdata = frame[!split,]),
+    testing <- data.frame(obs = frame[as.matrix(data_split)[,(X-1)] == 0, ]$occurrence,
+                          pred = predict(plsFit, newdata = frame[as.matrix(data_split)[,(X-1)] == 0,]),
                           presence = predict(plsFit, 
-                                             newdata = frame[!split,], 
+                                             newdata = frame[as.matrix(data_split)[,(X-1)] == 0,], 
                                              type = "prob")[,2],
                           absence = predict(plsFit, 
-                                            newdata = frame[!split,], 
+                                            newdata = frame[as.matrix(data_split)[,(X-1)] == 0,], 
                                             type = "prob")[,1])
     
     testing_performance <- c(defaultSummary(testing, 
