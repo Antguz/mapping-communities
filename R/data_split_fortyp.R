@@ -1,6 +1,5 @@
-categorical_data_split <- function(forest_type,
-                                   split = 0.6,
-                                   threads = 4) {
+data_split_fortyp <- function(forest_type,
+                              split = 0.6) {
   
   # Create data for training and testing
   PLT_CN <- forest_type$PLT_CN
