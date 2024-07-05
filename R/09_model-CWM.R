@@ -33,9 +33,9 @@ source("R/model_performance.R")
 #-------------------------------------------------------------------------------
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/DESIS_mapping"
 type <- "func"
-out_path <- "E:/Projects/DESIS_mapping/07_model_CWM"
+out_path <- "/media/antonio/Work/DESIS_mapping/07_model_CWM"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -87,6 +87,7 @@ model <- model_CWM(fia_meta = fia_meta,
                    ordination = ordination,
                    aggregation = aggregation,
                    data_split = data_split,
+                   iterations = 100,
                    threads = 25)
 
 # Export model

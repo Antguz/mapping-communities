@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Apply PLS model to DESIS scenes (msi)
+#' @title Apply PLS model to DESIS scenes
 #'------------------------------------------------------------------------------
 
 #' @description It applies the model to DESIS scenes.
@@ -266,6 +266,8 @@ apply_model <- function(X,
 
 #'------------------------------------------------------------------------------
 #' @example 
+
+#### Local predictions from .zip files
 
 # Apply in a batch of scenes
 root_path <- "/media/antonio/Work/DESIS_mapping"

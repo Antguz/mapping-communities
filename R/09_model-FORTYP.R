@@ -25,15 +25,16 @@ library(plotROC)
 #-------------------------------------------------------------------------------
 
 source("R/data_split_fortyp.R")
+source("R/model_fortyp.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
-type <- "phylo-log"
-out_path <- "E:/Projects/DESIS_mapping/07_model_fortyp"
+root_path <- "/media/antonio/Work/DESIS_mapping"
+type <- "taxo"
+out_path <- "/media/antonio/Work/DESIS_mapping/07_model_fortyp"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -111,6 +112,7 @@ model <- model_fortyp(fia_meta = fia_meta,
                       forest_type = forest_type,
                       ordination = ordination,
                       data_split = data_split,
+                      iterations = 100,
                       threads = 25)
 
 # Export model

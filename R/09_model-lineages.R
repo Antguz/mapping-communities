@@ -19,6 +19,7 @@ library(vegan)
 library(CAST)
 library(sf)
 library(plotROC)
+library(MLmetrics)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -28,16 +29,16 @@ sourceCpp("src/approximation_rcpp.cpp")
 source("R/aggregate_plants.R")
 source("R/data_split_lineages.R")
 source("R/axes_segmentation.R") 
-source("R/model_occurence.R")
+source("R/model_lineages.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/DESIS_mapping"
 type <- "phylo-log"
-out_path <- "E:/Projects/DESIS_mapping/DESIS_mapping/07_model_occurrence"
+out_path <- "/media/antonio/Work/DESIS_mapping/07_model_occurrence"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -99,7 +100,8 @@ model <- model_lineages(fia_meta = fia_meta,
                         ordination = ordination,
                         aggregation = aggregation,
                         data_split = data_split,
-                        threads = 25)
+                        iterations = 100,
+                        threads = 32)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_model-occurrence.csv"))
