@@ -76,9 +76,9 @@ apply_model_occurence <- function(predicted_scene_path,
 #' @example
 
 # Run in a batch
-root_path <- "E:/Projects/DESIS_mapping"
-sensor <- "DESIS"
-type <- "func"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+sensor <- "EMIT"
+type <- "phylo-log"
 coefficients <- fread(paste0(root_path, "/07_model_occurrence/", 
                              type, "_model-occurrence.csv"))
 coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]

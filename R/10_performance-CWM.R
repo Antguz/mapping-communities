@@ -102,7 +102,7 @@ performance_batch <- function(all_cwm) {
 #-------------------------------------------------------------------------------
 
 sensor <- "EMIT"
-dataset <- "testing"
+dataset <- "training"
 
 # Taxonomic
 type <- "taxo"
@@ -152,3 +152,34 @@ func_perf <- performance_batch(func_CWM)
 func_CWM$perf <- func_perf
 saveRDS(func_CWM, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
+
+
+#-------------------------------------------------------------------------------
+#' @Collect-performance
+#-------------------------------------------------------------------------------
+
+folder_path <- paste0(root_path, "/08_CWM_performance")
+
+files <- list.files(path = folder_path, 
+                    pattern = ".rds", 
+                    recursive = TRUE,
+                    include.dirs = TRUE)
+
+data <- data.table()
+
+for(i in 1:length(files)) {
+  
+  sensor <- strsplit(files[i], "_")[[1]][1]
+  type <- strsplit(files[i], "_")[[1]][2]
+  dataset <- strsplit(files[i], "_")[[1]][3]
+  
+  performance <- readRDS(paste0(folder_path, "/", files[i]))$perf
+  performance$sensor <- sensor
+  performance$type <- type
+  performance$dataset <- dataset
+  
+  data <- rbind(data, performance)
+  
+}
+
+fwrite(data, paste0(root_path, "/08_CWM_performance/performance_summary_CWM.csv"))

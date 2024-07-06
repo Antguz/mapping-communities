@@ -45,6 +45,11 @@ apply_model_CWM <- function(predicted_scene_path,
   plant_cwm <- multi_cwm(ordination,
                          as.matrix(coefficients[, 2:5]))
   
+  #Scale predictions
+  plant_cwm[, c(1, 3, 4, 6, 7, 8, 9)] <- round(plant_cwm[, c(1, 3, 4, 6, 7, 8, 9)]*1000, 0)
+  plant_cwm[, c(2, 5, 11, 12)] <- round(plant_cwm[, c(2, 5, 11, 12)]*100, 0)
+  plant_cwm[, c(10)] <- round(plant_cwm[, c(10)], 0)
+  
   #--------------------------------------------------------
   #Get a scene frame
   species_scene <- subset(predicted_scene, 1)
@@ -76,9 +81,10 @@ apply_model_CWM <- function(predicted_scene_path,
 #' @example
 
 # Run in a batch
-root_path <- "E:/Projects/DESIS_mapping"
+#root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 sensor <- "DESIS"
-type <- "taxo"
+type <- "phylo-log"
 coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]
