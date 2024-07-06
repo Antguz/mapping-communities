@@ -113,7 +113,7 @@ model <- model_fortyp(fia_meta = fia_meta,
                       ordination = ordination,
                       data_split = data_split,
                       iterations = 100,
-                      threads = 25)
+                      threads = 30)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_model-FORTYP.csv"))

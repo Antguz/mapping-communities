@@ -80,24 +80,15 @@ performance_batch <- function(all_probabilities, threads) {
   application_performance <- function(X,
                                       all_probabilities) {
     
-    cat(X)
-    
     name <- colnames(all_probabilities$obs)[X]
     
-    if(max(as.matrix(all_probabilities$obs)[, X]) == 0 &
-       max(as.matrix(all_probabilities$pred)[,X]) == 0) {
-      
-    } else {
-      
-      # Predict new values
-      per <- try(parameters(obs = as.matrix(all_probabilities$obs)[, X], 
-                            pred = as.matrix(all_probabilities$pred)[,X]),
-                 silent = TRUE)
-      
-      if(class(per)[1] == "try-error") {
-        per <- data.table(R2 = NA, BIAS = NA, RMSE = NA, 
-                          perRMSE = NA, intercept = NA, slope = NA)
-      }
+    per <- try(parameters(obs = as.matrix(all_probabilities$obs)[, X], 
+                          pred = as.matrix(all_probabilities$pred)[,X]),
+               silent = TRUE)
+    
+    if(class(per)[1] == "try-error") {
+      per <- data.table(R2 = NA, BIAS = NA, RMSE = NA, 
+                        perRMSE = NA, intercept = NA, slope = NA)
     }
     
     per <- cbind(plant = name, per)
@@ -121,7 +112,7 @@ performance_batch <- function(all_probabilities, threads) {
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT"
 
 #### Phylogenetic training ####
 dataset <- "training"

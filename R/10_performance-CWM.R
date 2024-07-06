@@ -26,8 +26,8 @@ source("R/model_performance.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-out_path <- "/media/antonio/Work/Projects/DESIS_mapping/08_CWM_performance"
+root_path <- "/media/antonio/Work/DESIS_mapping"
+out_path <- "/media/antonio/Work/DESIS_mapping/08_CWM_performance"
 
 #-------------------------------------------------------------------------------
 #' @Probabilities-function
@@ -84,10 +84,10 @@ performance_batch <- function(all_cwm) {
   }
   
   # Performance in parallel
-  performance <- mclapply(X = 1:ncol(all_cwm$obs),
-                          FUN = application_performance,
-                          all_cwm = all_cwm,
-                          mc.cores = 10)
+  performance <- pbmclapply(X = 1:ncol(all_cwm$obs),
+                            FUN = application_performance,
+                            all_cwm = all_cwm,
+                            mc.cores = 28)
   
   performance <- do.call(rbind.data.frame, performance)
   performance <- cbind(plants = colnames(all_cwm$obs),
@@ -104,45 +104,12 @@ performance_batch <- function(all_cwm) {
 sensor <- "EMIT"
 dataset <- "training"
 
-# Taxonomic
-type <- "taxo"
-coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
-                             type, "_model-CWM.csv"))
-coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 10:13)]
-
-predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
-                          sensor, "_", type, "_predicted_", dataset, ".csv"))
-
-taxo_CWM <- get_CWM(predicted, coefficients)
-taxo_perf <- performance_batch(taxo_CWM)
-taxo_CWM$perf <- taxo_perf
-saveRDS(taxo_CWM, 
-        paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
-
-# Phylogenetic
-type <- "phylo-log"
-coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
-                             type, "_model-CWM.csv"))
-coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 10:13)]
-
-predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
-                          sensor, "_", type, "_predicted_", dataset, ".csv"))
-
-phylo_CWM <- get_CWM(predicted, coefficients)
-phylo_perf <- performance_batch(phylo_CWM)
-phylo_CWM$perf <- phylo_perf
-saveRDS(phylo_CWM, 
-        paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
-
-
 # Functional
 type <- "func"
 coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 10:13)]
+coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
 
 predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))

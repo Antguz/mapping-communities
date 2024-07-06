@@ -101,7 +101,7 @@ model <- model_lineages(fia_meta = fia_meta,
                         aggregation = aggregation,
                         data_split = data_split,
                         iterations = 100,
-                        threads = 32)
+                        threads = 30)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_model-occurrence.csv"))

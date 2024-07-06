@@ -88,7 +88,7 @@ model <- model_CWM(fia_meta = fia_meta,
                    aggregation = aggregation,
                    data_split = data_split,
                    iterations = 100,
-                   threads = 25)
+                   threads = 30)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_model-CWM.csv"))
