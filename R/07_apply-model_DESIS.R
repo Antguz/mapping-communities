@@ -262,6 +262,10 @@ apply_model <- function(X,
   # Remove temporal folder
   unlink(paste0(temp, "/", name_product), recursive = TRUE)
   
+  # Return
+  gc()
+  return(paste0(name_product, ": success"))
+  
 }
 
 #'------------------------------------------------------------------------------
@@ -285,19 +289,22 @@ temp <- paste0(root_path, "/00_imagery/predicted/DESIS/temp")
 output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
 
 # Parallel processing
-pbmclapply(X = 1:length(scenes), 
-           FUN = apply_model, 
-           scene_main_path = scenes, 
-           coefficients_taxonomic = coefficients_taxonomic,
-           coefficients_phylogenetic = coefficients_phylogenetic,
-           coefficients_functional = coefficients_functional,
-           output_path = output_path,
-           temp= temp,
-           threads = 1,
-           mc.preschedule = TRUE, 
-           mc.set.seed = FALSE,
-           mc.silent = FALSE, 
-           mc.cores = 12,
-           mc.cleanup = TRUE, 
-           mc.allow.recursive = TRUE, 
-           affinity.list = NULL)
+run <- pbmclapply(X = 1:length(scenes), 
+                  FUN = apply_model, 
+                  scene_main_path = scenes, 
+                  coefficients_taxonomic = coefficients_taxonomic,
+                  coefficients_phylogenetic = coefficients_phylogenetic,
+                  coefficients_functional = coefficients_functional,
+                  output_path = output_path,
+                  temp= temp,
+                  threads = 1,
+                  mc.preschedule = TRUE, 
+                  mc.set.seed = FALSE,
+                  mc.silent = FALSE, 
+                  mc.cores = 12,
+                  mc.cleanup = TRUE, 
+                  mc.allow.recursive = TRUE, 
+                  affinity.list = NULL)
+
+complete <- do.call(rbind, run)
+fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
