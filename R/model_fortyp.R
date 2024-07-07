@@ -69,9 +69,8 @@ model_fortyp <- function(fia_meta,
         
         #---------------------------------------------------------------------------
         # Down sampling
-        #down_train <- downSample(x = data_training,
-        #                         y = data_training$occurrence)
-        #down_train <- down_train[, c(1:4)]
+        down_train <- data_training[sample(1:nrow(data_training), 
+                                           ceiling(nrow(data_training)*0.8)),]
         
         #---------------------------------------------------------------------------
         # Perform model
@@ -84,7 +83,7 @@ model_fortyp <- function(fia_meta,
         
         # Model
         plsFit <- train(occurrence ~ .,
-                        data = data_training,
+                        data = down_train,
                         method = "glm",
                         trControl = ctrl,
                         metric = "ROC")
