@@ -12,6 +12,7 @@ library(data.table)
 library(terra)
 library(Rcpp)
 library(RcppArmadillo)
+library(pbmcapply)
 
 #'------------------------------------------------------------------------------
 #' Source code
@@ -25,17 +26,17 @@ sourceCpp("src/summary_rcpp.cpp")
 #' @param predicted_scene_path
 #' @param coefficients
 #' @param output_raster
-#' @param threads
 
 #'------------------------------------------------------------------------------
 #' Function
 
-apply_model_CWM <- function(predicted_scene_path, 
+apply_model_CWM <- function(X,
+                            predicted_scene_path, 
                             coefficients, 
                             output_path) {
   
   # Read predicted scene
-  predicted_scene <- rast(predicted_scene_path)
+  predicted_scene <- rast(predicted_scene_path[X])
   cwn_scene <- subset(predicted_scene, 1)
   cwn_scene[] <- NA
   
@@ -123,8 +124,9 @@ apply_model_CWM <- function(predicted_scene_path,
   #-----------------------------------------------------------
   # Scene export
   
-  scene_name <- strsplit(predicted_scene_path, "/")[[1]]
+  scene_name <- strsplit(predicted_scene_path[X], "/")[[1]]
   scene_name <- scene_name[length(scene_name)]
+  fl <- scene_name
   scene_name <- strsplit(scene_name, "-functional-composition.tif")[[1]][1]
   scene_name <- paste0(scene_name, "-CWM.tif")
   scene_name <- strsplit(scene_name, "DESIS-L3A_")[[1]][2]
@@ -138,6 +140,10 @@ apply_model_CWM <- function(predicted_scene_path,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
+  
+  # Return
+  gc()
+  return(paste0(fl, ": success"))
   
 }
 
@@ -155,16 +161,21 @@ coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "A
 files <- list.files(path = paste0(root_path, "/00_imagery/predicted/", sensor),
                           pattern = "functional-composition.tif",
                           full.names = TRUE)
-output_path <- paste0(root_path, "/00_imagery/CWM/", sensor, "/", type)
+output_path <- paste0(root_path, "/00_imagery/CWM/", sensor)
 
-pb <- txtProgressBar(min = 0, max = length(files), style = 3)
-
-for(i in 1:length(files)) {
-  
-  setTxtProgressBar(pb, i)
-  
-  apply_model_CWM(predicted_scene_path = files, 
+# Parallel processing
+run <- pbmclapply(X = 1:length(files), 
+                  FUN = apply_model_CWM, 
+                  predicted_scene_path = files, 
                   coefficients = coefficients,
-                  output_path)
-  
-}
+                  output_path = output_path,
+                  mc.preschedule = TRUE, 
+                  mc.set.seed = FALSE,
+                  mc.silent = FALSE, 
+                  mc.cores = 4,
+                  mc.cleanup = TRUE, 
+                  mc.allow.recursive = TRUE, 
+                  affinity.list = NULL)
+
+complete <- do.call(rbind, run)
+fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
