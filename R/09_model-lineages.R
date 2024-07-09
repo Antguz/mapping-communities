@@ -20,6 +20,7 @@ library(CAST)
 library(sf)
 library(plotROC)
 library(MLmetrics)
+library(ROSE)
 
 #'------------------------------------------------------------------------------
 #' @Source_code

@@ -112,7 +112,7 @@ performance_batch <- function(all_probabilities, threads) {
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #### Phylogenetic training ####
 dataset <- "training"
@@ -121,7 +121,6 @@ coefficients <- fread(paste0(root_path, "/07_model_occurrence/",
                              type, "_model-occurrence.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 15:18)]
-coefficients <- coefficients[plant != "angiosperm" & plant != "broadleaf", ]
 
 predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
@@ -140,7 +139,6 @@ coefficients <- fread(paste0(root_path, "/07_model_occurrence/",
                              type, "_model-occurrence.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 15:18)]
-coefficients <- coefficients[plant != "angiosperm" & plant != "broadleaf", ]
 
 predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
@@ -187,3 +185,36 @@ taxo_perf <- performance_batch(all_probabilities = taxo_probabilities,
 taxo_probabilities$perf <- taxo_perf
 saveRDS(taxo_probabilities, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
+
+#-------------------------------------------------------------------------------
+#' @Collect-performance
+#-------------------------------------------------------------------------------
+
+folder_path <- paste0(root_path, "/08_fortyp_performance")
+#folder_path <- paste0(root_path, "/08_occurence_performance")
+
+files <- list.files(path = folder_path, 
+                    pattern = ".rds", 
+                    recursive = TRUE,
+                    include.dirs = TRUE)
+
+data <- data.table()
+
+for(i in 1:length(files)) {
+  
+  sensor <- strsplit(files[i], "_")[[1]][1]
+  type <- strsplit(files[i], "_")[[1]][2]
+  dataset <- strsplit(files[i], "_")[[1]][3]
+  
+  performance <- readRDS(paste0(folder_path, "/", files[i]))$perf
+  performance$sensor <- sensor
+  performance$type <- type
+  performance$dataset <- dataset
+  
+  data <- rbind(data, performance)
+  
+}
+
+fwrite(data, paste0(root_path, "/08_fortyp_performance/performance_summary_fortyp.csv"))
+#fwrite(data, paste0(root_path, "/08_occurence_performance/performance_summary_occurence.csv"))
+

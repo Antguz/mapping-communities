@@ -102,9 +102,9 @@ performance_batch <- function(all_cwm) {
 #-------------------------------------------------------------------------------
 
 sensor <- "EMIT"
-dataset <- "training"
 
-# Functional
+# Training
+dataset <- "training"
 type <- "func"
 coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
                              type, "_model-CWM.csv"))
@@ -120,6 +120,22 @@ func_CWM$perf <- func_perf
 saveRDS(func_CWM, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 
+# Testing
+dataset <- "testing"
+type <- "func"
+coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
+                             type, "_model-CWM.csv"))
+coefficients <- subset(coefficients, dataset == "training")
+coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
+
+predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
+                          sensor, "_", type, "_predicted_", dataset, ".csv"))
+
+func_CWM <- get_CWM(predicted, coefficients)
+func_perf <- performance_batch(func_CWM)
+func_CWM$perf <- func_perf
+saveRDS(func_CWM, 
+        paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 
 #-------------------------------------------------------------------------------
 #' @Collect-performance
