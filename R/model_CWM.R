@@ -41,8 +41,7 @@ model_CWM <- function(fia_meta,
       
       #---------------------------------------------------------------------------
       # Down sampling
-      down_train <- data_training[sample(1:nrow(data_training), 
-                                         ceiling(nrow(data_training)*0.8)),]
+      down_train <- data_training[cwm_subsplit(trait, split = 0.8),]
       
       #---------------------------------------------------------------------------
       # Perform model
@@ -106,7 +105,7 @@ model_CWM <- function(fia_meta,
                          mc.preschedule = TRUE, 
                          mc.set.seed = FALSE,
                          mc.silent = FALSE, 
-                         mc.cores = 25,
+                         mc.cores = threads,
                          mc.cleanup = TRUE, 
                          mc.allow.recursive = TRUE, 
                          affinity.list = NULL)
@@ -114,5 +113,30 @@ model_CWM <- function(fia_meta,
   complete <- do.call(rbind.data.frame, complete)
   
   return(complete)
+  
+}
+
+cwm_subsplit <- function(trait, split = 0.8) {
+  
+  test <- data.table(sample = 1:length(trait),
+                     trait = trait)
+  test$cut <- cut(test$trait, breaks = 20)
+  test$train <- 0
+  cuts_unite <- unique(test$cut)
+  all <- data.frame()
+  
+  for(ii in 1:length(cuts_unite)) {
+    
+    sub <- subset(test, cut == cuts_unite[ii])
+    sample_test <- sample(1:nrow(sub), ceiling(nrow(sub)*split))
+    sub[sample_test, train := 1]
+    all <- rbind(all, sub)
+  
+  }
+  
+  all <- all[order(sample),]
+  all <- all[train == 1,]
+  
+  return(all$sample)
   
 }

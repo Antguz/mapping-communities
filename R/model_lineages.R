@@ -47,8 +47,8 @@ model_lineages <- function(fia_meta,
       
       #---------------------------------------------------------------------------
       # Down sampling
-      down_train <- data_training[sample(1:nrow(data_training), 
-                                         ceiling(nrow(data_training)*0.8)),]
+      down_train <- ROSE(occurrence ~ ., data = data_training)$data
+      down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
       
       #---------------------------------------------------------------------------
       # Perform model
@@ -144,7 +144,7 @@ model_lineages <- function(fia_meta,
                          mc.preschedule = TRUE, 
                          mc.set.seed = FALSE,
                          mc.silent = FALSE, 
-                         mc.cores = 32,
+                         mc.cores = threads,
                          mc.cleanup = TRUE, 
                          mc.allow.recursive = TRUE, 
                          affinity.list = NULL)
