@@ -17,8 +17,8 @@ library(pbmcapply)
 #'------------------------------------------------------------------------------
 #' Source code
 
-source("R/DESIS-transform.R")
-sourceCpp("src/beta_predict_pls.cpp")
+#source("R/DESIS-transform.R")
+#sourceCpp("src/beta_predict_pls.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -268,25 +268,87 @@ apply_model <- function(X,
   
 }
 
+
 #'------------------------------------------------------------------------------
 #' @example 
 
-#### Local predictions from .zip files
+################################################################################
+#' @Local predictions from .zip files
+################################################################################
+
+# # Apply in a batch of scenes
+# root_path <- "/media/antonio/Work/DESIS_mapping"
+# scenes <- list.files(path = paste0(root_path, "/00_imagery/DESIS/test"),
+#                      full.names = TRUE,
+#                      recursive = FALSE)
+# type <- "taxo"
+# coefficients_taxonomic <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+# type <- "phylo-log"
+# coefficients_phylogenetic <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+# type <- "func"
+# coefficients_functional <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+# 
+# temp <- paste0(root_path, "/00_imagery/predicted/DESIS/temp")
+# output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
+# 
+# # Parallel processing
+# run <- pbmclapply(X = 1:length(scenes), 
+#                   FUN = apply_model, 
+#                   scene_main_path = scenes, 
+#                   coefficients_taxonomic = coefficients_taxonomic,
+#                   coefficients_phylogenetic = coefficients_phylogenetic,
+#                   coefficients_functional = coefficients_functional,
+#                   output_path = output_path,
+#                   temp= temp,
+#                   threads = 1,
+#                   mc.preschedule = TRUE, 
+#                   mc.set.seed = FALSE,
+#                   mc.silent = FALSE, 
+#                   mc.cores = 12,
+#                   mc.cleanup = TRUE, 
+#                   mc.allow.recursive = TRUE, 
+#                   affinity.list = NULL)
+# 
+# complete <- do.call(rbind, run)
+# fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
+
+################################################################################
+#' @MSI predictions from .zip files
+################################################################################
 
 # Apply in a batch of scenes
-root_path <- "/media/antonio/Work/DESIS_mapping"
-scenes <- list.files(path = paste0(root_path, "/00_imagery/DESIS/test"),
-                     full.names = TRUE,
-                     recursive = FALSE)
-type <- "taxo"
-coefficients_taxonomic <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
-type <- "phylo-log"
-coefficients_phylogenetic <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
-type <- "func"
-coefficients_functional <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
+# Path
+root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 
-temp <- paste0(root_path, "/00_imagery/predicted/DESIS/temp")
-output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
+# Source code
+source(paste0(root_path, "/Source/DESIS-transform.R"))
+sourceCpp(paste0(root_path, "/Source/beta_predict_pls.cpp"))
+
+# Scenes path
+scenes <- list.files(path = paste0(root_path, "/Imagery"),
+                     full.names = TRUE,
+                     recursive = TRUE)
+
+# Coefficients
+type <- "taxo"
+coefficients_taxonomic <- fread(paste0(root_path, 
+                                       "/Model/DESIS_", 
+                                       type, 
+                                       "_coefficients.csv"))
+type <- "phylo-log"
+coefficients_phylogenetic <- fread(paste0(root_path, 
+                                          "/Model/DESIS_", 
+                                          type, 
+                                          "_coefficients.csv"))
+type <- "func"
+coefficients_functional <- fread(paste0(root_path, 
+                                        "/Model/DESIS_", 
+                                        type, 
+                                        "_coefficients.csv"))
+
+# Out paths
+temp <- paste0(root_path, "/temp")
+output_path <- paste0(root_path, "/Predicted")
 
 # Parallel processing
 run <- pbmclapply(X = 1:length(scenes), 
@@ -306,5 +368,6 @@ run <- pbmclapply(X = 1:length(scenes),
                   mc.allow.recursive = TRUE, 
                   affinity.list = NULL)
 
+# Export report
 complete <- do.call(rbind, run)
 fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
