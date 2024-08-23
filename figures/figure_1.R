@@ -86,7 +86,7 @@ taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
 phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
 #phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
 func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
-func_comm$Axis3 <- -func_comm$Axis3
+#func_comm$Axis3 <- -func_comm$Axis3
 #func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
 #fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
 
@@ -115,20 +115,20 @@ neon_aoi <- st_read(paste0(root_path, "/GIS/NEON_aoi.gpkg"))
 taxo_col <- RGB(taxo_comm$Axis1, 
            taxo_comm$Axis2, 
            taxo_comm$Axis3,
-           min_range = NULL, 
-           max_range = NULL)
+           min_range = -0.55, 
+           max_range = 0.55)
 
 phylo_col <- RGB(phylo_comm$Axis1, 
                  phylo_comm$Axis2, 
                  phylo_comm$Axis3,
-                 min_range = NULL, 
-                 max_range = NULL)
+                 min_range = -0.55, 
+                 max_range = 0.55)
 
 func_col <- RGB(func_comm$Axis1, 
                 func_comm$Axis2, 
                 func_comm$Axis3,
-                min_range = NULL, 
-                max_range = NULL)
+                min_range = -0.55, 
+                max_range = 0.55)
 
 th <- theme(panel.grid.major = element_line(colour = gray(0.5), 
                                             linetype = "dotted", 

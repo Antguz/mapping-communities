@@ -140,13 +140,13 @@ model_performance <- function(meta,
 # Parameters to estimate
 parameters <- function(obs, pred) {
   
-  linear <- lm(obs ~ pred)
+  linear <- lm(obs ~ pred, na.action = na.exclude)
   linear_summary <- summary(linear)
   
   R2 <- linear_summary$r.squared
   intercept <- linear_summary$coefficients[1,1]
   slope <- linear_summary$coefficients[2,1]
-  BIAS <- mean(obs-pred)
+  BIAS <- mean(obs-pred, na.rm = TRUE)
   RMSE <- sqrt(sum(((obs-pred)^2))/length(obs))
   perRMSE <- sqrt(sum(((obs-pred)^2))/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
   names(perRMSE) <- NULL

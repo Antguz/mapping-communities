@@ -59,6 +59,10 @@ th_trans <- dark_theme_bw(base_size = 11) +
                                        fill = "transparent",
                                        linewidth = 0))
 
+th <- th_trans
+
+line <- "grey75"
+text <- "white"
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -116,19 +120,19 @@ mantel_plot <- function(mantel_results,
              bins = 100) +
     geom_abline(aes(intercept = 0, 
                     slope = 1),
-                colour = "grey75",
+                colour = line,
                 linetype = "dotted") +
     geom_ribbon(aes(x = x,
                     ymin = pre_mean - pre_sd,
                     ymax = pre_mean + pre_sd),
-                colour = "grey",
+                colour = line,
                 fill = NA,
                 linetype = "dashed",
                 alpha = 0.5) +
     geom_abline(data = sma, 
                 aes(intercept = mean(elevation), 
                     slope = mean(slope)),
-                colour = "grey") +
+                colour = line) +
     scale_x_continuous(limits = c(-0.01, 1.01), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
     scale_y_continuous(limits = c(-0.01, 1.01), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
     scale_fill_viridis_c(name = "Count", 
@@ -146,9 +150,9 @@ mantel_plot <- function(mantel_results,
                   y = Inf, 
                   hjust = -0.1, 
                   vjust = 1.50),
-              colour = "grey25",
+              colour = text,
               size = 2.5) +
-    th_black
+    th
   #p
     
   return(p)
@@ -200,7 +204,7 @@ EMIT_func_fig <- mantel_plot(mantel_results = EMIT_func,
 row1 <- ggarrange(DESIS_taxo_fig, DESIS_phylo_fig, DESIS_func_fig, 
                   ncol=3, nrow=1,
                   labels = c("A", "B", "C"),
-                  font.label =  list(size = 9, face = "plain", color ="grey25"),
+                  font.label =  list(size = 9, face = "plain", color = text),
                   label.x = 0.02,
                   label.y = 1.05,
                   common.legend = TRUE,
@@ -209,7 +213,7 @@ row1 <- ggarrange(DESIS_taxo_fig, DESIS_phylo_fig, DESIS_func_fig,
 row2 <- ggarrange(EMIT_taxo_fig, EMIT_phylo_fig, EMIT_func_fig, 
                   ncol=3, nrow=1,
                   labels = c("D", "E", "F"),
-                  font.label =  list(size = 9, face = "plain", color ="grey25"),
+                  font.label =  list(size = 9, face = "plain", color = text),
                   label.x = 0.02,
                   label.y = 1.05,
                   common.legend = TRUE,
@@ -220,6 +224,14 @@ jpeg(paste0(root_path, "/figures/", "figure_mantel.jpeg"), width = 210, height =
 
 annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
                 top = text_grob("Taxonomic                                  Phylogenetic                                  Functional", face = "bold", color = "black"),
-                right = text_grob("DESIS                                  EMIT", face = "bold", color = "black", rot = -90))
+                right = text_grob("DESIS                                  EMIT", face = "bold", color = text, rot = -90))
+
+dev.off()
+
+png(paste0(root_path, "/figures/", "figure_mantel_black.png"), width = 210, height = 150, units = "mm", res = 600, bg = "transparent")
+
+annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
+                top = text_grob("Taxonomic                                  Phylogenetic                                  Functional", face = "bold", color = text),
+                right = text_grob("DESIS                                  EMIT", face = "bold", color = text, rot = -90))
 
 dev.off()
