@@ -97,7 +97,7 @@ apply_model_occurence <- function(X,
 ################################################################################
 
 # Define root path, sensor, and coefficients
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
 type <- "phylo-log"
 coefficients <- fread(paste0(root_path, "/07_model_occurrence/", 
