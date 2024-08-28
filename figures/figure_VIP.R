@@ -15,7 +15,7 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/DESIS_mapping"
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -95,11 +95,15 @@ vip_summary$type <- factor(vip_summary$type, levels = c("Taxonomic",
                                                           "Phylogenetic",
                                                           "Functional"))
 
+vip_summary$sensor <- as.factor(vip_summary$sensor)
+vip_summary$sensor <- factor(vip_summary$sensor, levels = c("DESIS",
+                                                        "EMIT"))
+
 #-------------------------------------------------------------------------------
 # Plot details
 
 #col <- c("#b35806", "#542788")
-col <- c("#e66101", "#5e3c99")
+col <- c("#a6611a", "#018571")
 
 
 th_black <- theme_bw() + 

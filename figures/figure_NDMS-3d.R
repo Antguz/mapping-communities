@@ -3,39 +3,105 @@ library(stringr)
 library(bit64)
 library(plotly)
 library(plot3D)
+library(data.table)
+library(ggpubr)
+
 
 
 root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme Pro/Projects/DESIS_mapping"
-#root_path <- "F:/Projects/DESIS_mapping"
-species_scores <- readRDS(paste0(root_path, "/05_ordination/species_scores_BA.rds"))
-dimensions_plots <- readRDS(paste0(root_path, "/05_ordination/communities_scores_BA.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
-proportions <- fread(paste0(root_path, "/00_FIA/proportions_BA.csv"))
 
 #'------------------------------------------------------------------------------
 #' Arrange information
 
-species <- merge(species_scores, SPCD, by = "Taxon2", all.x = TRUE, all.y = FALSE)
-plots_fia <- merge(proportions, dimensions_plots, by = "PLT_CN", all.x = FALSE, all.y = TRUE)
+# Communities
+taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
+#taxo_comm <- taxo_comm[order(Axis1, -Axis2, Axis3), ]
+phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
+#phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
+func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+#func_comm$Axis3 <- -func_comm$Axis3
+#func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
+#fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
 
-normalization <- dimensions_plots[, c("MDS1", "MDS2", "MDS3")]
-normalization$MDS1 <- (normalization$MDS1-min(normalization$MDS1))/(max(normalization$MDS1)-min(normalization$MDS1))
-normalization$MDS2 <- (normalization$MDS2-min(normalization$MDS2))/(max(normalization$MDS2)-min(normalization$MDS2))
-normalization$MDS3 <- (normalization$MDS3-min(normalization$MDS3))/(max(normalization$MDS3)-min(normalization$MDS3))
+#'------------------------------------------------------------------------------
+#' @Plot-functions
+#-------------------------------------------------------------------------------
 
-RGB <- rgb(normalization$MDS1, normalization$MDS2, normalization$MDS3)
+# RGB color
+RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
+  
+  if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
+    
+    x_new <-  ((X - min(X)) / ((max(X)) - (min(X)))) * (255 - 0) + 0
+    y_new <-  ((Y - min(Y)) / ((max(Y)) - (min(Y)))) * (255 - 0) + 0
+    z_new <-  ((Z - min(Z)) / ((max(Z)) - (min(Z)))) * (255 - 0) + 0
+    
+  } else {
+    
+    x_new <-  ((X - min_range) / (max_range - min_range)) * (255 - 0) + 0
+    y_new <-  ((Y - min_range) / (max_range - min_range)) * (255 - 0) + 0
+    z_new <-  ((Z - min_range) / (max_range - min_range)) * (255 - 0) + 0
+    
+  }
+  
+  # Convert colour channels to hex
+  hex_value <- paste0(
+    "#",
+    # Convert red
+    str_pad(
+      string = as.hexmode(round(x_new, 0)),
+      width = 2, pad = "0", side = "left"
+    ),
+    # Convert green
+    str_pad(
+      string = as.hexmode(round(y_new, 0)),
+      width = 2, pad = "0", side = "left"
+    ),
+    # Convert blue
+    str_pad(
+      string = as.hexmode(round(z_new, 0)),
+      width = 2, pad = "0", side = "left"
+    )
+  )
+  
+  return(hex_value)
+  
+}
 
-################################################################################
-## Just communities
-################################################################################
+taxo_comm$color <- RGB(taxo_comm$Axis1, 
+                  taxo_comm$Axis2, 
+                  taxo_comm$Axis3, 
+                  min_range = -0.55, 
+                  max_range = 0.55)
 
-species$value <- "Species"
-plots_fia$value <- "Communities"
-plots_fia$RGB <- RGB
+phylo_comm$color <- RGB(phylo_comm$Axis1, 
+                        phylo_comm$Axis2, 
+                        phylo_comm$Axis3, 
+                       min_range = -0.55, 
+                       max_range = 0.55)
 
-frame <- rbind(species[, c("MDS1", "MDS2", "MDS3", "value")],
-               plots_fia[, c("MDS1", "MDS2", "MDS3", "value")])
+func_comm$color <- RGB(func_comm$Axis1, 
+                       func_comm$Axis2, 
+                       func_comm$Axis3, 
+                       min_range = -0.55, 
+                       max_range = 0.55)
+
+#'------------------------------------------------------------------------------
+#' @Plot-communities
+#-------------------------------------------------------------------------------
+
+
+th <- theme_void(base_size = 15) +
+  theme(panel.background = element_rect(fill = "black",
+                                        colour = "black",
+                                        linewidth = 0.5, 
+                                        linetype = "solid"),
+        plot.background = element_rect(fill = "black"),
+        legend.title = element_text(colour="white", size = 12),
+        legend.text = element_text(color = "white", size = 12),
+        legend.position = "bottom",
+        plot.margin = unit(c(0,0,0,0), 'pt'))
+
 
 plot_list <- list()
 
@@ -50,20 +116,20 @@ h_adjust_axis2 <- c(seq(1, 1, length.out = 180), #0-180
 
 for (i in 1:length(theta)) {
   
-  p <- ggplot(plots_fia, aes(x = MDS1, 
-                         y = MDS2, 
-                         z = MDS3, 
-                         color = value)) +
+  taxo_p <- ggplot(taxo_comm, aes(x = Axis1, 
+                         y = Axis2, 
+                         z = -Axis3,
+                         color = color)) +
     axes_3D(theta = theta[i], 
             phi = phi[i], 
-            size = 0.5,
+            linewidth = 0.5,
             colour = "white") +
     stat_3D(theta = theta[i], 
             phi = phi[i], 
             shape = 19,
             size = 0.6,
             alpha = 0.6) +
-    scale_color_manual(" ", values = "black") +
+    scale_colour_identity() +
     labs_3D(theta = theta[i], 
             phi = phi[i], 
             labs = c("Axis 1", "Axis 2", "Axis 3"),
@@ -72,15 +138,57 @@ for (i in 1:length(theta)) {
             angle = c(0, 0, 90),
             color = "white", 
             size = 6) +
-    theme_void() +
-    theme(panel.background = element_rect(fill = "black",
-                                          colour = "black",
-                                          linewidth = 0.5, 
-                                          linetype = "solid"),
-          plot.background = element_rect(fill = "black"),
-          legend.title = element_text(colour="white", size = 12),
-          legend.text = element_text(color = "white", size = 12),
-          legend.position = "bottom")
+    th
+  
+  phylo_p <- ggplot(phylo_comm, aes(x = Axis1, 
+                                  y = Axis2, 
+                                  z = -Axis3,
+                                  color = color)) +
+    axes_3D(theta = theta[i], 
+            phi = phi[i], 
+            linewidth = 0.5,
+            colour = "white") +
+    stat_3D(theta = theta[i], 
+            phi = phi[i], 
+            shape = 19,
+            size = 0.6,
+            alpha = 0.6) +
+    scale_colour_identity() +
+    labs_3D(theta = theta[i], 
+            phi = phi[i], 
+            labs = c("Axis 1", "Axis 2", "Axis 3"),
+            hjust = c(h_adjust_axis1[i], h_adjust_axis2[i], 1), 
+            vjust = c(-0.5, -0.5,-0.5), 
+            angle = c(0, 0, 90),
+            color = "white", 
+            size = 6) +
+    th
+  
+  func_p <- ggplot(func_comm, aes(x = Axis1, 
+                                  y = Axis2, 
+                                  z = -Axis3,
+                                  color = color)) +
+    axes_3D(theta = theta[i], 
+            phi = phi[i], 
+            linewidth = 0.5,
+            colour = "white") +
+    stat_3D(theta = theta[i], 
+            phi = phi[i], 
+            shape = 19,
+            size = 0.6,
+            alpha = 0.6) +
+    scale_colour_identity() +
+    labs_3D(theta = theta[i], 
+            phi = phi[i], 
+            labs = c("Axis 1", "Axis 2", "Axis 3"),
+            hjust = c(h_adjust_axis1[i], h_adjust_axis2[i], 1), 
+            vjust = c(-0.5, -0.5,-0.5), 
+            angle = c(0, 0, 90),
+            color = "white", 
+            size = 6) +
+    th
+  
+  p <- ggarrange(taxo_p, phylo_p, func_p, ncol = 3)# +
   
   plot_list[[i]] = p
   
@@ -93,13 +201,14 @@ for (i in 1:length(theta)) { #length(theta)
   name <- str_pad(i, 4, pad = "0")
   file_name = paste0(export, "/plot_communities_", name, ".png", sep="")
   png(file_name,
-      width = 210, 
-      height = 210, 
+      width = 600, 
+      height = 200, 
       units = "mm", 
-      pointsize = 12,
+      pointsize = 32,
       bg = NA,  
-      res = 600)
-  print(plot_list[[i]])
+      res = 300)
+  p
+  #print(plot_list[[i]])
   dev.off()
   
 }
