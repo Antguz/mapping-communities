@@ -106,7 +106,7 @@ coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "A
 
 # Define inputs and outputs folder
 folder_path <- paste0(root_path, "/00_imagery/predicted/", sensor)
-output_path <- paste0(root_path, "/00_imagery/occurrence/", sensor)
+output_path <- paste0(root_path, "/00_imagery/lineages/", sensor)
 
 # Select files to process
 phylogenetic_composition <- list.files(path = folder_path, 

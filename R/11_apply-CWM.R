@@ -18,7 +18,7 @@ library(pbmcapply)
 #' Source code
 
 sourceCpp("src/cwm_rcpp.cpp")
-sourceCpp("src/summary_rcpp.cpp")
+#sourceCpp("src/summary_rcpp.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -31,24 +31,27 @@ sourceCpp("src/summary_rcpp.cpp")
 #' Function
 
 apply_model_CWM <- function(X,
-                            predicted_scene_path, 
+                            functional_composition, 
                             coefficients, 
                             output_path) {
   
   # Read predicted scene
-  predicted_scene <- rast(predicted_scene_path[X])
+  predicted_scene <- rast(functional_composition[X])
   cwn_scene <- subset(predicted_scene, 1)
   cwn_scene[] <- NA
   
   #Ask data frame
   frame_scene <- as.data.table(as.data.frame(predicted_scene, cells = TRUE, na.rm = TRUE))
-  cell <- frame_scene$cell
   ordination <- as.matrix(frame_scene[, 2:4]/1000)
   
   #---------------------------------------------------------
   # Estimate probabilities based on coefficients
   plant_cwm <- multi_cwm(ordination,
-                         as.matrix(coefficients[, 2:5]))
+                         as.matrix(coefficients[, 2:5]),
+                         as.numeric(as.factor(coefficients$plant)))
+  
+  #--------------------------------------------------------
+  #Get a scene frame
   
   coefficients$col <- 1:nrow(coefficients)
   unique_coeff <- unique(coefficients$plant)
@@ -150,32 +153,43 @@ apply_model_CWM <- function(X,
 #'------------------------------------------------------------------------------
 #' @example
 
-# Run in a batch
-#root_path <- "E:/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/DESIS_mapping"
+
+################################################################################
+#' @Local predictions from taxonomic-composition.tif files
+################################################################################
+
+# Define root path, sensor, and coefficients
+root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
 type <- "func"
 coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]
-files <- list.files(path = paste0(root_path, "/00_imagery/predicted/", sensor),
-                          pattern = "functional-composition.tif",
-                          full.names = TRUE)
-output_path <- paste0(root_path, "/00_imagery/CWM/", sensor)
+
+# Define inputs and outputs folder
+folder_path <- paste0(root_path, "/00_imagery/predicted/", sensor)
+output_path <- paste0(root_path, "/00_imagery/cwm/", sensor)
+
+# Select files to process
+functional_composition <- list.files(path = folder_path, 
+                                    pattern = "functional-composition.tif", 
+                                    full.names = TRUE,
+                                    recursive = TRUE)
 
 # Parallel processing
-run <- pbmclapply(X = 1:length(files), 
-                  FUN = apply_model_CWM, 
-                  predicted_scene_path = files, 
-                  coefficients = coefficients,
+run <- pbmclapply(X = 1:length(functional), 
+                  FUN = apply_model_cwm, 
+                  functional_composition = functional_composition, 
+                  coefficients = coefficients, 
                   output_path = output_path,
                   mc.preschedule = TRUE, 
                   mc.set.seed = FALSE,
                   mc.silent = FALSE, 
-                  mc.cores = 4,
+                  mc.cores = 1,
                   mc.cleanup = TRUE, 
                   mc.allow.recursive = TRUE, 
                   affinity.list = NULL)
 
+# Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_", type, " ", Sys.time(), ".txt"))

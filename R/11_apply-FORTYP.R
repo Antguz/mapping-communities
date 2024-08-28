@@ -93,7 +93,7 @@ apply_model_occurence <- function(X,
 #' @example
 
 ################################################################################
-#' @Local predictions from phylogenetic-composition.tif files
+#' @Local predictions from taxonomic-composition.tif files
 ################################################################################
 
 # Define root path, sensor, and coefficients
@@ -106,7 +106,7 @@ coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "A
 
 # Define inputs and outputs folder
 folder_path <- paste0(root_path, "/00_imagery/predicted/", sensor)
-output_path <- paste0(root_path, "/00_imagery/occurrence/", sensor)
+output_path <- paste0(root_path, "/00_imagery/fortyp/", sensor)
 
 # Select files to process
 taxonomic_composition <- list.files(path = folder_path, 

@@ -1,6 +1,7 @@
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 using namespace arma;
+using namespace Rcpp;
 
 // [[Rcpp::export]]
 arma::vec cwm(arma::mat axes, 
@@ -31,8 +32,9 @@ arma::vec cwm(arma::mat axes,
 } 
 
 // [[Rcpp::export]]
-arma::mat multi_cwm(arma::mat axes, 
-                    arma::mat mcoefficients) {
+List multi_cwm(arma::mat axes, 
+                    arma::mat mcoefficients,
+                    arma::vec plants) {
   
   // N observations and axes
   int nr = axes.n_rows;
@@ -51,6 +53,39 @@ arma::mat multi_cwm(arma::mat axes,
     
   }  
   
-  return prob;
+  // Find the unique elements in the vector
+  arma::vec unique_plants = arma::unique(plants);
+  int nplants = unique_plants.n_elem;
+  
+  // Matrix to return
+  arma::mat mean_cwm(nr, nplants);
+  arma::mat error_cwm(nr, nplants);
+  
+  // Get mean and error
+  for(int k = 0; k < nr; k++) {
+    
+    // Select pixel
+    arma::rowvec pixel = prob.row(k);
+    
+    for(int i = 0; i < nplants; i++) {
+      
+      // Select plants within pixel for metrics
+      arma::vec values = pixel(find(plants == unique_plants[i]));
+      
+      double n_root = sqrt(values.n_elem);
+      double pixel_mean = mean(values);
+      double pixel_sd = stddev(values);
+      double pixel_z = 1.96*(pixel_sd/n_root);
+      double pixel_error = (pixel_mean + pixel_z) - (pixel_mean - pixel_z);
+      
+      //Fill results
+      mean_cwm(k, i) = pixel_mean;
+      error_cwm(k, i) = pixel_error;
+      
+    }
+  }
+  
+  // Return a list containing two matrices
+  return List::create(mean_cwm, error_cwm);
   
 }  
