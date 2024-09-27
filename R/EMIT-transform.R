@@ -8,9 +8,7 @@
 #' Library
 
 library(data.table)
-library(wmtsa)
-library(terra)
-library(parallel)
+library(CWT)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -32,67 +30,30 @@ EMIT_transform <- function(spectra,
                            new_bands = seq(min(EMIT_bands), max(EMIT_bands), by = 7.43),
                            threads = 28) {
   
-  #--------------------------------------------------------
-  #Function for batch transformation
-  application <- function(i, 
-                          spectra = spectra,
-                          bands = EMIT_bands,
-                          new_bands = new_bands,
-                          cell = cell) {
-    
-    # Sample
-    sample <- as.numeric(spectra[i, ]) 
-    
-    if(max(sample) != 0) {
-      
-      # Constant values
-      scales <- c(2, 3)
-      sampling <- 7.43
-      
-      # Cubic resample
-      resample <- prospectr::resample2(X = sample,
-                                       wav = bands,
-                                       new.wav = new_bands,
-                                       fwhm = sampling)
-      
-      # Create time series
-      ts_resample <- ts(resample, 
-                        start = min(new_bands), 
-                        deltat = sampling)
-      
-      # Transformation
-      cwt <- wavCWT(ts_resample, 
-                    scale.range= c(sampling, sampling*max(scales)), 
-                    variance= 1, 
-                    wavelet= "gaussian2")
-      
-      summed_wavelet <- c(cell[i], rowSums(as.matrix(cwt)[, scales]))
-      
-    } else {
-      
-      summed_wavelet <- c(cell[i], rep(NA, 285))
-      
-    }
-    
-    return(summed_wavelet)
-    
-  }
+  # Apply resampling
+  resampled <- resampling_FWHM(spectra = spectra,
+                               wavelengths = EMIT_bands,
+                               new_wavelengths = new_bands,
+                               FWHM = rep(7.43, length(new_bands)),
+                               threads = threads)
   
-  # Parallel
-  transformed <- mclapply(1:nrow(spectra), 
-                          FUN = application,
-                          spectra = spectra,
-                          bands = EMIT_bands,
-                          cell = cell,
-                          new_bands = new_bands,
-                          mc.cores = threads,
-                          mc.preschedule = TRUE,
-                          mc.cleanup = TRUE)
-
-  transformed <- data.table(do.call(rbind, transformed))  
-  colnames(transformed) <- c("cell", as.character(new_bands)) 
+  # Remove artifacts of resampling (no nice but works!)
+  resampled$'381.005584716796' <- resampled$'395.865584716796'
+  resampled$'388.435584716796' <- resampled$'395.865584716796'
+  resampled$'2483.6955847168' <- resampled$'2476.2655847168'
+  resampled$'2491.1255847168' <- resampled$'2476.2655847168'
+  
+  # Apply CWT transformation
+  transformed <- cwt(t = resampled,
+                     scales = c(2, 3),
+                     variance = 1,
+                     summed_wavelet = TRUE,
+                     threads = threads)
+  
+  transformed <- cbind(cell = cell, transformed) 
   transformed <- transformed[order(cell)]
   
+  # Return transformation
   return(transformed)
-  
+
 }

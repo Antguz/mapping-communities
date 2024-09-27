@@ -13,8 +13,10 @@ library(CWT)
 #'------------------------------------------------------------------------------
 #' Arguments
 
-#' @param scene_main_path A path to the scene folder
+#' @param spectra A frame of spectral data
 #' @param DESIS_bands A vector with the bands of DESIS
+#' @param cell An ID for cell number
+#' @param new_bands A new integer for the bands to compute
 #' @param threads N threads to run in parallel
 
 DESIS_bands <- readRDS("data/DESIS_bands.rds")
