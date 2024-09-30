@@ -149,4 +149,4 @@ run <- pbmclapply(X = 1:length(phylogenetic_composition),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files_", type, " ", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_", sensor, "_Occurrence_", Sys.time(), ".txt"))

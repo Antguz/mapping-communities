@@ -393,4 +393,4 @@ run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_EMIT_", Sys.time(), ".txt"))
