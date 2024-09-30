@@ -288,7 +288,7 @@ apply_model <- function(X,
 # coefficients_functional <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
 # 
 # temp <- paste0(root_path, "/00_imagery/predicted/DESIS/temp")
-# output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
+# output_path <- paste0(root_path, "/00_imagery/Predicted/EMIT/L3")
 # 
 # # Parallel processing
 # run <- pbmclapply(X = 1:length(scenes), 
@@ -347,7 +347,7 @@ coefficients_functional <- fread(paste0(root_path,
 
 # Out paths
 temp <- paste0(root_path, "/temp")
-output_path <- paste0(root_path, "/Predicted")
+output_path <- paste0(root_path, "/Predicted/DESIS/L3")
 
 # Parallel processing
 run <- pbmclapply(X = 1:length(scenes), 

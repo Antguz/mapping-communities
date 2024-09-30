@@ -81,8 +81,8 @@ apply_model_occurence <- function(X,
   }
   
   scene_name <- strsplit(scene_name, "NDMS-phylogenetic-composition.tif")[[1]][1]
-  scene_name_mean <- paste0(scene_name, "plant-groups_mean.tif")
-  scene_name_error <- paste0(scene_name, "plant-groups_error.tif")
+  scene_name_mean <- paste0(scene_name, "plant-occurrence_mean.tif")
+  scene_name_error <- paste0(scene_name, "plant-occurrence_error.tif")
   
   output_raster_mean <- paste0(output_path, "/", scene_name_mean)
   output_raster_error <- paste0(output_path, "/", scene_name_error)

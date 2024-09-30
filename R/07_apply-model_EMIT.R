@@ -294,7 +294,7 @@ apply_model <- function(X,
 #                                         type,
 #                                         "_coefficients.csv"))
 # # Out paths
-# output_path <- paste0(root_path, "/00_imagery/predicted/EMIT")
+# output_path <- paste0(root_path, "/00_imagery/Predicted/EMIT/L3")
 # 
 # # Parallel processing
 # run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)),
@@ -372,7 +372,7 @@ coefficients_functional <- fread(paste0(root_path,
                                         type, 
                                         "_coefficients.csv"))
 # Out paths
-output_path <- paste0(root_path, "/Predicted_EMIT")
+output_path <- paste0(root_path, "/Predicted/EMIT/L3")
 
 # Parallel processing
 run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)), 
@@ -386,7 +386,7 @@ run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)),
                   mc.preschedule = TRUE, 
                   mc.set.seed = FALSE,
                   mc.silent = FALSE, 
-                  mc.cores = 16,
+                  mc.cores = 32,
                   mc.cleanup = TRUE, 
                   mc.allow.recursive = TRUE, 
                   affinity.list = NULL)
