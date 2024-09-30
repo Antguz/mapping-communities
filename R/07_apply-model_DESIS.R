@@ -317,14 +317,14 @@ apply_model <- function(X,
 
 # Apply in a batch of scenes
 # Path
-root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/Imagery"
 
 # Source code
 source(paste0(root_path, "/Source/DESIS-transform.R"))
 sourceCpp(paste0(root_path, "/Source/beta_predict_pls.cpp"))
 
 # Scenes path
-scenes <- list.files(path = paste0(root_path, "/Imagery"),
+scenes <- list.files(path = paste0(root_path, "/DESIS"),
                      full.names = TRUE,
                      recursive = TRUE)
 

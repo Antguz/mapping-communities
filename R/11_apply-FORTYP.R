@@ -22,15 +22,17 @@ sourceCpp("src/probability_rcpp.cpp")
 #'------------------------------------------------------------------------------
 #' Arguments
 #' 
-#' @param predicted_scene_path
+#' @param X
+#' @param sensor
+#' @param taxonomic_composition
 #' @param coefficients
-#' @param output_raster
-#' @param threads
+#' @param output_path
 
 #'------------------------------------------------------------------------------
 #' Function
 
 apply_model_occurence <- function(X,
+                                  sensor,
                                   taxonomic_composition, 
                                   coefficients, 
                                   output_path) {
@@ -42,47 +44,61 @@ apply_model_occurence <- function(X,
   frame_scene <- as.data.table(as.data.frame(predicted_scene, cells = TRUE, na.rm = TRUE))
   ordination <- as.matrix(frame_scene[, 2:4]/1000)
   
+  # Order coefficients for naming
+  coefficients <- coefficients[order(plant)]
+  FORTYP <- unique(coefficients$plant)
+  coefficients$plant <- factor(coefficients$plant, levels = FORTYP)
+  
   #---------------------------------------------------------
   # Estimate probabilities based on coefficients
   plant_probabilities <- multi_probability(ordination, 
                                            as.matrix(coefficients[, 2:5]),
-                                           as.numeric(as.factor(coefficients$plant)))
+                                           as.numeric(FORTYP))
   
   #--------------------------------------------------------
   #Get a scene frame
   fortyp_scene_mean <- subset(predicted_scene, 1)
   fortyp_scene_mean[] <- NA
-  fortyp_scene_mean <- rep(fortyp_scene_mean, length(unique(coefficients$plant)))
+  fortyp_scene_mean <- rep(fortyp_scene_mean, length(FORTYP))
   fortyp_scene_error <- fortyp_scene_mean
   fortyp_scene_mean[frame_scene$cell] <- plant_probabilities[[1]]
   fortyp_scene_error[frame_scene$cell] <- plant_probabilities[[2]]
-  names(fortyp_scene_mean) <- unique(coefficients$plant)
-  names(fortyp_scene_error) <- unique(coefficients$plant)
+  names(fortyp_scene_mean) <- FORTYP
+  names(fortyp_scene_error) <- FORTYP
   
   #-----------------------------------------------------------
   # Scene export
   
   scene_name <- strsplit(taxonomic_composition[X], "/")[[1]]
   scene_name <- scene_name[length(scene_name)]
-  scene_name <- strsplit(scene_name, "DESIS-L3A")[[1]][2]
-  scene_name <- paste0("DESIS-L4A", scene_name)
+  
+  if(sensor == "DESIS") {
+    scene_name <- strsplit(scene_name, "DESIS-L3A")[[1]][2]
+    scene_name <- paste0("DESIS-L4A", scene_name)
+
+  } else if(sensor == "EMIT") {
+    scene_name <- strsplit(scene_name, "EMIT-L3A")[[1]][2]
+    scene_name <- paste0("DESIS-L4A", scene_name)
+  }
+  
   scene_name <- strsplit(scene_name, "NDMS-taxonomic-composition.tif")[[1]][1]
   scene_name_mean <- paste0(scene_name, "FORTYP_mean.tif")
   scene_name_error <- paste0(scene_name, "FORTYP_error.tif")
+  
   output_raster_mean <- paste0(output_path, "/", scene_name_mean)
   output_raster_error <- paste0(output_path, "/", scene_name_error)
   
   #Export
   writeRaster(x = fortyp_scene_mean,
               filename = output_raster_mean,
-              names = unique(coefficients$plant),
+              names = FORTYP,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
   
   writeRaster(x = fortyp_scene_error,
               filename = output_raster_error,
-              names = unique(coefficients$plant),
+              names = FORTYP,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
@@ -100,13 +116,17 @@ apply_model_occurence <- function(X,
 root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
 type <- "taxo"
+
+# Read coefficients
 coefficients <- fread(paste0(root_path, "/07_model_fortyp/", 
                              type, "_model-FORTYP.csv"))
-coefficients <- coefficients[dataset == "training", c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]
+
+coefficients <- coefficients[dataset == "training", 
+                             c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]
 
 # Define inputs and outputs folder
-folder_path <- paste0(root_path, "/00_imagery/predicted/", sensor)
-output_path <- paste0(root_path, "/00_imagery/fortyp/", sensor)
+folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/Taxonomic")
+output_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L4/FORTYP")
 
 # Select files to process
 taxonomic_composition <- list.files(path = folder_path, 
@@ -117,6 +137,7 @@ taxonomic_composition <- list.files(path = folder_path,
 # Parallel processing
 run <- pbmclapply(X = 1:length(taxonomic_composition), 
                   FUN = apply_model_occurence, 
+                  sensor = sensor,
                   taxonomic_composition = taxonomic_composition, 
                   coefficients = coefficients, 
                   output_path = output_path,

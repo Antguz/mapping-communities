@@ -80,7 +80,7 @@ List multi_probability(arma::mat axes,
       
       //Fill results
       mean_prob(k, i) = round(pixel_mean*10000);
-      error_prob(k, i) = round(pixel_error*10000);
+      error_prob(k, i) = round(pixel_error*1000000);
     
     }
    }
