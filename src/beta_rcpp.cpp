@@ -12,7 +12,9 @@
 using namespace arma;
 
 // [[Rcpp::export]]
-arma::vec beta_tree_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_2) {
+arma::vec beta_tree_rcpp(arma::mat commBoth, 
+                         arma::vec xtree_1, 
+                         arma::mat xtree_2) {
   
   // Get a
   arma::mat BA = commBoth * xtree_2; // matrix samples X branches
@@ -20,7 +22,7 @@ arma::vec beta_tree_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_
   int ncol = BA.n_cols;
   arma::vec minBA(ncol);
   
-  for(int i = 0; i < ncol; i++) {
+  for(int i = 0; i < ncol; ++i) {
     minBA[i] = min(BA.col(i));
   }
   
@@ -28,7 +30,7 @@ arma::vec beta_tree_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_
   
   arma::vec comm_diff(ncol);
   
-  for(int i = 0; i < ncol; i++) {
+  for(int i = 0; i < ncol; ++i) {
     comm_diff[i] = (BA(0, i) - BA(1, i));
   }
   
@@ -48,17 +50,17 @@ arma::vec beta_tree_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_
   arma::vec beta(3); 
   
   //Total
-  beta(0) = (b+c)/denominator; 
+  beta[0] = (b+c)/denominator; 
   
   //Replacement
   arma::vec bc(2);
-  bc(0) = b;
-  bc(1) = c;
-  beta(1) = (2*min(bc))/denominator;
+  bc[0] = b;
+  bc[1] = c;
+  beta[1] = (2*min(bc))/denominator;
   
   //Richness
   double substraction = b - c;
-  beta(2) = fabs(substraction)/denominator;
+  beta[2] =  std::abs(substraction)/denominator;
   
   //return beta;
   return beta;
@@ -68,17 +70,19 @@ arma::vec beta_tree_rcpp(arma::mat commBoth, arma::vec xtree_1, arma::mat xtree_
 // [[Rcpp::export]]
 arma::vec beta_abundance_rcpp(arma::mat commBoth) {
   
-  int ncol = commBoth.n_cols;
-  
   double a = 0;
   double b = 0;
   double c = 0;
   
+  int ncol = commBoth.n_cols;
+  
   for(int i = 0; i < ncol; i++) {
+    
     double minComm = min(commBoth.col(i));
     a = a + minComm;
     b = b + commBoth(0, i) - minComm;
     c = c + commBoth(1, i) - minComm;
+    
   }
   
   double denominator = (a + b + c);
@@ -87,17 +91,17 @@ arma::vec beta_abundance_rcpp(arma::mat commBoth) {
   arma::vec beta(3); 
   
   //Total
-  beta(0) = (b+c)/denominator;
+  beta[0] = (b+c)/denominator;
   
   //Replacement
   arma::vec bc(2);
-  bc(0) = b;
-  bc(1) = c;
-  beta(1) = (2*min(bc))/denominator;
+  bc[0] = b;
+  bc[1] = c;
+  beta[1] = (2*min(bc))/denominator;
   
   //Richness
   double substraction = b - c;
-  beta(2) = fabs(substraction)/denominator;
+  beta[2] = std::abs(substraction)/denominator;
   
   //return beta;
   return beta;
@@ -105,11 +109,18 @@ arma::vec beta_abundance_rcpp(arma::mat commBoth) {
 }
 
 // [[Rcpp::export]]
-arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, bool taxonomic = true, int threads = 1, bool progress = true) {
+Rcpp::List beta_arma(arma::mat comm, 
+                     arma::vec xtree1, 
+                     arma::mat xtree2, 
+                     bool taxonomic = true, 
+                     int threads = 1, 
+                     bool progress = true) {
   
   //Matrix of beta
   int ncomm = comm.n_rows;
-  arma::cube distance(ncomm, ncomm, 3);
+  arma::mat Btotal(ncomm, ncomm);
+  arma::mat Brepl(ncomm, ncomm);
+  arma::mat Brich(ncomm, ncomm);
   
   //create progress
   Progress p(ncomm*ncomm, progress);
@@ -123,8 +134,8 @@ arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, bool ta
   
   //Loop for distance
 #pragma omp parallel for
-  for(int k = 0; k < ncomm; k++) {
-    for(int j = 0; j < ncomm; j++) {
+  for(int k = 0; k < ncomm; ++k) {
+    for(int j = 0; j < ncomm; ++j) {
       
       if (! Progress::check_abort() ) {
         p.increment(); // update progress
@@ -137,20 +148,30 @@ arma::cube beta_arma(arma::mat comm, arma::vec xtree1, arma::mat xtree2, bool ta
       arma::mat commBoth = comm.rows(indices);
       
       if(!taxonomic) {
-        arma::vec beta_comm = beta_tree_rcpp(commBoth, xtree1, xtree2);
-        distance(k, j, 0) = round(beta_comm[0]*10000);
-        distance(k, j, 1) = round(beta_comm[1]*10000);
-        distance(k, j, 2) = round(beta_comm[2]*10000);
-      
+        arma::vec beta_comm = beta_tree_rcpp(commBoth = commBoth, 
+                                             xtree1 = xtree1, 
+                                             xtree2 = xtree2);
+        //Btotal(k, j) = beta_comm[0];
+        //Brepl(k, j) = beta_comm[1];
+        //Brich(k, j) = beta_comm[2];
+        Btotal(k, j) = round(beta_comm[0]*10000);
+        Brepl(k, j) = round(beta_comm[1]*10000);
+        Brich(k, j) = round(beta_comm[2]*10000);
+        
       } else {
-        arma::vec beta_comm = beta_abundance_rcpp(commBoth);
-        distance(k, j, 0) = round(beta_comm[0]*10000);
-        distance(k, j, 1) = round(beta_comm[1]*10000);
-        distance(k, j, 2) = round(beta_comm[2]*10000);
+        arma::vec beta_comm = beta_abundance_rcpp(commBoth = commBoth);
+        //Btotal(k, j) = beta_comm[0];
+        //Brepl(k, j) = beta_comm[1];
+        //Brich(k, j) = beta_comm[2];
+        Btotal(k, j) = round(beta_comm[0]*10000);
+        Brepl(k, j) = round(beta_comm[1]*10000);
+        Brich(k, j) = round(beta_comm[2]*10000);
       }
     }
   }
   
-  return distance;
+  return Rcpp::List::create(Rcpp::Named("Btotal") = Btotal,
+                            Rcpp::Named("Brepl") = Brepl,
+                            Rcpp::Named("Brich") = Brich);
   
 }

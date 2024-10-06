@@ -46,13 +46,14 @@ beta_rcpp <- function(comm, tree = NULL, taxonomic = TRUE, threads = 1L, progres
                        threads = threads,
                        progress = progress)
     
-  colnames(results) <- rownames(comm)
-  rownames(results) <- rownames(comm)
+  colnames(results$Btotal) <- rownames(comm)
+  rownames(results$Btotal) <- rownames(comm)
   
-  # as.dist
-  results <- list(Btotal = results[,,1],
-                  Brepl = results[,,2],
-                  Brich = results[,,3])
+  colnames(results$Brepl) <- rownames(comm)
+  rownames(results$Brepl) <- rownames(comm)
+  
+  colnames(results$Brich) <- rownames(comm)
+  rownames(results$Brich) <- rownames(comm)
   
   return(results)
   
