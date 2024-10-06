@@ -1,0 +1,96 @@
+#'------------------------------------------------------------------------------
+#' @title Non-metric Multidimensional Scaling
+#'------------------------------------------------------------------------------
+
+#' @description It creates a NMDS ordination for multiple dimensions of beta 
+#' diversity
+
+#' @return .rds file with scores per communities and species
+
+################################################################################
+#' @warming If you have to many communities this need to be run using HPC
+################################################################################
+
+#'------------------------------------------------------------------------------
+#' Library
+
+library(data.table)
+library(vegan)
+library(bit64)
+
+#'------------------------------------------------------------------------------
+#' Arguments
+#' @param beta
+#' @param stand
+#' @param type
+#' @param diversity
+#' @param out_path
+#' @param threads
+
+#'------------------------------------------------------------------------------
+#' Function
+ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
+  
+  # Read distances
+  distance <- readRDS(beta)
+  
+  # Select total distances
+  if(diversity == "total") {
+    Beta <- distance$Btotal/10000
+  } else if(diversity == "replacement") {
+    Beta <- distance$Brepl/10000
+  } else if(diversity == "richness") {
+    Beta <- distance$Brich/10000
+  }
+  
+  # Run NMDS
+  NMDS <- metaMDS(comm = as.dist(Beta),
+                  k = 3,
+                  try = 3, #15
+                  trymax = 15, #30
+                  maxit = 50, #50
+                  engine = "monoMDS",
+                  autotransform = FALSE,
+                  plot = FALSE,
+                  parallel = threads,
+                  wascores = FALSE,
+                  trace = 3,
+                  model = "linear",
+                  center = FALSE,
+                  pc = FALSE,
+                  stress = 1,
+                  halfchange = FALSE,
+                  maxdist = 1)
+  
+  # Ordination export
+  saveRDS(NMDS, paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))
+  
+}
+
+#'------------------------------------------------------------------------------
+#' @example 
+
+#root_path <- "E:/Projects/MMDB"
+#root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+
+# Phylogenetic
+beta <- paste0(root_path, "/03_diversity/beta_phylo-log_VOL.rds")
+out_path <- paste0(root_path, "/04_ordination")
+type <- "phylo"
+threads <- 1
+
+diversity <- "total"
+if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+  ordination(beta, stand, type, out_path, threads)
+} 
+
+diversity <- "replacement"
+if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+  ordination(beta, stand, type, out_path, threads)
+} 
+
+diversity <- "richness"
+if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+  ordination(beta, stand, type, out_path, threads)
+}

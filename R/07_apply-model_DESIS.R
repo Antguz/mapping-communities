@@ -288,7 +288,7 @@ apply_model <- function(X,
 # coefficients_functional <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/DESIS/DESIS_", type, "_coefficients.csv"))
 # 
 # temp <- paste0(root_path, "/00_imagery/predicted/DESIS/temp")
-# output_path <- paste0(root_path, "/00_imagery/Predicted/EMIT/L3")
+# output_path <- paste0(root_path, "/00_imagery/predicted/DESIS")
 # 
 # # Parallel processing
 # run <- pbmclapply(X = 1:length(scenes), 
@@ -317,14 +317,14 @@ apply_model <- function(X,
 
 # Apply in a batch of scenes
 # Path
-root_path <- "/panfs/jay/groups/17/cavender/guzman/Imagery"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 
 # Source code
 source(paste0(root_path, "/Source/DESIS-transform.R"))
 sourceCpp(paste0(root_path, "/Source/beta_predict_pls.cpp"))
 
 # Scenes path
-scenes <- list.files(path = paste0(root_path, "/DESIS"),
+scenes <- list.files(path = paste0(root_path, "/Imagery"),
                      full.names = TRUE,
                      recursive = TRUE)
 
@@ -347,7 +347,7 @@ coefficients_functional <- fread(paste0(root_path,
 
 # Out paths
 temp <- paste0(root_path, "/temp")
-output_path <- paste0(root_path, "/Predicted/DESIS/L3")
+output_path <- paste0(root_path, "/Predicted")
 
 # Parallel processing
 run <- pbmclapply(X = 1:length(scenes), 
@@ -369,4 +369,4 @@ run <- pbmclapply(X = 1:length(scenes),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files_DESIS_", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))

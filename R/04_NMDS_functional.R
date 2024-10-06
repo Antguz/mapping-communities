@@ -22,24 +22,31 @@ library(bit64)
 #' Arguments
 #' @param beta
 #' @param stand
+#' @param type
+#' @param diversity
 #' @param out_path
 #' @param threads
 
 #'------------------------------------------------------------------------------
 #' Function
-ordination <- function(beta, stand, type, out_path, threads = 1) {
+ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
   
   # Read distances
   distance <- readRDS(beta)
   
   # Select total distances
-  distance <- distance$Btotal/10000
-  gc()
+  if(diversity == "total") {
+    Beta <- distance$Btotal/10000
+  } else if(diversity == "replacement") {
+    Beta <- distance$Brepl/10000
+  } else if(diversity == "richness") {
+    Beta <- distance$Brich/10000
+  }
   
   # Run NMDS
-  NMDS <- metaMDS(comm = as.dist(distance),
-                  k = 6,
-                  try = 10, #15
+  NMDS <- metaMDS(comm = as.dist(Beta),
+                  k = 3,
+                  try = 3, #15
                   trymax = 15, #30
                   maxit = 50, #50
                   engine = "monoMDS",
@@ -56,34 +63,34 @@ ordination <- function(beta, stand, type, out_path, threads = 1) {
                   maxdist = 1)
   
   # Ordination export
-  saveRDS(NMDS, paste0(out_path, "/NMDS_", type, ".rds"))
+  saveRDS(NMDS, paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))
   
 }
 
 #'------------------------------------------------------------------------------
 #' @example 
 
-#root_path <- "E:/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-
-# Taxonomic
-beta <- paste0(root_path, "/03_diversity/beta_taxo_VOL.rds")
-out_path <- paste0(root_path, "/05_ordination")
-type <- "taxo"
-threads <- 1
-ordination(beta, stand, type, out_path, threads)
-
-# Phylogenetic
-beta <- paste0(root_path, "/03_diversity/beta_phylo_VOL.rds")
-out_path <- paste0(root_path, "/05_ordination")
-type <- "phylo"
-threads <- 1
-ordination(beta, stand, type, out_path, threads)
+#root_path <- "E:/Projects/MMDB"
+#root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
 # Functional
 beta <- paste0(root_path, "/03_diversity/beta_func_VOL.rds")
-out_path <- paste0(root_path, "/05_ordination")
+out_path <- paste0(root_path, "/04_ordination")
 type <- "func"
 threads <- 1
-ordination(beta, stand, out_path, threads)
+
+diversity <- "total"
+if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+  ordination(beta, stand, type, out_path, threads)
+} 
+
+diversity <- "replacement"
+if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+  ordination(beta, stand, type, out_path, threads)
+} 
+
+diversity <- "richness"
+if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+  ordination(beta, stand, type, out_path, threads)
+}

@@ -15,24 +15,15 @@ library(viridis)
 library(smatr)
 library(scales)
 library(ggpubr)
-options(scipen = 100)
+options(scipen = 100000)
 
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-
-#'------------------------------------------------------------------------------
-#' Read information
-
-sensor <- "DESIS"
-type <- "taxo"
-
-# Get coefficients
-DESIS_taxo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
+root_path <- "/media/antonio/Work/MMDB"
 
 #-------------------------------------------------------------------------------
-# Plot details
+#' @Plot-details
 
 col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 
@@ -59,15 +50,13 @@ th_trans <- dark_theme_bw(base_size = 11) +
                                        fill = "transparent",
                                        linewidth = 0))
 
-th <- th_trans
+th <- th_black
 
 line <- "grey75"
 text <- "white"
 
 #'------------------------------------------------------------------------------
-#' Function
-
-#mantel_results <- DESIS_taxo
+#' @Function
 
 mantel_plot <- function(mantel_results, 
                         exp = expression(paste("Taxonomic dissimilarity (", beta[total], ")")),
@@ -84,7 +73,7 @@ mantel_plot <- function(mantel_results,
     plot <- frame[PLOT_CN == plot_id[X], ]
     
     # Test
-    test <- sma(spectral ~ 0 + Btotal, data = plot)
+    test <- sma(spectral ~ 0 + Beta, data = plot)
     elevation <- test$coef[[1]][1,1]
     slope <- test$coef[[1]][2,1]
     
@@ -115,7 +104,7 @@ mantel_plot <- function(mantel_results,
   
   p <- ggplot() +
     geom_hex(data = dissimilarities,#[1:10000,],
-             aes(x = Btotal, 
+             aes(x = Beta, 
                  y = spectral),
              bins = 100) +
     geom_abline(aes(intercept = 0, 
@@ -159,43 +148,66 @@ mantel_plot <- function(mantel_results,
   
 }
 
+#-------------------------------------------------------------------------------
+#' @figures
 
 sensor <- "DESIS"
 type <- "taxo"
-DESIS_taxo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
-DESIS_taxo_fig <- mantel_plot(mantel_results = DESIS_taxo,
-                              exp = " ")#expression(paste("Taxonomic dissimilarity (", beta[total], ")")))
+
+diversity <- "total"
+DESIS_taxo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+DESIS_taxo_total_fig <- mantel_plot(mantel_results = DESIS_taxo_total,
+                                    exp = expression(paste("T", beta[total]))) #expression(paste("T", beta[total], ")")))
+
+diversity <- "replacement"
+DESIS_taxo_replacement <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+DESIS_taxo_replacement_fig <- mantel_plot(mantel_results = DESIS_taxo_replacement,
+                                    exp = expression(paste("T", beta[replacement]))) #expression(paste("T", beta[replacement], ")")))
+
+diversity <- "richness"
+DESIS_taxo_richness <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+DESIS_taxo_richness_fig <- mantel_plot(mantel_results = DESIS_taxo_richness,
+                                       exp = expression(paste("T", beta[richness]))) #expression(paste("T", beta[richness], ")")))
 
 sensor <- "DESIS"
 type <- "phylo-log"
-DESIS_phylo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
+
+diversity <- "total"
+DESIS_phylo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_phylo_fig <- mantel_plot(mantel_results = DESIS_phylo,
                                exp = " ",#expression(paste("Phylogenetic dissimilarity (", beta[total], ")")))
                                y_lab = " ")
 
 sensor <- "DESIS"
 type <- "func"
-DESIS_func <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
+
+diversity <- "total"
+DESIS_func <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_func_fig <- mantel_plot(mantel_results = DESIS_func,
                               exp = " ",#expression(paste("Functional dissimilarity (", beta[total], ")")))
                               y_lab = " ")
 
 sensor <- "EMIT"
 type <- "taxo"
-EMIT_taxo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
+diversity <- "total"
+
+EMIT_taxo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_taxo_fig <- mantel_plot(mantel_results = EMIT_taxo,
                               exp = expression(paste("Taxonomic dissimilarity (", beta[total], ")")))
 
 sensor <- "EMIT"
 type <- "phylo-log"
-EMIT_phylo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
+diversity <- "total"
+
+EMIT_phylo <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_phylo_fig <- mantel_plot(mantel_results = EMIT_phylo,
                               exp = expression(paste("Phylogenetic dissimilarity (", beta[total], ")")),
                               y_lab = " ")
 
 sensor <- "EMIT"
 type <- "func"
-EMIT_func <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_mantel.rds"))
+diversity <- "total"
+EMIT_func <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_func_fig <- mantel_plot(mantel_results = EMIT_func,
                               exp = expression(paste("Functional dissimilarity (", beta[total], ")")),
                              y_lab = " ")
