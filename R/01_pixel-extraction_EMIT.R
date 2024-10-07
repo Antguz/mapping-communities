@@ -17,6 +17,7 @@ library(data.table)
 library(parallel)
 library(bit64)
 library(pbmcapply)
+library(future.apply)
 options(scipen = 100000)
 
 #'------------------------------------------------------------------------------
@@ -35,11 +36,11 @@ source("R/spectral_transform.R")
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "E:"
-folder <- "EMIT"
+root_path <- "/media/antonio/Work/MMDB"
+folder <- "/00_imagery/EMIT"
 scene_path <- paste0(root_path, "/", folder)
-FIA_path <- "F:/Projects/DESIS_mapping/00_FIA/plots_eastern_20230427.csv"
-out_path <- "E:/pixel_extraction/EMIT"
+FIA_path <- "/media/antonio/Work/MMDB/00_FIA/plots_eastern_20230427.csv"
+out_path <- "/media/antonio/Work/MMDB/01_pixel-extraction/EMIT_new"
 
 rast_subst_EMIT(scene_path,
                 FIA_path,
@@ -47,7 +48,7 @@ rast_subst_EMIT(scene_path,
                 EMIT_bands = EMIT_bands,
                 EMIT_mask = EMIT_mask,
                 EMIT_good_bands = EMIT_good_bands,
-                threads = 1) # No threads in windows
+                threads = 2)
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -60,7 +61,7 @@ rast_subst_EMIT <- function(scene_path,
                             threads = 6) {
   
   ### Vector file processing 
-  # Read the FI
+  # Read the FIA
   FIA <- fread(FIA_path)
   FIA <- FIA[, c("PLT_CN", "LAT", "LON")]
   
@@ -106,10 +107,10 @@ rast_subst_EMIT <- function(scene_path,
     
     # Select products
     spectra <- paste0(scene_path, "/", 
-                      scene[type == "RFL"]$scene)
+                      subset(scene, type == "RFL")$scene)
     
     mask <- paste0(scene_path, "/", 
-                   scene[type == "MASK" & band_mask == "mask"]$scene)
+                   subset(scene, type == "MASK" & band_mask == "mask")$scene)
     
     # Read products
     rast_spectra <- rast(spectra)
@@ -156,13 +157,14 @@ rast_subst_EMIT <- function(scene_path,
         VN <- cbind(point_mask, vector_normalization(point_spectra[, good]))
         SG <- cbind(point_mask, smooth(point_spectra[, 2:ncol(point_spectra)]))
         SW <- cbind(point_mask, CWT(point_spectra[, 2:ncol(point_spectra)], 
-                                    sampling = 7.43,
+                                    sampling = 7.5,
                                     scales = c(2, 3),
-                                    sensor_bands = EMIT_bands))
+                                    sensor_bands = EMIT_bands,
+                                    sensor = "EMIT"))
         ### Export 
         # Base file name
         export_name <- paste0(out_path, "/",
-                              scene[type == "RFL", scene])
+                              subset(scene, type == "RFL")$scene)
         
         # Export files
         fwrite(VN, paste0(export_name, "_VN.txt"), sep = "\t")
@@ -173,25 +175,33 @@ rast_subst_EMIT <- function(scene_path,
     }
   }
   
-  # On Windows, set cores to be 1
   if (.Platform$OS.type == "windows") {
-    cores = 1
-  } else {
+
+    future_lapply(X = 1:n_scenes, 
+                  FUN = extraction,
+                  frame = frame, 
+                  scene_path = scene_path, 
+                  out_path = out_path, 
+                  FIA_vector = FIA_vector, 
+                  EMIT_bands = EMIT_bands,
+                  EMIT_mask = EMIT_mask,
+                  EMIT_good_bands = EMIT_good_bands)
+  
+  } else if(.Platform$OS.type == "unix") {
+
     cores = threads
+    pbmclapply(X = 1:n_scenes,
+               FUN = extraction,
+               frame = frame,
+               scene_path = scene_path,
+               out_path = out_path,
+               FIA_vector = FIA_vector,
+               EMIT_bands = EMIT_bands,
+               EMIT_mask = EMIT_mask,
+               EMIT_good_bands = EMIT_good_bands,
+               mc.cores = cores,
+               mc.preschedule = FALSE,
+               mc.cleanup = FALSE)
+    
   }
-  
-  # Batch application
-  pbmclapply(X = 1:n_scenes, 
-             FUN = extraction, 
-             frame = frame, 
-             scene_path = scene_path, 
-             out_path = out_path, 
-             FIA_vector = FIA_vector, 
-             EMIT_bands = EMIT_bands,
-             EMIT_mask = EMIT_mask,
-             EMIT_good_bands = EMIT_good_bands,
-             mc.cores = cores,
-             mc.preschedule = FALSE,
-             mc.cleanup = FALSE)
-  
 }

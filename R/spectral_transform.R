@@ -9,7 +9,7 @@
 #'------------------------------------------------------------------------------
 #' Library
 library(signal)
-library(wmtsa)
+library(CWT)
 library(prospectr)
 
 #install.packages("wmtsa", repos="http://R-Forge.R-project.org")
@@ -57,57 +57,37 @@ smooth <- function(spectra, p = 1, n = 5) {
 # Continuous Wavelet Transform
 CWT <- function(spectra, 
                 sampling = 3.0, 
-                scales = c(3, 4),
-                sensor_bands = NULL) {
+                scales = c(2, 3),
+                sensor_bands = NULL,
+                sensor = "EMIT") {
   
-  #Copy
-  transformed <- data.table()
-  
-  #Bands and new bands
-  if(is.null(sensor_bands) == TRUE) {
-    bands <- as.numeric(colnames(spectra))
-    new_bands <- seq(min(bands), max(bands), by = sampling)
-  } else {
-    bands <- sensor_bands
-    new_bands <- seq(min(bands), max(bands), by = sampling)
+  if(sensor == "EMIT") {
+    new_wavelengths <- seq(min(EMIT_bands), max(EMIT_bands), by = sampling)
+  } else if(sensor == "DESIS") {
+    
   }
   
-  #Loop over samples
-  for(t in 1:nrow(spectra)) {
+  # Apply resampling
+  resampled <- resampling_FWHM(spectra = spectra,
+                               wavelengths = sensor_bands,
+                               new_wavelengths = new_wavelengths,
+                               FWHM = rep(sampling, length(new_wavelengths)),
+                               threads = 1)
+  
+  if(sensor == "EMIT") {
+    resampled$'381.005584716796' <- resampled$'396.005584716796'
+    resampled$'388.505584716796' <- resampled$'396.005584716796'
+    resampled$'2488.5055847168' <- resampled$'2481.0055847168'
+  } else if(sensor == "DESIS") {
     
-    # Get the spectra
-    sample <- as.numeric(spectra[t, ]) 
-    
-    # Resample
-    resample <- prospectr::resample2(X = sample,
-                                     wav = bands,
-                                     new.wav = new_bands,
-                                     fwhm = sampling)
-    
-    # Time series
-    ts_resample <- ts(resample, 
-                      start = min(new_bands), 
-                      deltat = sampling)
-    
-    # Transformation
-    cwt <- wavCWT(ts_resample, 
-                  scale.range= c(sampling, sampling*max(scales)), 
-                  variance= 1, 
-                  wavelet= "gaussian2")
-    
-    if(length(scales) == 1) {
-      #A single scales
-      wavelet <- matrix(as.matrix(cwt)[,c(scales)], nrow = 1)
-      transformed <- rbind(transformed, wavelet)
-      
-    } else if(length(scales) > 1) {
-      #Summed wavelet spectra
-      summed_wavelet <- matrix(rowSums(as.matrix(cwt)[,c(scales)]), nrow = 1)
-      transformed <- rbind(transformed, summed_wavelet)
-    }
   }
   
-  colnames(transformed) <- as.character(new_bands)
+  transformed <- cwt(t = resampled,
+                     scales = scales,
+                     variance = 1,
+                     summed_wavelet = TRUE,
+                     threads = 1)
+  
   return(transformed)
   
 }
