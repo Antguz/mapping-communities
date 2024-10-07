@@ -48,7 +48,7 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
                   k = 3,
                   try = 3, #15
                   trymax = 15, #30
-                  maxit = 50, #50
+                  maxit = 10, #50
                   engine = "monoMDS",
                   autotransform = FALSE,
                   plot = FALSE,
@@ -76,21 +76,21 @@ root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
 # Taxonomic
 beta <- paste0(root_path, "/03_diversity/beta_taxo_VOL.rds")
-out_path <- paste0(root_path, "/04_ordination")
+out_path <- paste0(root_path, "/04_NMDS")
 type <- "taxo"
 threads <- 1
 
 diversity <- "total"
 if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
-  ordination(beta, stand, type, out_path, threads)
+  ordination(beta, stand, type, diversity, out_path, threads)
 } 
 
 diversity <- "replacement"
 if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
-  ordination(beta, stand, type, out_path, threads)
+  ordination(beta, stand, type, diversity, out_path, threads)
 } 
 
 diversity <- "richness"
 if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
-  ordination(beta, stand, type, out_path, threads)
+  ordination(beta, stand, type, diversity, out_path, threads)
 }

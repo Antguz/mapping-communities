@@ -19,7 +19,7 @@ library(bit64)
 
 #'------------------------------------------------------------------------------
 #' Source code
-setwd("/panfs/jay/groups/17/cavender/guzman/DESIS_mapping/mapping-species")
+setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
 source("R/beta_rcpp.R")
 
 #'------------------------------------------------------------------------------
