@@ -10,7 +10,7 @@
 #' Library
 library(signal)
 library(CWT)
-library(prospectr)
+#library(prospectr)
 
 #install.packages("wmtsa", repos="http://R-Forge.R-project.org")
 #remotes::install_github("spkaluzny/ifultools")

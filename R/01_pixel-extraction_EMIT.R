@@ -189,7 +189,6 @@ rast_subst_EMIT <- function(scene_path,
   
   } else if(.Platform$OS.type == "unix") {
 
-    cores = threads
     pbmclapply(X = 1:n_scenes,
                FUN = extraction,
                frame = frame,
@@ -199,7 +198,7 @@ rast_subst_EMIT <- function(scene_path,
                EMIT_bands = EMIT_bands,
                EMIT_mask = EMIT_mask,
                EMIT_good_bands = EMIT_good_bands,
-               mc.cores = cores,
+               mc.cores = threads,
                mc.preschedule = FALSE,
                mc.cleanup = FALSE)
     
