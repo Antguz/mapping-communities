@@ -60,7 +60,7 @@ phylogenetic_diversity <- function(fia,
   tol = 1e-9
   phylo$edge.length[phylo$edge.length <= 0] <- tol
   is.ultrametric(phylo)
-  phylo$edge.length <- (log10(phylo$edge.length)+(min(log10(phylo$edge.length))*-1))
+  #phylo$edge.length <- (log10(phylo$edge.length)+(min(log10(phylo$edge.length))*-1))
   
   #plot(phylo, type = "fan")
 
@@ -70,8 +70,8 @@ phylogenetic_diversity <- function(fia,
   master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "VOL_TPA", "Taxon2")])
   
   # Standardization of communities
-  master_matrix <- decostand(master_matrix, method = "total")
-  master_matrix <- round(master_matrix, 4)
+  #master_matrix <- decostand(master_matrix, method = "total")
+  #master_matrix <- round(master_matrix, 4)
   
   ### Get phylogenetic beta diversity ------------------------------------------
   
@@ -82,7 +82,7 @@ phylogenetic_diversity <- function(fia,
   
   # Export
   saveRDS(matched$comm, paste0(out_path, "/master_matched_comm_phylo_VOL.rds"))
-  saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo-log.rds"))
+  saveRDS(matched$phy, paste0(out_path, "/master_matched_phylo.rds"))
   
   # Compute functional beta diversity
   beta <- beta_rcpp(comm = as.matrix(matched$comm), 
@@ -91,7 +91,7 @@ phylogenetic_diversity <- function(fia,
                     threads = threads,
                     progress = progress)
   
-  saveRDS(beta, paste0(out_path, "/beta_phylo-log_VOL.rds"))
+  saveRDS(beta, paste0(out_path, "/beta_phylo_VOL.rds"))
   
 }
 

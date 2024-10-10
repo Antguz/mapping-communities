@@ -43,12 +43,15 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
     Beta <- distance$Brich/10000
   }
   
+  rm("distance")
+  gc
+  
   # Run NMDS
   NMDS <- metaMDS(comm = as.dist(Beta),
                   k = 3,
-                  try = 3, #15
-                  trymax = 15, #30
-                  maxit = 10, #50
+                  try = 4, #15
+                  trymax = 8, #30
+                  maxit = 30, #50
                   engine = "monoMDS",
                   autotransform = FALSE,
                   plot = FALSE,
@@ -60,7 +63,9 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
                   pc = FALSE,
                   stress = 1,
                   halfchange = FALSE,
-                  maxdist = 1)
+                  maxdist = 1,
+                  weakties = FALSE,
+                  scaling = FALSE)
   
   # Ordination export
   saveRDS(NMDS, paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))
@@ -75,9 +80,9 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
 root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
 # Phylogenetic
-beta <- paste0(root_path, "/03_diversity/beta_phylo-log_VOL.rds")
+beta <- paste0(root_path, "/03_diversity/beta_phylo_VOL.rds")
 out_path <- paste0(root_path, "/04_NMDS")
-type <- "phylo-log"
+type <- "phylo"
 threads <- 1
 
 diversity <- "total"

@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH -p msismall
+#SBATCH -p agsmall
 #SBATCH --job-name=NMDS-phylogenetic
 #SBATCH --nodes=1
-#SBATCH --ntasks=128
+#SBATCH --ntasks=6
 #SBATCH --mem=499g
-#SBATCH --tmp=390g
-#SBATCH --time=24:00:00
+#SBATCH --tmp=500g
+#SBATCH --time=96:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=guzman@umn.edu
 cd /home/cavender/guzman/MMDB
-module load R/4.2.2-gcc-8.2.0-vp7tyde
+module load R/4.4.0-openblas-rocky8mod
 Rscript --vanilla /home/cavender/guzman/MMDB/R/04_NMDS_phylogenetic.R
 
