@@ -18,7 +18,8 @@ options(scipen = 100)
 #' Arguments
 
 # Select root path
-root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping/02_compile-files"
+root_path <- "/media/antonio/Extreme_Pro/Projects/MMDB/02_compile-files"
+root_path <- "G:/Projects/MMBD/02_compile-files"
 
 # Select sensor
 sensor <- "EMIT"
@@ -28,25 +29,27 @@ spectra <- fread(paste0(root_path, "/02_", sensor, "_spectra-SG.txt"))
 
 # Filter by flags
 spectra <- spectra[`Aggregate Flag` == 1]
+spectra_mean <- rowMeans(spectra[, 11:295])
+spectra <- spectra[spectra_mean != -9999.00, ]
   
 # Filter by NDVI
 NDVI <- (spectra$`797.9` - spectra$`626.37`) / (spectra$`797.9` + spectra$`626.37`)
 hist(NDVI)
-spectra <- spectra[NDVI >= 0.6 & NDVI <= 1.0,]
+spectra <- spectra[NDVI >= 0.4 & NDVI <= 1.0,]
 NDVI <- (spectra$`797.9` - spectra$`626.37`) / (spectra$`797.9` + spectra$`626.37`)
 hist(NDVI)
 
 # Filter by NIR
 NIR <- spectra$`797.9`
 hist(NIR)
-spectra <- spectra[NIR >= 0.15 & NIR <= 0.8,]
+spectra <- spectra[NIR >= 0.1 & NIR <= 0.8,]
 NIR <- spectra$`797.9`
 hist(NIR)
 
 # Filter by CCI
 CCI <- (spectra$`529.53` - spectra$`626.37`) / (spectra$`529.53` + spectra$`626.37`)
 hist(CCI)
-spectra <- spectra[CCI >= 0.05 & CCI <= 0.6]
+spectra <- spectra[CCI >= 0.00 & CCI <= 0.6]
 CCI <- (spectra$`529.53` - spectra$`626.37`) / (spectra$`529.53` + spectra$`626.37`)
 hist(CCI)
 
