@@ -19,6 +19,7 @@ options(scipen = 100)
 
 # Select root path
 root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping/02_compile-files"
+root_path <- "G:/Projects/MMBD/02_compile-files"
 
 # Select sensor
 sensor <- "DESIS"
@@ -28,14 +29,16 @@ spectra <- fread(paste0(root_path, "/02_", sensor, "_spectra-SG.txt"))
 
 # Filter by flags
 spectra <- spectra[Shadow != 1]
-spectra <- spectra[`Haze (land)` != 1]
+spectra <- spectra[Snow != 1]
+spectra <- spectra[`Haze (water)` != 1]
 spectra <- spectra[`Cloud (land)` != 1]
+spectra <- spectra[`Cloud (water)` != 1]
 spectra <- spectra[Water != 1]
 
 # Filter by NDVI
 NDVI <- (spectra$`801.16` - spectra$`629.66`) / (spectra$`801.16` + spectra$`629.66`)
 hist(NDVI)
-spectra <- spectra[NDVI >= 0.6 & NDVI <= 1.0,]
+spectra <- spectra[NDVI >= 0.4 & NDVI <= 1.0,]
 NDVI <- (spectra$`801.16` - spectra$`629.66`) / (spectra$`801.16` + spectra$`629.66`)
 hist(NDVI)
 
