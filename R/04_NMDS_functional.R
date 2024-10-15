@@ -80,7 +80,7 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
 root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
 # Functional
-beta <- paste0(root_path, "/03_diversity/beta_functional_VOL.rds")
+beta <- paste0(root_path, "/03_diversity/beta_func_VOL.rds")
 out_path <- paste0(root_path, "/04_NMDS")
 type <- "func"
 threads <- 1

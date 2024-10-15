@@ -26,15 +26,15 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 fia <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 master_comm <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
 master_spectra <- fread(paste0(root_path, "/02_compile-files/EMIT_master_spectra.csv"), header = TRUE)
 spectra_sg <- fread(paste0(root_path, "/02_compile-files/02_EMIT_spectra-SG.txt"), header = TRUE)
 spectra_vn <- fread(paste0(root_path, "/02_compile-files/02_EMIT_spectra-VN.txt"), header = TRUE)
 spectra_sw <- fread(paste0(root_path, "/02_compile-files/02_EMIT_spectra-SW.txt"), header = TRUE)
-out_path <- paste0(root_path, "/04_match_spectra-stand")
+out_path <- paste0(root_path, "/05_match_spectra-stand")
 
 match_datasets_EMIT(fia, stand, spectra_sw, master_spectra, out_path)
 
@@ -140,7 +140,7 @@ match_datasets_EMIT <- function(fia,
   #Plots with useful spectra
   unique_plots <- na.exclude(unique_plots)
   master_spectra <- master_spectra[unique_plots$sample, ]
-  master_spectra <- master_spectra[, c(1, 3:5)]
+  master_spectra <- master_spectra[, c(-2, -9, -10)]
   unique_plots <- cbind(unique_plots, master_spectra)
   
   #------------------------------------

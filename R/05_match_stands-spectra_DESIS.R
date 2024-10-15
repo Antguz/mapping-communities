@@ -26,15 +26,15 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 fia <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 master_comm <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"))
+SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
 master_spectra <- fread(paste0(root_path, "/02_compile-files/DESIS_master_spectra.csv"), header = TRUE)
 spectra_sg <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-SG.txt"), header = TRUE)
 spectra_vn <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-VN.txt"), header = TRUE)
 spectra_sw <- fread(paste0(root_path, "/02_compile-files/02_DESIS_spectra-SW.txt"), header = TRUE)
-out_path <- paste0(root_path, "/04_match_spectra-stand")
+out_path <- paste0(root_path, "/05_match_spectra-stand")
 
 match_datasets_DESIS(fia, stand, spectra_sw, master_spectra, out_path)
 
@@ -128,7 +128,7 @@ match_datasets_DESIS <- function(fia,
         
         # Select observations closest to the inventory year
         delta_year <- abs(year(sub_spectra$date) - year(unique_plots$date[i]))
-        sub_spectra <- sub_spectra[delta_year == delta_year[which.min(delta_year)]]
+        sub_spectra <- sub_spectra[delta_year == delta_year[which.min(delta_year)[1]]]
         
         # Select observations closest to the peak of season
         peak <- as.IDate(paste0(unique(year(sub_spectra$date)), "-07-15"))
@@ -150,9 +150,10 @@ match_datasets_DESIS <- function(fia,
   #Plots with useful spectra
   unique_plots <- na.exclude(unique_plots)
   master_spectra <- master_spectra[unique_plots$sample, ]
-  master_spectra <- master_spectra[, c(2, 4:6)]
+  master_spectra <- master_spectra[, c("folder", "scene", "AOT (550 nm) * 100", "WV [cm] * 42",
+                                       "NDVI", "NIR", "CCI", "SMA")]
   unique_plots <- cbind(unique_plots, master_spectra)
-  
+  unique_plots <- unique_plots[, -12]
   #------------------------------------
   # Matching files
   

@@ -66,12 +66,12 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
 #'------------------------------------------------------------------------------
 #' @example
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+#root_path <- "/media/antonio/Work/MMDB"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
 
 # Taxonomic
-ordination <- paste0(root_path, "/05_NMDS/NMDS_taxo.rds")
+ordination <- paste0(root_path, "/04_NMDS/NMDS_taxo.rds")
 fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
 species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
 out_path <- paste0(root_path, "/05_NMDS")
@@ -80,7 +80,7 @@ text <- "Taxonomic"
 postprocessing(ordination, fia_environment, out_path, type, text)
 
 # Phylogenetic
-ordination <- paste0(root_path, "/05_NMDS/NMDS_phylo-log.rds")
+ordination <- paste0(root_path, "/04_NMDS/NMDS_phylo-log.rds")
 fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
 species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-log-VOL.rds")
 out_path <- paste0(root_path, "/05_NMDS")

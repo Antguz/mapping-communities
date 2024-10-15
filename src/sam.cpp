@@ -70,3 +70,36 @@ arma::mat sam(arma::mat data, int threads = 1, bool progress = true) {
   return distances;
   
 }
+
+// [[Rcpp::export]]
+arma::vec sam_ref(arma::mat data, arma::vec reference, int threads = 1, bool progress = true) {
+  
+  //Matrix of data
+  int n = data.n_rows;
+  arma::vec distances(n);
+  
+  //create progress
+  Progress p(n, progress);
+  
+  // Parallel for speed
+#ifdef _OPENMP 
+  if ( threads > 0 ) {
+    omp_set_num_threads( threads );
+  } 
+#endif
+  
+  //Loop for distance
+#pragma omp parallel for 
+  for (int i = 0; i < n; ++i) {
+    if (! Progress::check_abort() ) {
+      p.increment(); // update progress
+    }  
+    
+    arma::vec a = arma::trans(data.row(i));
+    distances[i] = spectral_angle_mapper_cpp(a, reference);
+    
+  }
+  
+  return distances;
+  
+}

@@ -12,7 +12,7 @@
 
 library(data.table)
 library(bit64)
-options(scipen = 100)
+options(scipen = 10000)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -22,10 +22,15 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "E:/pixel_extraction"
-folder <- "EMIT"
+root_path <- "/media/antonio/Work/MMDB"
+folder <- "01_pixel-extraction/EMIT"
 in_path <- paste0(root_path, "/", folder)
 out_path <- paste0(root_path, "/", folder, "/02_spectra") #This will return 3 files
+
+root_path <- "/media/antonio/Work/MMDB"
+folder <- "01_pixel-extraction/EMIT"
+in_path <- "/media/antonio/Work/MMDB/01_pixel-extraction/EMIT"
+out_path <- "/media/antonio/Work/MMDB/02_compile-files" #This will return 3 files
 
 compile_files(in_path, out_path)
 
@@ -66,6 +71,8 @@ compile_files <- function(in_path, out_path) {
     
     for(i in 1:nrow(type)) {
       
+      #print(i)
+      
       # Progress bar
       setTxtProgressBar(pb, i)
       
@@ -78,9 +85,8 @@ compile_files <- function(in_path, out_path) {
     }
     
     # Name to export and export
-    name_export <- paste0(out_path, "-", unique_type[j], ".txt")
+    name_export <- paste0(out_path, "/02_EMIT_spectra-", unique_type[j], ".txt")
     fwrite(compile, name_export, sep = "\t")
     
   }
-  
 }

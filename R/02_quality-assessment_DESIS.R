@@ -12,14 +12,20 @@
 
 library(data.table)
 library(ggplot2)
+library(Rcpp)
+library(RcppArmadillo)
 options(scipen = 100)
+
+#'------------------------------------------------------------------------------
+#' Source code
+sourceCpp("src/sam.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
 
 # Select root path
-root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping/02_compile-files"
-root_path <- "G:/Projects/MMBD/02_compile-files"
+root_path <- "/media/antonio/Work/MMDB/02_compile-files"
+#root_path <- "G:/Projects/MMBD/02_compile-files"
 
 # Select sensor
 sensor <- "DESIS"
@@ -45,14 +51,14 @@ hist(NDVI)
 # Filter by NIR
 NIR <- spectra$`801.16`
 hist(NIR)
-spectra <- spectra[NIR >= 1500 & NIR <= 8000,]
+spectra <- spectra[NIR >= 1000 & NIR <= 8000,]
 NIR <- spectra$`801.16`
 hist(NIR)
 
 # Filter by CCI
 CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 hist(CCI)
-spectra <- spectra[CCI >= 0.05 & CCI <= 0.6]
+spectra <- spectra[CCI >= 0.0 & CCI <= 0.7, ]
 CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 hist(CCI)
 
@@ -67,18 +73,27 @@ hist(AOT_550)
 WV <- spectra$`WV [cm] * 42`
 hist(WV)
 
+# Filter using SMA
+ref_sam <- sam_ref(as.matrix(spectra[, 33:209]), #450 - 900
+                   colMeans(as.matrix(spectra[, 33:209])),
+                   threads = 12)[,1]
+
+spectra <- spectra[ref_sam < quantile(ref_sam, 0.95), ]
+ref_sam <- ref_sam[ref_sam < quantile(ref_sam, 0.95)]
+
 # Get metrics to export
 NDVI <- (spectra$`801.16` - spectra$`629.66`) / (spectra$`801.16` + spectra$`629.66`)
-NDVI <- round(NDVI, 2)
+NDVI <- round(NDVI, 3)
 CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
-CCI <- round(CCI, 2)
-NIR <- round(spectra$`801.16`, 2)
+CCI <- round(CCI, 3)
+NIR <- round(spectra$`801.16`, 3)
 
 # Final file
-master <- spectra[, c("folder", "scene", "PLT_CN")]
+master <- spectra[, c("folder", "scene", "PLT_CN", "AOT (550 nm) * 100", "WV [cm] * 42")]
 master$NDVI <- NDVI
 master$NIR <- NIR
 master$CCI <- CCI
+master$SMA <- ref_sam
 
 # Export
 fwrite(master, paste0(root_path, "/DESIS_master_spectra.csv"))
