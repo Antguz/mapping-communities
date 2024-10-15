@@ -36,11 +36,11 @@ sourceCpp("src/sam.cpp")
 #' Function
 mantel_test <- function(sensor,
                         spectral_path,
-                        diversity,
                         beta_path, 
+                        diversity,
                         beta_type,
                         output_path, 
-                        threads = 6) {
+                        threads) {
   
   #'----------------------------------------------------------------------------
   # Get spectral data
@@ -67,7 +67,7 @@ mantel_test <- function(sensor,
   rownames(spectra) <- plot_cn
   
   # Get distance
-  spectral_distance <-  sam(as.matrix(spectra), threads = 28) 
+  spectral_distance <-  sam(as.matrix(spectra), threads = threads) 
   colnames(spectral_distance) <- as.character(plot_cn)
   rownames(spectral_distance) <- as.character(plot_cn)
   
@@ -79,11 +79,11 @@ mantel_test <- function(sensor,
   # Get beta data
   beta <- readRDS(beta_path)
   
-  if(diversity == "total") {
+  if(beta_type == "total") {
     Beta <- beta$Btotal/10000
-  } else if(diversity == "replacement") {
+  } else if(beta_type == "replacement") {
     Beta <- beta$Brepl/10000
-  } else if(diversity == "richness") {
+  } else if(beta_type == "richness") {
     Beta <- beta$Brich/10000
   }
   
@@ -139,6 +139,7 @@ mantel_test <- function(sensor,
   Beta$PLOT_CN <- as.integer64(Beta$PLOT_CN)
   Beta$PLOT_CN_col <- as.integer64(as.character(Beta$PLOT_CN_col))
   
+  # Merge frames for results
   frame <- merge(spectral_distance, 
                  Beta, 
                  by = c("PLOT_CN", "PLOT_CN_col"), 
@@ -148,84 +149,222 @@ mantel_test <- function(sensor,
   return_list <- list(mantel = mantel_Beta,
                       frame = frame)
   
-  saveRDS(return, paste0(output_path, "/", 
-                         sensor, "_", type, "_", diversity, "_mantel.rds"))
+  saveRDS(return_list, paste0(output_path, "/",
+                              sensor, "_", diversity, 
+                              "_", beta_type, "_mantel.rds"))
   
 }
 
 #'------------------------------------------------------------------------------
 #' Mantel test
 
-sensor,
-                        spectral_path,
-                        diversity,
-                        beta_path, 
-                        beta_type,
-                        output_path, 
-                        threads = 6
-
+#---------------------------------------------------------
 #' @DESIS
 
+root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 sensor <- "DESIS"
 spectral_path <- paste0(root_path, 
-                        "/04_match_spectra-stand/", 
+                        "/05_match_spectra-stand/", 
                         sensor, "/", sensor, "_spectra_SW.csv")
+output_path <- paste0(root_path, "/06_mantel")
+threads <- 12
 
 #---------------------------------------------------------
 # Taxonomic
-type <- "taxo"
-beta <- paste0(root_path, "/03_diversity/beta_", type, "_VOL.rds")
+diversity <- "taxo"
+beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
 
-diversity <- "total"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "taxo",
+            beta_path = beta_path, 
+            beta_type = "total",
+            output_path = output_path, 
+            threads = threads)
 gc()
 
-diversity <- "replacement"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "taxo",
+            beta_path = beta_path, 
+            beta_type = "replacement",
+            output_path = output_path,
+            threads = threads)
 gc()
 
-diversity <- "richness"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "taxo",
+            beta_path = beta_path,  
+            beta_type = "richness",
+            output_path = output_path,
+            threads = threads)
 gc()
 
 # Phylogenetic
-type <- "phylo"
-beta <- readRDS(paste0(root_path, "/03_diversity/beta_", type, "_VOL.rds"))
+diversity <- "phylo"
+beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
 
-diversity <- "total"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "phylo",
+            beta_path = beta_path, 
+            beta_type = "total",
+            output_path = output_path, 
+            threads = threads)
 gc()
 
-diversity <- "replacement"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "phylo",
+            beta_path = beta_path, 
+            beta_type = "replacement",
+            output_path = output_path,
+            threads = threads)
 gc()
 
-diversity <- "richness"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "phylo",
+            beta_path = beta_path,  
+            beta_type = "richness",
+            output_path = output_path,
+            threads = threads)
 gc()
 
 # Functional
-type <- "func"
-beta <- readRDS(paste0(root_path, "/03_diversity/beta_", type, "_VOL.rds"))
+diversity <- "func"
+beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
 
-diversity <- "total"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "func",
+            beta_path = beta_path, 
+            beta_type = "total",
+            output_path = output_path, 
+            threads = threads)
 gc()
 
-diversity <- "replacement"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "func",
+            beta_path = beta_path, 
+            beta_type = "replacement",
+            output_path = output_path,
+            threads = threads)
 gc()
 
-diversity <- "richness"
-test <- mantel_test(spectral_distance, beta, diversity)
-saveRDS(test, paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+mantel_test(sensor = "DESIS", 
+            spectral_path = spectral_path,
+            diversity = "func",
+            beta_path = beta_path,  
+            beta_type = "richness",
+            output_path = output_path,
+            threads = threads)
 gc()
 
+
+#---------------------------------------------------------
+#' @EMIT
+
+root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+sensor <- "EMIT"
+spectral_path <- paste0(root_path, 
+                        "/05_match_spectra-stand/", 
+                        sensor, "/", sensor, "_spectra_SW.csv")
+output_path <- paste0(root_path, "/06_mantel")
+threads <- 12
+
+#---------------------------------------------------------
+# Taxonomic
+diversity <- "taxo"
+beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "taxo",
+            beta_path = beta_path, 
+            beta_type = "total",
+            output_path = output_path, 
+            threads = threads)
+gc()
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "taxo",
+            beta_path = beta_path, 
+            beta_type = "replacement",
+            output_path = output_path,
+            threads = threads)
+gc()
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "taxo",
+            beta_path = beta_path,  
+            beta_type = "richness",
+            output_path = output_path,
+            threads = threads)
+gc()
+
+# Phylogenetic
+diversity <- "phylo"
+beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "phylo",
+            beta_path = beta_path, 
+            beta_type = "total",
+            output_path = output_path, 
+            threads = threads)
+gc()
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "phylo",
+            beta_path = beta_path, 
+            beta_type = "replacement",
+            output_path = output_path,
+            threads = threads)
+gc()
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "phylo",
+            beta_path = beta_path,  
+            beta_type = "richness",
+            output_path = output_path,
+            threads = threads)
+gc()
+
+# Functional
+diversity <- "func"
+beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "func",
+            beta_path = beta_path, 
+            beta_type = "total",
+            output_path = output_path, 
+            threads = threads)
+gc()
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "func",
+            beta_path = beta_path, 
+            beta_type = "replacement",
+            output_path = output_path,
+            threads = threads)
+gc()
+
+mantel_test(sensor = "EMIT", 
+            spectral_path = spectral_path,
+            diversity = "func",
+            beta_path = beta_path,  
+            beta_type = "richness",
+            output_path = output_path,
+            threads = threads)
+gc()
