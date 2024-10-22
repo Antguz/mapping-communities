@@ -39,7 +39,7 @@ arma::mat sam(arma::mat data, int threads = 1, bool progress = true) {
   
   // Parallel for speed
 #ifdef _OPENMP
-  if ( threads > 0 ) {
+  if ( threads > 1 ) {
     omp_set_num_threads( threads );
   }
 #endif
