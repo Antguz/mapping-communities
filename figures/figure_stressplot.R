@@ -143,8 +143,9 @@ th_black <- theme_bw() +
   frame <- data.table(x = diss, y = dist, z = 1)
   rm(list = c("diss", "dist"))
   gc()
-  vox <- voxels(frame, edge_length = c(0.01, 0.01, 0.01), threads = 16, obj.voxels = FALSE)
-  plot(vox$X-0.00025, vox$Y-0.00025)
+  vox <- voxels(frame, edge_length = c(0.001, 0.001, 0.001), threads = 16, obj.voxels = FALSE)
+  #plot(vox$X-0.00025, vox$Y-0.00025)
+  print(max(vox$N))
   rm(list = c("frame"))
   gc()
   

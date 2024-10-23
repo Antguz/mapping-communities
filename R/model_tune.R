@@ -34,7 +34,7 @@ model_tune <- function(meta_training,
                      ncomp = ncomp_max,
                      center = TRUE,
                      method = "oscorespls",
-                     maxit = 1000)
+                     maxit = 10000)
 
     # Performance 
     RMSEP_train <- pls::RMSEP(object = ml_model,

@@ -12,7 +12,7 @@
 
 library(data.table)
 library(bit64)
-#options(scipen = 10000000000)
+options(scipen = 10000000)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -136,7 +136,7 @@ match_datasets_DESIS <- function(fia,
         
         unique_plots$sample[i] <- sub_spectra$sample[which.min(abs(delta_time))]
         unique_plots$plot[i] <- i
-        unique_plots$dtime[i] <- delta_time[which.min(delta_time)]
+        unique_plots$dtime[i] <- sub_spectra$date[which.min(abs(delta_time))] - unique_plots$date[i]
         unique_plots$observation_date[i] <- sub_spectra$date[which.min(abs(delta_time))]
         unique_plots$folder[i] <- sub_spectra$folder[which.min(abs(delta_time))]
         
@@ -151,7 +151,8 @@ match_datasets_DESIS <- function(fia,
   unique_plots <- na.exclude(unique_plots)
   master_spectra <- master_spectra[unique_plots$sample, ]
   master_spectra <- master_spectra[, c("folder", "scene", "AOT (550 nm) * 100", "WV [cm] * 42",
-                                       "NDVI", "NIR", "CCI", "SMA")]
+                                       "NDVI", "NIR", "CCI", "CRI700", "VOG2", "NPCI",
+                                       "WBI", "PRI570", "CMS", "RDVI")]
   unique_plots <- cbind(unique_plots, master_spectra)
   unique_plots <- unique_plots[, -12]
   #------------------------------------
@@ -175,9 +176,9 @@ match_datasets_DESIS <- function(fia,
   spectra_sw <- spectra_sw[, -1]
   
   #Export
-  fwrite(unique_plots, paste0(out_path, "/DESIS_match_usefull.csv"))
-  fwrite(spectra_sg, paste0(out_path, "/DESIS_spectra_SG.csv"))
-  fwrite(spectra_vn, paste0(out_path, "/DESIS_spectra_VN.csv"))
-  fwrite(spectra_sw, paste0(out_path, "/DESIS_spectra_SW.csv"))
+  fwrite(unique_plots, paste0(out_path, "/DESIS/DESIS_match_usefull.csv"))
+  fwrite(spectra_sg, paste0(out_path, "/DESIS/DESIS_spectra_SG.csv"))
+  fwrite(spectra_vn, paste0(out_path, "/DESIS/DESIS_spectra_VN.csv"))
+  fwrite(spectra_sw, paste0(out_path, "/DESIS/DESIS_spectra_SW.csv"))
   
 }

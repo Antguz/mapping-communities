@@ -20,9 +20,9 @@ library(BIEN)
 #'------------------------------------------------------------------------------
 #' Paths and files
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "E:/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
+#root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/work/Projects/DESIS_mapping"
 fia <- fread(paste0(root_path, "/00_FIA/trees_eastern_20230427.csv"))
 SPCD <- fread(paste0(root_path, "/00_FIA/SPCD.csv"), na.strings="NA")
 FIA_SPCD <- fread(paste0(root_path, "/00_FIA/FIA_SPCD.csv"), na.strings="NA")
@@ -138,7 +138,6 @@ traits <- merge(traits, res, by = "SPCD", all.x = TRUE, all.y = FALSE)
 ### Export for manual cleaning of observations
 fwrite(traits, paste0(root_path, "/00_FIA/traits/fia_traits_res.csv")) 
 
-
 #'------------------------------------------------------------------------------
 # Merge other traits from Niinemets and Valladares
 traits <- fread(paste0(root_path, "/00_FIA/traits/fia_traits_res.csv")) 
@@ -205,7 +204,7 @@ traits_and_phylo <- merge(traits, pc, by = "Taxon2", all.x = TRUE, all.y = TRUE)
 fwrite(traits_and_phylo, paste0(root_path, "/00_FIA/traits/traits_and_phylogeny.csv")) 
 
 # Imputation of traits
-imputation_traits <- missForest(traits_and_phylo[, .SD, .SDcols = c(15:39)], 
-                            maxiter = 500, ntree = 100, verbose = TRUE)
-imputation_traits_and_phylo <- cbind(traits_and_phylo[, 1:14], imputation_traits$ximp)
-fwrite(imputation_traits_and_phylo, paste0(root_path, "/00_FIA/traits/imputation_traits_and_phylo.csv")) 
+imputation_traits <- missForest(traits_and_phylo[, .SD, .SDcols = c(13, 14, 16:34)], 
+                                maxiter = 500, ntree = 100, verbose = TRUE)
+imputation_traits_and_phylo <- cbind(traits_and_phylo[, 1:12], imputation_traits$ximp)
+fwrite(imputation_traits_and_phylo, paste0(root_path, "/00_FIA/traits/imputation_traits_and_phylo (2024-10-08).csv")) 

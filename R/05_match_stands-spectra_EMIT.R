@@ -78,7 +78,7 @@ match_datasets_EMIT <- function(fia,
   unique_plots$plot <- 0
   unique_plots$dtime <- 0
   unique_plots$nobservations <- 0
-  unique_plots$observation_date <- as.IDate("2000-01-01")
+  unique_plots$observation_date <- as.IDate(NULL)
   
   # Progress bar
   pb <- txtProgressBar(min = 1, max = nrow(unique_plots), style = 3)
@@ -127,7 +127,7 @@ match_datasets_EMIT <- function(fia,
         
         unique_plots$sample[i] <- sub_spectra$sample[which.min(abs(delta_time))]
         unique_plots$plot[i] <- i
-        unique_plots$dtime[i] <- delta_time[which.min(delta_time)]
+        unique_plots$dtime[i] <- sub_spectra$date[which.min(abs(delta_time))] - unique_plots$date[i]
         unique_plots$observation_date[i] <- sub_spectra$date[which.min(abs(delta_time))]
         
       }
@@ -140,7 +140,9 @@ match_datasets_EMIT <- function(fia,
   #Plots with useful spectra
   unique_plots <- na.exclude(unique_plots)
   master_spectra <- master_spectra[unique_plots$sample, ]
-  master_spectra <- master_spectra[, c(-2, -9, -10)]
+  master_spectra <- master_spectra[, c("scene", "AOD550", "H2O (g cm-2)",
+                                       "NDVI", "NIR", "CCI", "CRI700", "VOG2", "NPCI",
+                                       "WBI", "PRI570", "CMS", "RDVI")]
   unique_plots <- cbind(unique_plots, master_spectra)
   
   #------------------------------------

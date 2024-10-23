@@ -19,8 +19,9 @@ options(scipen = 100000)
 #'------------------------------------------------------------------------------
 #' Source code
 
-setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
+#setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
 sourceCpp("src/sam.cpp")
+sourceCpp("src/mantel_rcpp.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -107,13 +108,13 @@ mantel_test <- function(sensor,
   
   #'----------------------------------------------------------------------------
   #' Compute mantel test
-  mantel_Beta <- mantel(xdis = Beta, 
-                        ydis = spectral_distance, 
-                        method = "pearson", 
-                        permutations = 999, 
-                        strata = NULL,
-                        na.rm = TRUE,
-                        parallel = threads)
+  mantel_Beta <- mantel_rcpp(mat1 = Beta, 
+                             mat2 = spectral_distance,
+                             nperm = 999,
+                             threads = threads,
+                             progress = TRUE)
+  
+  stadistics <- (sum(mantel_Beta$perm_stats >= mantel_Beta$observed_stat) + 1)/(999 + 1)
   
   #'----------------------------------------------------------------------------
   #' Melt frames
@@ -146,7 +147,9 @@ mantel_test <- function(sensor,
                  all.x = TRUE,
                  all.y = TRUE)
   
-  return_list <- list(mantel = mantel_Beta,
+  return_list <- list(mantel = mantel_Beta$observed_stat,
+                      mantel_permutation = mantel_Beta$perm_stats[,1],
+                      mantel_significance = stadistics,
                       frame = frame)
   
   saveRDS(return_list, paste0(output_path, "/",
@@ -161,13 +164,14 @@ mantel_test <- function(sensor,
 #---------------------------------------------------------
 #' @DESIS
 
-root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+#root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
 spectral_path <- paste0(root_path, 
                         "/05_match_spectra-stand/", 
                         sensor, "/", sensor, "_spectra_SW.csv")
 output_path <- paste0(root_path, "/06_mantel")
-threads <- 12
+threads <- 20
 
 #---------------------------------------------------------
 # Taxonomic
@@ -267,7 +271,7 @@ gc()
 #---------------------------------------------------------
 #' @EMIT
 
-root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+root_path <- "/media/antonio/Work/MMDB"
 sensor <- "EMIT"
 spectral_path <- paste0(root_path, 
                         "/05_match_spectra-stand/", 

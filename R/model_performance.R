@@ -54,6 +54,7 @@ model_performance <- function(meta,
     iteration <- predicted[[X]]
     collector <- data.table()
     
+    # Performance at the Axis level
     for(i in 1:ncol(ordination)) {
       per <- parameters(obs = ord[, i], pred = iteration[,i])
       per <- cbind(Axes = paste0("Axis", i),
@@ -62,7 +63,14 @@ model_performance <- function(meta,
       collector <- rbind(collector, per)
     }
     
+    # Performance at the Axes level
+    per <- parameters_3d(observed = ordination, 
+                         predicted_values = as.data.table(iteration))
+    
+    collector <- cbind(collector, per)
+    
     return(collector)
+    
   }
   
   # Performance in parallel
@@ -91,13 +99,13 @@ model_performance <- function(meta,
                                                 dim(predicted[[1]])[2],
                                                 length(predicted)))
   
-  application_residuals <- function(ordination, predicted) {
+  application_residuals <- function(observed, predicted) {
     
     collector <- data.table()
     
-    for(i in 1:ncol(ordination)) {
+    for(i in 1:ncol(observed)) {
       
-      axis <- as.matrix(ordination)[, i]
+      axis <- as.matrix(observed)[, i]
       predictions <- predicted[,i,]
       
       # Predictions
@@ -130,14 +138,37 @@ model_performance <- function(meta,
   predicted_summary <- application_residuals(ordination, predicted)
   
   #-----------------------------------------------------------------------------
+  # Get 3D residuals
+  # Apply prediction function
+  residuals_3D <- function(observed, predicted) {
+    
+    collector <- data.table()
+    
+    for(i in 1:dim(predicted)[3]) {
+      collector <- cbind(collector, rowSums((observed - predicted[,,i])^2))
+    }
+    
+    residuals_means <- rowMeans(collector)
+    residuals_sd <- apply(collector, 1, sd)
+    
+    results <- data.table(sample = 1:dim(predicted)[1],
+                          residuals_3D = residuals_means,
+                          residuals_3D_sd = residuals_sd)
+    
+  }
+  
+  residuals_3D_predicted <- residuals_3D(ordination, predicted)
+  
+  #-----------------------------------------------------------------------------
   # Return results
   return(list(performance = frame,
-              predicted = predicted_summary))
+              predicted = predicted_summary,
+              residuals_3D = residuals_3D_predicted))
   
 }
 
 #-------------------------------------------------------------------------------
-# Parameters to estimate
+# Parameters of performance to estimate 1D
 parameters <- function(obs, pred) {
   
   linear <- lm(obs ~ pred, na.action = na.exclude)
@@ -158,5 +189,34 @@ parameters <- function(obs, pred) {
                           perRMSE = perRMSE,
                           intercept = intercept,
                           slope = slope), 4))
+  
+}
+
+# Parameters of performance  estimate 3D
+parameters_3d <- function(observed, predicted_values) {
+  
+  # Mean of observed vectors
+  mean_observed <- colMeans(observed)
+  
+  # Residual Sum of Squares (RSS)
+  rss <- sum(rowSums((observed - predicted_values)^2))
+  
+  # Total Sum of Squares (TSS)
+  tss <- sum(rowSums((observed - mean_observed)^2))
+  
+  # R-squared
+  r_squared <- 1 - (rss / tss)
+  
+  # RMSE (Root Mean Squared Error)
+  n <- nrow(observed)
+  rmse <- sqrt(sum(rowSums((observed - predicted_values)^2)) / n)
+  
+  # Overall bias magnitude (optional, as a scalar)
+  bias <- colMeans(observed - predicted_values)
+  bias_magnitude <- sqrt(sum(bias^2))
+  
+  return(data.table(R2_3D = r_squared,
+                    RMSE_3D = rmse,
+                    BIAS_3D = bias_magnitude))
   
 }

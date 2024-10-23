@@ -33,7 +33,7 @@ model_build <- function(meta_training,
                      ncomp = max(tune_optimal),
                      center = TRUE,
                      method = "oscorespls",
-                     maxit = 1000)
+                     maxit = 10000)
     
     return(ml_model)
     

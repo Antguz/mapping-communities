@@ -78,22 +78,46 @@ ref_sam <- sam_ref(as.matrix(spectra[, 33:209]), #450 - 900
                    colMeans(as.matrix(spectra[, 33:209])),
                    threads = 12)[,1]
 
+hist(ref_sam)
+plot(as.matrix(spectra[which.max(ref_sam), .SD, .SDcols = c(33:209)])[1,])
+
 spectra <- spectra[ref_sam < quantile(ref_sam, 0.95), ]
 ref_sam <- ref_sam[ref_sam < quantile(ref_sam, 0.95)]
 
-# Get metrics to export
-NDVI <- (spectra$`801.16` - spectra$`629.66`) / (spectra$`801.16` + spectra$`629.66`)
-NDVI <- round(NDVI, 3)
-CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
-CCI <- round(CCI, 3)
-NIR <- round(spectra$`801.16`, 3)
+# Filter using SMA in the visible
+ref_sam_vis <- sam_ref(as.matrix(spectra[, .SD, .SDcols = c(33:120)]),
+                       colMeans(as.matrix(spectra[, .SD, .SDcols = c(33:120)])),
+                       threads = 12)[,1]
+hist(ref_sam_vis)
+plot(names(colMeans(as.matrix(spectra[, .SD, .SDcols = c(33:120)]))),
+     as.matrix(spectra[which.max(ref_sam_vis), .SD, .SDcols = c(33:120)])[1,])
 
-# Final file
+spectra <- spectra[ref_sam_vis < quantile(ref_sam_vis, 0.95), ]
+ref_sam_vis <- ref_sam_vis[ref_sam_vis < quantile(ref_sam_vis, 0.95)]
+ref_sam <- ref_sam[ref_sam_vis < quantile(ref_sam_vis, 0.95)]
+
+# Get metrics to export
 master <- spectra[, c("folder", "scene", "PLT_CN", "AOT (550 nm) * 100", "WV [cm] * 42")]
-master$NDVI <- NDVI
-master$NIR <- NIR
-master$CCI <- CCI
-master$SMA <- ref_sam
+master$NDVI <- (spectra$`801.16` - spectra$`629.66`) / (spectra$`801.16` + spectra$`629.66`)
+master$CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
+master$NIR <- spectra$`801.16`
+master$CRI700 <- (1/spectra$`509.54`) - (1/spectra$`701.41`) #(1/R510) - (1/R700)
+master$VOG2 <- (spectra$`734.37` - spectra$`747.13`)/(spectra$`714.02` + spectra$`726.85`)  #(R734 - R747)/(R715 + R726)
+master$NPCI <- (spectra$`680.91` - spectra$`429.86`)/(spectra$`680.91` + spectra$`429.86`) #(R680 - R430)/(R680 + R430)
+master$WBI <- spectra$`970.43`/spectra$`901.2` # R970/R900
+master$PRI570 <- (spectra$`571` - spectra$`532.33`) / (spectra$`571` + spectra$`532.33`) #(R570 - R531)/(R570 + R531)
+master$CMS <- (spectra$`693.47`/spectra$`760.33`) #R694/R760
+master$RDVI <- (spectra$`801.16` - spectra$`670.48`)/ sqrt(spectra$`801.16` + spectra$`670.48`) #(R800 - R670)/sqrt(R800 + R670)
+
+master <- master[!is.infinite(NPCI)]
+
+# Remove points based on mahalanobis distance
+mahalanobis_dist <- mahalanobis(master[, 6:15], colMeans(master[, 6:15]), cov(master[, 6:15]))
+hist(mahalanobis_dist)
+threshold <- qchisq(0.95, df = ncol(master[, 6:15]))
+hist(mahalanobis_dist[mahalanobis_dist <= threshold])
+outliers <- mahalanobis_dist <= threshold
+master <- master[outliers == TRUE, ]
 
 # Export
 fwrite(master, paste0(root_path, "/DESIS_master_spectra.csv"))

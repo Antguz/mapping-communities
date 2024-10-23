@@ -17,6 +17,8 @@ library(sf)
 library(parallel)
 library(pbmcapply)
 library(misc3d)
+library(bit64)
+options(scipen = 10000)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -37,19 +39,20 @@ source("R/pls_coefficients.R")
 
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-type <- "func"
+type <- "taxo"
+diversity <- "total"
 meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
-ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"))
+ordination <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
 ncol_ordination <- ncol(ordination) - 1
-match_meta <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "/", sensor,"_match_usefull.csv"))
-spectra <- fread(paste0(root_path, "/04_match_spectra-stand/", sensor, "/", sensor,"_spectra_SW.csv"))
+match_meta <- fread(paste0(root_path, "/05_match_spectra-stand/", sensor, "/", sensor,"_match_usefull.csv"))
+spectra <- fread(paste0(root_path, "/05_match_spectra-stand/", sensor, "/", sensor,"_spectra_SW.csv"))
 iterations <- 100
 #outliers <-  fread(paste0(root_path, "/06_model/SW_beta_PLS/DESIS_outliers.csv"))
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
@@ -63,9 +66,11 @@ match_meta <- merge(match_meta,
                     meta[, c("PLT_CN", "STATECD", "COUNTYCD", "ELEV")],
                     by = "PLT_CN", all.x = TRUE, all.y = FALSE)
 
-# 400 days difference
+# Years threshold
 if(sensor == "DESIS") {
-  match_meta <- match_meta[abs(dtime) <= 455, ]
+  match_meta <- match_meta[abs(dtime)/365.25 <= 6, ]
+} else if(sensor == "EMIT") {
+  match_meta <- match_meta[abs(dtime)/365.25 <= 6, ]
 }
 
 # Merge meta with ordination
@@ -76,16 +81,16 @@ ordination <- merge(match_meta,
 # Select bands to work with
 if(sensor == "DESIS") {
   
-  # Bands from 450 to 962.53
-  spectra <- spectra[, .SD, .SDcols = c(2, 40:212)]
+  # Bands from 449.53 to 899.53.
+  spectra <- spectra[, .SD, .SDcols = c(2, 50:200)]
   
 } else if(sensor == "EMIT") {
   
   # Bands from 447.74 to 1265.17, from 1488.07 to 1710.97, from 2015.60 to 2424.25
   spectra <- spectra[, .SD, .SDcols = c(2, 
-                                        32:142, # from 447.74 to 1265.17
-                                        172:202, #from 1488.07 to 1710.97
-                                        243:298)] #from 2015.60 to 2424.25
+                                        41:139, # from 448.50 to 1266
+                                        182:209, #from 1506 to 1708
+                                        264:305)] #from 2015.60 to 2424.25
 }
 
 # Merge ordination with spectra 
@@ -111,28 +116,28 @@ if(type == "taxo") {
   
 }
 
-# Outliers
-outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
-data <- data[outliers$remove != TRUE, ]
+# # Outliers
+# outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
+# data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
   
   saveRDS(data, paste0(out_path, "/DESIS_", type,"_data.rds"))
-  meta <- data[, .SD, .SDcols = 1:18]
-  ordination <- data[, .SD, .SDcols = 19:(18+ncol_ordination)]
+  meta <- data[, .SD, .SDcols = 1:27]
+  ordination <- data[, .SD, .SDcols = 28:(27+ncol_ordination)]
   ordination <- ordination[, 1:3]
-  spectra <- data[, .SD, .SDcols = (19+ncol_ordination):ncol(data)]
-  #weigths <- data$goodness
+  spectra <- data[, .SD, .SDcols = (28+ncol_ordination):ncol(data)]
+  weigths <- data$gof
   
 } else if(sensor == "EMIT") {
   
   saveRDS(data, paste0(out_path, "/EMIT_data.rds"))
-  meta <- data[, .SD, .SDcols = 1:17]
-  ordination <- data[, .SD, .SDcols = 18:(17+ncol_ordination)]
+  meta <- data[, .SD, .SDcols = 1:26]
+  ordination <- data[, .SD, .SDcols = 27:(26+ncol_ordination)]
   ordination <- ordination[, 1:3]
-  spectra <- data[, .SD, .SDcols = (18+ncol_ordination):ncol(data)]
-  #weigths <- data$goodness
+  spectra <- data[, .SD, .SDcols = (27+ncol_ordination):ncol(data)]
+  weigths <- data$gof
   
 }
 
@@ -144,10 +149,10 @@ if(sensor == "DESIS") {
 if(type == "taxo") {
   
   if(sensor == "DESIS") {
-    p <- 0.665
+    p <- 0.64
     
   } else if(sensor == "EMIT") {
-    p  <- 0.70
+    p  <- 0.638
   }
   
   # Data-split based on State-County ID
@@ -179,10 +184,9 @@ if(sensor == "DESIS") {
                          lower.p = 0.01,
                          proportion = 0.8,
                          mc.set.seed = TRUE,
-                         mc.cores = 20)
+                         mc.cores = 25)
   
   saveRDS(segments, paste0(out_path, "/", sensor, "_", type, "_segments.rds"))
-  segments <- readRDS(paste0(out_path, "/", sensor, "_", type, "_segments.rds"))
   
 } else if(sensor == "EMIT") {
   
@@ -193,12 +197,13 @@ if(sensor == "DESIS") {
                          lower.p = 0.01,
                          proportion = 0.8,
                          mc.set.seed = TRUE,
-                         mc.cores = 20)
+                         mc.cores = 25)
   
   saveRDS(segments, paste0(out_path, "/", sensor, "_", type, "_segments.rds"))
-  segments <- readRDS(paste0(out_path, "/", sensor, "_", type, "_segments.rds"))
-
+  
 }
+
+segments <- readRDS(paste0(out_path, "/", sensor, "_", type, "_segments.rds"))
 
 #-------------------------------------------------------------------------------
 #' @Spatial cross-validation strategy
@@ -218,7 +223,7 @@ iscv <- iscv_strategy(meta = meta,
                       vec_projected = vec_projected, 
                       split = split, 
                       segments = segments,
-                      threads = 25)
+                      threads = 30)
 
 # Export strategy
 saveRDS(iscv, paste0(out_path, "/", sensor, "_", type, "_iscv.rds"))
@@ -236,29 +241,30 @@ models <- model_tune(meta_training = meta[split,],
                      iscv = iscv,
                      ncomp_max = 30,
                      ntimes = iterations,
-                     threads = 20)
+                     threads = 16)
 
 # Export for inspection
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
-#plot(colMeans(models[type == "RMSEP" & estimate == "train" & Axes == "Axis2", 6:ncol(models)], na.rm = TRUE))
-plot(colMeans(models[type == "RMSEP" & estimate == "CV" & Axes == "Axis1", 6:ncol(models)], na.rm = TRUE))
-#plot(colMeans(models[type == "R2" & estimate == "train" & Axes == "Axis2", 6:ncol(models)], na.rm = TRUE))
-#plot(colMeans(models[type == "PRESS" & estimate == "CV" & Axes == "Axis2", 6:ncol(models)], na.rm = TRUE))
+plot(colMeans(models[type == "RMSEP" & estimate == "train" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
+plot(colMeans(models[type == "RMSEP" & estimate == "CV" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
+plot(colMeans(models[type == "R2" & estimate == "train" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
+plot(colMeans(models[type == "PRESS" & estimate == "CV" & Axes == "Axis3", 6:ncol(models)], na.rm = TRUE))
+
 
 #' @note Do a manual checking of the optimal number of components
 
 ### DESIS 
-# Taxonomic c(23, 20, 17)
-# Phylogenetic-log c(26, 12, 24)
-# Functional c(25, 25, 25)
+# Taxonomic c(18, 12, 11)
+# Phylogenetic c(XX, XX, XX)
+# Functional c(XX, XX, XX)
 
 ### EMIT
-# Taxonomic c(10, 15, 12)
-# Phylogenetic-log c(15, 16, 10)
-# Functional c(12, 14, 9)
+# Taxonomic c(15, 11, 11)
+# Phylogenetic c(XX, XX, XX)
+# Functional c(XX, XX, XX)
 
 # Manual checked
-tune_optimal <- c(25, 25, 25)
+tune_optimal <- c(18, 12, 11)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -271,7 +277,7 @@ final_models <- model_build(meta_training = meta[split,],
                             iscv = iscv,
                             tune_optimal = tune_optimal,
                             ntimes = iterations,
-                            threads = 20)
+                            threads = 16)
 
 #saveRDS(final_models, paste0(out_path, "/", sensor, "_final_models.rds")) # Do it if you really need it
 
@@ -293,6 +299,7 @@ testing <- model_performance(meta = meta[!split,],
                              tune_optimal = tune_optimal,
                              threads = 25)
 
+# Export performance values
 performance_training <- training$performance
 performance_training$type <- "Training"
 performance_testing <- testing$performance
@@ -300,12 +307,21 @@ performance_testing$type <- "Testing"
 performance <- rbind(performance_training, performance_testing)
 fwrite(performance, paste0(out_path, "/", sensor, "_", type, "_performance.csv"))
 
+# Export predicted values
 predicted_training <- training$predicted
 predicted_training$type <- "Training"
 fwrite(predicted_training, paste0(out_path, "/", sensor, "_", type, "_predicted_training.csv"))
 predicted_testing <- testing$predicted
 predicted_testing$type <- "Testing"
 fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_testing.csv"))
+
+# Export three-dimensional residuals
+residuals_3D_training <- training$residuals_3D
+residuals_3D_training$type <- "Training"
+fwrite(residuals_3D_training, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_training.csv"))
+residuals_3D_testing <- testing$residuals_3D
+residuals_3D_testing$type <- "Testing"
+fwrite(residuals_3D_testing, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_testing.csv"))
 
 #-------------------------------------------------------------------------------
 #' @Model_coefficients
