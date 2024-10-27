@@ -37,9 +37,9 @@ source("R/model_lineages.R")
 #-------------------------------------------------------------------------------
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/DESIS_mapping"
-type <- "phylo-log"
-out_path <- "/media/antonio/Work/DESIS_mapping/07_model_occurrence"
+root_path <- "/media/antonio/Work/MMDB"
+type <- "phylo"
+out_path <- "/media/antonio/Work/MMDB/07_model_occurrence"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -49,10 +49,10 @@ out_path <- "/media/antonio/Work/DESIS_mapping/07_model_occurrence"
 fia_meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"))
+ordination <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", type, "_total.csv"))
 
 # FIA data for aggregation
-inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "-VOL.rds"))
+inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "_VOL.rds"))
 sp_meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
 aggregation <- aggregate_batch(sp_meta[,c(9, 3, 4, 10, 11, 12, 13, 14)], inventory)
 #aggregation <- aggregation[, 1:2]
@@ -77,7 +77,7 @@ aggregation <- aggregation[ , .SD, .SDcols = c(1:ncol(aggregation))[rpresence]]
 #-------------------------------------------------------------------------------
 
 # Applies just with one time using taxo data as reference
-if(type == "phylo-log") {
+if(type == "phylo") {
   
   set.seed(1107)
   

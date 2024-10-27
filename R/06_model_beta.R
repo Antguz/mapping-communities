@@ -106,12 +106,12 @@ data <- data[order(PLT_CN)]
 if(type == "taxo") {
   
   PLT_CN <- data$PLT_CN
-  saveRDS(PLT_CN, paste0(out_path, "/", "PLT_CN-order.rds"))
+  saveRDS(PLT_CN, paste0(out_path, "/", sensor, "_PLT_CN-order.rds"))
   
 } else {
   
   ref <- data$PLT_CN
-  PLT_CN <- readRDS(paste0(out_path, "/", "PLT_CN-order.rds"))
+  PLT_CN <- readRDS(paste0(out_path, "/", sensor, "_PLT_CN-order.rds"))
   all.equal(ref, PLT_CN)
   
 }

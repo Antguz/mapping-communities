@@ -19,6 +19,7 @@ library(vegan)
 library(CAST)
 library(sf)
 library(plotROC)
+library(ROSE)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -32,9 +33,9 @@ source("R/model_fortyp.R")
 #-------------------------------------------------------------------------------
 
 #root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 type <- "taxo"
-out_path <- "/media/antonio/Work/DESIS_mapping/07_model_fortyp"
+out_path <- "/media/antonio/Work/MMDB/07_model_fortyp"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -44,7 +45,7 @@ out_path <- "/media/antonio/Work/DESIS_mapping/07_model_fortyp"
 fia_meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"))
+ordination <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", type, "_total.csv"))
 
 # Test for match
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
@@ -110,7 +111,7 @@ data_split <- readRDS(paste0(out_path, "/split_fortyp.rds"))
 # Create model
 model <- model_fortyp(fia_meta = fia_meta,
                       forest_type = forest_type,
-                      ordination = ordination,
+                      ordination = ordination[, 1:4],
                       data_split = data_split,
                       iterations = 100,
                       threads = 30)
