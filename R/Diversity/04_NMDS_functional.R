@@ -5,31 +5,32 @@
 #' @description It creates a NMDS ordination for multiple dimensions of beta 
 #' diversity
 
-#' @return .rds file with scores per communities and species
+#' @return .rds file with scores per communities
 
 ################################################################################
 #' @warming If you have to many communities this need to be run using HPC
 ################################################################################
 
 #'------------------------------------------------------------------------------
-#' Library
+#' @Library
 
 library(data.table)
 library(vegan)
 library(bit64)
 
 #'------------------------------------------------------------------------------
-#' Arguments
-#' @param beta
-#' @param stand
-#' @param type
-#' @param diversity
-#' @param out_path
-#' @param threads
+#' @Arguments
+
+#' @param beta A path to an .rds file with the estimations of beta diversity.
+#' @param type A character of the dimension of diversity to export.
+#' @param diversity A character describing the metric of beta diversity to use.
+#' @param out_path A path to a folder to export the NMDS result.
+#' @param threads A number of threads to use.
 
 #'------------------------------------------------------------------------------
-#' Function
-ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
+#' @Function
+
+ordination <- function(beta, type, diversity, out_path, threads = 1) {
   
   # Read distances
   distance <- readRDS(beta)
@@ -49,22 +50,21 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
   # Run NMDS
   NMDS <- metaMDS(comm = as.dist(Beta),
                   k = 3,
-                  try = 4, #15
-                  trymax = 8, #30
-                  maxit = 30, #50
+                  try = 0, #15
+                  trymax = 0, #30
+                  maxit = 0, #50
                   engine = "monoMDS",
                   autotransform = FALSE,
                   plot = FALSE,
                   parallel = threads,
                   wascores = FALSE,
                   trace = 3,
-                  model = "linear",
+                  model = "global",
                   center = FALSE,
                   pc = FALSE,
-                  stress = 1,
-                  halfchange = FALSE,
-                  maxdist = 1,
                   weakties = FALSE,
+                  halfchange = TRUE,
+                  threshold = 1.0,
                   scaling = FALSE)
   
   # Ordination export
@@ -75,27 +75,26 @@ ordination <- function(beta, stand, type, diversity, out_path, threads = 1) {
 #'------------------------------------------------------------------------------
 #' @example 
 
-#root_path <- "E:/Projects/MMDB"
 #root_path <- "/media/antonio/Work/MMDB"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
-# Taxonomic
-beta <- paste0(root_path, "/03_diversity/beta_taxo_VOL.rds")
-out_path <- paste0(root_path, "/04_NMDS")
-type <- "taxo"
+# Functional
+beta <- paste0(root_path, "/Diversity/beta/beta_func_VOL.rds")
+out_path <- paste0(root_path, "/Diversity/NMDS")
+type <- "func"
 threads <- 1
 
 diversity <- "total"
 if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
-  ordination(beta, stand, type, diversity, out_path, threads)
-} 
-
-diversity <- "replacement"
-if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
-  ordination(beta, stand, type, diversity, out_path, threads)
-} 
-
-diversity <- "richness"
-if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
-  ordination(beta, stand, type, diversity, out_path, threads)
+  ordination(beta, type, diversity, out_path, threads)
 }
+
+# diversity <- "replacement"
+# if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+#   ordination(beta, type, diversity, out_path, threads)
+# } 
+# 
+# diversity <- "richness"
+# if(!file.exists(paste0(out_path, "/NMDS_", type, "_", diversity, ".rds"))) {
+#   ordination(beta, type, diversity, out_path, threads)
+# }

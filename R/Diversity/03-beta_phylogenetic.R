@@ -2,37 +2,43 @@
 #' @title Beta phylogenetic diversity between communities 
 #'------------------------------------------------------------------------------
 
-#' @description It estimates beta phylogenetic diversity between communities.
-#' @return Return a distance matrices as .rds files.
+#' @description It estimates beta phylogenetic diversity between communities and its
+#' partition between replacement and richness. Values are scaled to 10000 to reduce
+#' the side of the files and keep significant digits.
+ 
+#' @return Return a list of distance matrices (Btotal, Brepl, Brich) as .rds files
 
 ################################################################################
-#' @warming If you have to many communities this need to be run using HPC
+#' @warming If you have to many communities, you need to run it using using HPC
 ################################################################################
 
 #'------------------------------------------------------------------------------
-#' Library
+#' @Library
 
 library(data.table)
-library(phytools)
-library(V.PhyloMaker2)
+library(ape)
 library(picante)
 library(bit64)
 
 #'------------------------------------------------------------------------------
-#' Source code
+#' @Source-code
+
 setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
-source("R/beta_rcpp.R")
+source("R/auxiliary/beta_rcpp.R")
+source("R/auxiliary/normalize_tree.R")
 
 #'------------------------------------------------------------------------------
-#' Arguments
-#' @param fia
-#' @param SPCD
-#' @param out_path
-#' @param threads
-#' @param progress
+#' @Arguments
+
+#' @param fia A data.table with the forest communities (from 01_FIA-cleaning.R)
+#' @param SPCD A data.table of functional traits per species
+#' @param out_path A path to export estimations of beta diversity
+#' @param progress Logic, provide progress bar
+#' @param threads Number of threads for parallel processing
 
 #'------------------------------------------------------------------------------
-#' Function
+#' @Function
+
 phylogenetic_diversity <- function(fia, 
                                    SPCD, 
                                    outpath, 
@@ -56,11 +62,8 @@ phylogenetic_diversity <- function(fia,
   is.binary.phylo(phylo) #Test for Binary Tree
   is.ultrametric(phylo) #Test if a Tree is Ultrametric
   
-  # Transform phylo
-  tol = 1e-9
-  phylo$edge.length[phylo$edge.length <= 0] <- tol
-  is.ultrametric(phylo)
-  #phylo$edge.length <- (log10(phylo$edge.length)+(min(log10(phylo$edge.length))*-1))
+  # Normalize tree
+  phylo <- normalize_tree(phylo)
   
   #plot(phylo, type = "fan")
 
@@ -69,15 +72,10 @@ phylogenetic_diversity <- function(fia,
   # dcast
   master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "VOL_TPA", "Taxon2")])
   
-  # Standardization of communities
-  #master_matrix <- decostand(master_matrix, method = "total")
-  #master_matrix <- round(master_matrix, 4)
-  
   ### Get phylogenetic beta diversity ------------------------------------------
   
   #Get match
   matched <- picante::match.phylo.comm(phy = phylo, comm = master_matrix)
-  
   cat(paste0("Number of communities:", nrow(master_matrix)))
   
   # Export
@@ -98,13 +96,12 @@ phylogenetic_diversity <- function(fia,
 #'------------------------------------------------------------------------------
 #' @example 
 
-#root_path <- "E:/Projects/MMDB"
 #root_path <- "/media/antonio/Work/MMDB"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
-fia <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"), na.strings="NA")
-out_path <- paste0(root_path, "/03_diversity")
+fia <- readRDS(paste0(root_path, "/FIA/01_FIA-reshape/fia_reshape.rds"))
+SPCD <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
+out_path <- paste0(root_path, "/Diversity/beta")
 progress <- TRUE
 threads <- 120
 

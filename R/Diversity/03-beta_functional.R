@@ -2,15 +2,18 @@
 #' @title Beta functional diversity between communities 
 #'------------------------------------------------------------------------------
 
-#' @description It estimates beta functional diversity between communities
-#' @return Return a distance matrices as .rds files
+#' @description It estimates beta functional diversity between communities and its
+#' partition between replacement and richness. Values are scaled to 10000 to reduce
+#' the side of the files and keep significant digits.
+
+#' @return Return a list of distance matrices (Btotal, Brepl, Brich) as .rds files
 
 ################################################################################
-#' @warming If you have to many communities this need to be run using HPC
+#' @warming If you have to many communities, you need to run it using using HPC
 ################################################################################
 
 #'------------------------------------------------------------------------------
-#' Library
+#' @Library
 
 library(data.table)
 library(ape)
@@ -18,20 +21,24 @@ library(picante)
 library(bit64)
 
 #'------------------------------------------------------------------------------
-#' Source code
+#' @Source-code
+
 setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
-source("R/beta_rcpp.R")
+source("R/auxiliary/beta_rcpp.R")
+source("R/auxiliary/normalize_tree.R")
 
 #'------------------------------------------------------------------------------
-#' Arguments
-#' @param fia
-#' @param SPCD
-#' @param out_path
-#' @param progress
-#' @param threads
+#' @Arguments
+
+#' @param fia A data.table with the forest communities (from 01_FIA-cleaning.R)
+#' @param SPCD A data.table of functional traits per species
+#' @param out_path A path to export estimations of beta diversity
+#' @param progress Logic, provide progress bar
+#' @param threads Number of threads for parallel processing
 
 #'------------------------------------------------------------------------------
-#' Function
+#' @Function
+
 functional_diversity <- function(fia, 
                                  SPCD, 
                                  outpath, 
@@ -48,22 +55,23 @@ functional_diversity <- function(fia,
   species <- fia[, .N, by = "SPCD"]
   species <- species[, 1]
   species <- merge(species, 
-                   SPCD[, c("SPCD", "Taxon2", "HTq", "SLq", 
-                            "WOOD_SPGR_GREENVOL_DRYWT", 
-                            "MC_PCT_GREEN_WOOD", "CARBON_RATIO_LIVE", "shade", 
-                            "drought", "waterlogging", "leaf_area", "LMA", "N",
+                   SPCD[, c("SPCD", "Taxon2", 
+                            "HTq", "SLq", "WD", 
+                            "shade", "drought", "waterlogging", 
+                            "LMA", "N",
                             "lshape", "ltype", "lhabit")],
                    by = "SPCD",
                    all.x = TRUE,
                    all.y = FALSE)
   
   species <- as.data.frame(species)
+  species_tips <- species$Taxon2
   
   # Scale
-  species[, 3:13] <- scale(species[, 3:13])
+  species[, 3:10] <- scale(species[, 3:10])
   
   # Get distance
-  trait_distance <- dist(species[, c(3:16)], 
+  trait_distance <- dist(species[, c(3:13)], 
                          method= "euclidean", 
                          diag = TRUE, 
                          upper = TRUE)
@@ -71,29 +79,20 @@ functional_diversity <- function(fia,
   # Tree
   func <- hclust(trait_distance, "average")
   func <- ape::as.phylo(func)
-  func$tip.label <- species$Taxon2
+  func$tip.label <- species_tips
 
-  # Transform func
-  tol = 1e-9
-  func$edge.length[func$edge.length <= 0] <- tol
-  is.ultrametric(func)
-  
-  #plot(func, type = "fan")
+  # Normalize tree
+  func <- normalize_tree(func)
   
   ### Community matrix ---------------------------------------------------------
   
   # dcast
   master_matrix <- sample2matrix(fia_summary[, c("PLT_CN", "VOL_TPA", "Taxon2")])
   
-  # Standardization of communities
-  #master_matrix <- decostand(master_matrix, method = "total")
-  #master_matrix <- round(master_matrix, 4)
-  
   ### Get functional beta diversity ------------------------------------------
   
   #Get match
   matched <- picante::match.phylo.comm(phy = func, comm = master_matrix)
-  
   cat(paste0("Number of communities:", nrow(master_matrix)))
   
   # Export
@@ -114,13 +113,12 @@ functional_diversity <- function(fia,
 #'------------------------------------------------------------------------------
 #' @example 
 
-#root_path <- "E:/Projects/MMDB"
 #root_path <- "/media/antonio/Work/MMDB"
 root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 
-fia <- readRDS(paste0(root_path, "/03_reshape/fia_reshape.rds"))
-SPCD <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
-out_path <- paste0(root_path, "/03_diversity")
+fia <- readRDS(paste0(root_path, "/FIA/01_FIA-reshape/fia_reshape.rds"))
+SPCD <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
+out_path <- paste0(root_path, "/Diversity/beta")
 progress <- TRUE
 threads <- 120
 
