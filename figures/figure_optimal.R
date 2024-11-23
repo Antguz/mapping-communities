@@ -18,14 +18,14 @@ options(scipen = 100)
 
 #' Working directory
 
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 # DESIS
 sensor <- "DESIS"
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
 DESIS_taxo <- fread(paste0(out_path, "/", sensor, "_", "taxo_optimal.csv"))
 DESIS_taxo$dimension <- "Taxonomic"
-DESIS_phylo <- fread(paste0(out_path, "/", sensor, "_", "phylo-log_optimal.csv"))
+DESIS_phylo <- fread(paste0(out_path, "/", sensor, "_", "phylo_optimal.csv"))
 DESIS_phylo$dimension <- "Phylogenetic"
 DESIS_func <- fread(paste0(out_path, "/", sensor, "_", "func_optimal.csv"))
 DESIS_func$dimension <- "Functional"
@@ -37,7 +37,7 @@ sensor <- "EMIT"
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
 EMIT_taxo <- fread(paste0(out_path, "/", sensor, "_", "taxo_optimal.csv"))
 EMIT_taxo$dimension <- "Taxonomic"
-EMIT_phylo <- fread(paste0(out_path, "/", sensor, "_", "phylo-log_optimal.csv"))
+EMIT_phylo <- fread(paste0(out_path, "/", sensor, "_", "phylo_optimal.csv"))
 EMIT_phylo$dimension <- "Phylogenetic"
 EMIT_func <- fread(paste0(out_path, "/", sensor, "_", "func_optimal.csv"))
 EMIT_func$dimension <- "Functional"
@@ -68,12 +68,12 @@ summary_optimal$dimension <- factor(summary_optimal$dimension, levels = c("Taxon
 opt <- data.table(sensor = c(rep("DESIS", 9), rep("EMIT", 9)),
                   dimension = c(rep("Taxonomic", 3), rep("Phylogenetic", 3), rep("Functional", 3)),
                   Axes = rep(c("Axis1", "Axis2", "Axis3"), 6),
-                  opt = c(23, 20, 17,
-                          26, 12, 24,
-                          25, 25, 25,
-                          10, 15, 12,
-                          15, 16, 10,
-                          12, 14, 9))
+                  opt = c(17, 12, 10,
+                          17, 7, 12,
+                          16, 21, 10,
+                          15, 11, 14,
+                          15, 9, 10,
+                          15, 9, 12))
 
 opt$dimension <- as.factor(opt$dimension)
 opt$dimension <- factor(opt$dimension, levels = c("Taxonomic",
@@ -117,10 +117,13 @@ th_trans <- dark_theme_bw(base_size = 14) +
                                         linetype="solid"),
         strip.text = element_text(color = "black"))
 
-#th <- th_trans
+th <- th_trans
 th <- th_black
 line <- "black"
 text <- "black"
+line <- "white"
+text <- "white"
+
 
 col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 
@@ -161,13 +164,13 @@ jpeg(paste0(root_path, "/figures/optimal-components.jpg"),
 plot_optimal
 dev.off()
 
-png(paste0(root_path, "/figures/sensors-model_CWM.png"), 
+png(paste0(root_path, "/figures/optimal-components_transp.png"), 
     width = 210, 
     height = 200, 
     units = "mm", 
     res = 600, 
-    #bg = "transparent",
-    bg = "white",
+    bg = "transparent",
+    #bg = "white",
     pointsize = 14)
 plot_optimal
 dev.off()

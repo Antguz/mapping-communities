@@ -15,7 +15,7 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -25,7 +25,7 @@ sensor <- "DESIS"
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
 DESIS_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
 DESIS_taxo_coefficients$type <- "Taxonomic"
-DESIS_phylo_coefficients <- fread(paste0(out_path, "phylo-log", "_coefficients.csv"))
+DESIS_phylo_coefficients <- fread(paste0(out_path, "phylo", "_coefficients.csv"))
 DESIS_phylo_coefficients$type <- "Phylogenetic"
 DESIS_func_coefficients <- fread(paste0(out_path, "func", "_coefficients.csv"))
 DESIS_func_coefficients$type <- "Functional"
@@ -47,7 +47,7 @@ sensor <- "EMIT"
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
 EMIT_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
 EMIT_taxo_coefficients$type <- "Taxonomic"
-EMIT_phylo_coefficients <- fread(paste0(out_path, "phylo-log", "_coefficients.csv"))
+EMIT_phylo_coefficients <- fread(paste0(out_path, "phylo", "_coefficients.csv"))
 EMIT_phylo_coefficients$type <- "Phylogenetic"
 EMIT_func_coefficients <- fread(paste0(out_path, "func", "_coefficients.csv"))
 EMIT_func_coefficients$type <- "Functional"
@@ -141,9 +141,10 @@ th_trans <- dark_theme_bw(base_size = 11) +
         strip.text = element_text(color = "black"))
 
 th <- th_trans
-#th <- th_black
 line_col <- "white"
-#line_col <- "black"
+
+th <- th_black
+line_col <- "black"
 
 #-------------------------------------------------------------------------------
 # Get plot
@@ -158,7 +159,7 @@ DESIS_plot <- ggplot(coef_summary[sensor == "DESIS",]) +
                 y = Coefficients, 
                 colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 970), ylim = c(-3, 3), expand = FALSE) +
+  coord_cartesian(xlim = c(440, 910), ylim = c(-3, 3), expand = FALSE) +
   scale_y_continuous(breaks = c(-2, 0, 2)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
@@ -180,8 +181,8 @@ EMIT_plot <- ggplot(coef_summary[sensor == "EMIT",]) +
                 y = Coefficients, 
                 colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 2425), ylim = c(-8, 8), expand = FALSE) +
-  scale_y_continuous(breaks = c(-5, 0, 5)) +
+  coord_cartesian(xlim = c(440, 2428), ylim = c(-11, 11), expand = FALSE) +
+  scale_y_continuous(breaks = c(-10, 0, 10)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab(" ") +

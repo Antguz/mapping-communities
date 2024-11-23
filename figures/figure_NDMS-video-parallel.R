@@ -1,3 +1,10 @@
+#'------------------------------------------------------------------------------
+#' @title Visualize the NDMS as a video
+#'------------------------------------------------------------------------------
+
+#'------------------------------------------------------------------------------
+#' Library
+
 library(gg3D)
 library(stringr)
 library(bit64)
@@ -9,7 +16,7 @@ library(Rcpp)
 library(RcppArmadillo)
 library(pbmcapply)
 library(viridis)
-library(scale)
+library(scales)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -22,76 +29,76 @@ sourceCpp("src/cwm_rcpp.cpp")
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 #'------------------------------------------------------------------------------
 #' Read NMDS axes
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
-phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
-func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func_total.csv"))
 
 #-------------------------------------------------------------------------------
 # Occurrence models
-
-# Read occurrence models
-taxo_occurance <- fread(paste0(root_path, "/07_model_occurrence/taxo_model-occurrence.csv"))
-taxo_occurance <- taxo_occurance[dataset == "training", ]
-phylo_occurance <- fread(paste0(root_path, "/07_model_occurrence/phylo-log_model-occurrence.csv"))
-phylo_occurance <- phylo_occurance[dataset == "training", ]
-func_occurance <- fread(paste0(root_path, "/07_model_occurrence/func_model-occurrence.csv"))
-func_occurance <- func_occurance[dataset == "training", ]
-
-# Get probabilities
-taxo_prob <- multi_probability(as.matrix(taxo_comm[,-1]),
-                               as.matrix(taxo_occurance[, c(14:17)]))
-taxo_prob <- as.data.table(taxo_prob)/10000
-colnames(taxo_prob) <- taxo_occurance$plant
-
-phylo_prob <- multi_probability(as.matrix(phylo_comm[,-1]),
-                                as.matrix(phylo_occurance[, c(14:17)]))
-phylo_prob <- as.data.table(phylo_prob)/10000
-colnames(phylo_prob) <- phylo_occurance$plant
-
-func_prob <- multi_probability(as.matrix(func_comm[,-1]),
-                               as.matrix(func_occurance[, c(14:17)]))
-func_prob <- as.data.table(func_prob)/10000
-colnames(func_prob) <- func_occurance$plant
-
-#-------------------------------------------------------------------------------
-# CWM models
-
-# Read CWM models
-taxo_CWM <- fread(paste0(root_path, "/07_model_CWM/taxo_model-CWM.csv"))
-taxo_CWM <- taxo_CWM[dataset == "training", ]
-phylo_CWM <- fread(paste0(root_path, "/07_model_CWM/phylo-log_model-CWM.csv"))
-phylo_CWM <- phylo_CWM[dataset == "training", ]
-func_CWM <- fread(paste0(root_path, "/07_model_CWM/func_model-CWM.csv"))
-func_CWM <- func_CWM[dataset == "training", ]
-
-# Get CWM estimates
-taxo_cwm <- multi_cwm(as.matrix(taxo_comm[,-1]),
-                      as.matrix(taxo_CWM[, c(10:13)]))
-taxo_cwm <- as.data.table(taxo_cwm)
-colnames(taxo_cwm) <- taxo_CWM$plant
-
-phylo_cwm <- multi_cwm(as.matrix(phylo_comm[,-1]),
-                       as.matrix(phylo_CWM[, c(10:13)]))
-phylo_cwm <- as.data.table(phylo_cwm)
-colnames(phylo_cwm) <- phylo_CWM$plant
-
-func_cwm <- multi_cwm(as.matrix(func_comm[,-1]),
-                      as.matrix(func_CWM[, c(10:13)]))
-func_cwm <- as.data.table(func_cwm)
-colnames(func_cwm) <- func_CWM$plant
+# 
+# # Read occurrence models
+# taxo_occurance <- fread(paste0(root_path, "/07_model_occurrence/taxo_model-occurrence.csv"))
+# taxo_occurance <- taxo_occurance[dataset == "training", ]
+# phylo_occurance <- fread(paste0(root_path, "/07_model_occurrence/phylo-log_model-occurrence.csv"))
+# phylo_occurance <- phylo_occurance[dataset == "training", ]
+# func_occurance <- fread(paste0(root_path, "/07_model_occurrence/func_model-occurrence.csv"))
+# func_occurance <- func_occurance[dataset == "training", ]
+# 
+# # Get probabilities
+# taxo_prob <- multi_probability(as.matrix(taxo_comm[,-1]),
+#                                as.matrix(taxo_occurance[, c(14:17)]))
+# taxo_prob <- as.data.table(taxo_prob)/10000
+# colnames(taxo_prob) <- taxo_occurance$plant
+# 
+# phylo_prob <- multi_probability(as.matrix(phylo_comm[,-1]),
+#                                 as.matrix(phylo_occurance[, c(14:17)]))
+# phylo_prob <- as.data.table(phylo_prob)/10000
+# colnames(phylo_prob) <- phylo_occurance$plant
+# 
+# func_prob <- multi_probability(as.matrix(func_comm[,-1]),
+#                                as.matrix(func_occurance[, c(14:17)]))
+# func_prob <- as.data.table(func_prob)/10000
+# colnames(func_prob) <- func_occurance$plant
+# 
+# #-------------------------------------------------------------------------------
+# # CWM models
+# 
+# # Read CWM models
+# taxo_CWM <- fread(paste0(root_path, "/07_model_CWM/taxo_model-CWM.csv"))
+# taxo_CWM <- taxo_CWM[dataset == "training", ]
+# phylo_CWM <- fread(paste0(root_path, "/07_model_CWM/phylo-log_model-CWM.csv"))
+# phylo_CWM <- phylo_CWM[dataset == "training", ]
+# func_CWM <- fread(paste0(root_path, "/07_model_CWM/func_model-CWM.csv"))
+# func_CWM <- func_CWM[dataset == "training", ]
+# 
+# # Get CWM estimates
+# taxo_cwm <- multi_cwm(as.matrix(taxo_comm[,-1]),
+#                       as.matrix(taxo_CWM[, c(10:13)]))
+# taxo_cwm <- as.data.table(taxo_cwm)
+# colnames(taxo_cwm) <- taxo_CWM$plant
+# 
+# phylo_cwm <- multi_cwm(as.matrix(phylo_comm[,-1]),
+#                        as.matrix(phylo_CWM[, c(10:13)]))
+# phylo_cwm <- as.data.table(phylo_cwm)
+# colnames(phylo_cwm) <- phylo_CWM$plant
+# 
+# func_cwm <- multi_cwm(as.matrix(func_comm[,-1]),
+#                       as.matrix(func_CWM[, c(10:13)]))
+# func_cwm <- as.data.table(func_cwm)
+# colnames(func_cwm) <- func_CWM$plant
 
 #'------------------------------------------------------------------------------
 #' @Plot-functions
 #-------------------------------------------------------------------------------
 
 # RGB color
-RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
+RGB <- function(X, Y, Z, min_range = -0.50, max_range = 0.50) {
   
   if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
     
@@ -134,27 +141,29 @@ RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
 taxo_comm$color <- RGB(taxo_comm$Axis1, 
                        taxo_comm$Axis2, 
                        taxo_comm$Axis3, 
-                       min_range = -0.55, 
-                       max_range = 0.55)
+                       min_range = -0.50, 
+                       max_range = 0.50)
 
 phylo_comm$color <- RGB(phylo_comm$Axis1, 
                         phylo_comm$Axis2, 
                         phylo_comm$Axis3, 
-                        min_range = -0.55, 
-                        max_range = 0.55)
+                        min_range = -0.50, 
+                        max_range = 0.50)
 
 func_comm$color <- RGB(func_comm$Axis1, 
                        func_comm$Axis2, 
                        func_comm$Axis3, 
-                       min_range = -0.55, 
-                       max_range = 0.55)
+                       min_range = -0.50, 
+                       max_range = 0.50)
 
 #'------------------------------------------------------------------------------
 #' @Plot-communities
 #-------------------------------------------------------------------------------
 
+# Plot collector
 plot_list <- list()
 
+# Viewing angles
 theta <- c(seq(0, 180, length.out = 180), seq(-180, 0, length.out = 180))  # 36 positions in the full circle
 phi <- c(seq(0, 0, length.out = length(theta)))
 h_adjust_axis1 <- c(seq(1, 0, length.out = 180), seq(0, 1, length.out = 180))
@@ -164,6 +173,7 @@ h_adjust_axis2 <- c(seq(1, 1, length.out = 180), #0-180
                     seq(0, 0, length.out = 60),
                     seq(0, 1, length.out = 30)) #270-360
 
+# Define plot features
 th <- theme_void(base_size = 15) +
   theme(panel.background = element_rect(fill = "black",
                                         colour = "black",
@@ -173,9 +183,10 @@ th <- theme_void(base_size = 15) +
         legend.title = element_text(colour="white", size = 12),
         legend.text = element_text(color = "white", size = 12),
         legend.position = "bottom",
-        plot.margin = unit(c(0,0,0,0), 'pt'))
+        plot.margin = unit(c(5,5,5,5), 'pt'))
 
 
+# Function to apply in parallel
 application <- function(X,
                         taxo_comm, 
                         phylo_comm, 
@@ -184,7 +195,8 @@ application <- function(X,
                         phi, 
                         h_adjust_axis1,
                         h_adjust_axis2,
-                        th) {
+                        th,
+                        export_folder) {
   
   i <- X
   
@@ -210,12 +222,12 @@ application <- function(X,
             angle = c(0, 0, 90),
             color = "white", 
             size = 6) +
-    th +
+    th
     
   phylo_p <- ggplot(phylo_comm, aes(x = Axis1, 
                                     y = Axis2, 
                                     z = Axis3,
-                                    color = color)) +
+                                    colour = color)) +
     axes_3D(theta = theta[i], 
             phi = phi[i], 
             linewidth = 0.5,
@@ -261,7 +273,7 @@ application <- function(X,
     th
   
   name <- str_pad(i, 4, pad = "0")
-  file_name = paste0(export, "/plot_communities_", name, ".png", sep="")
+  file_name <- paste0(export_folder, "/plot_communities_", name, ".png")
   png(file_name,
       width = 600, 
       height = 200, 
@@ -276,7 +288,8 @@ application <- function(X,
   
 }
 
-complete <- pbmclapply(X = 1:length(theta), 
+# Export in parallel
+complete <- pbmclapply(X = 1:30, #length(theta), 
                        FUN = application, 
                        taxo_comm = taxo_comm, 
                        phylo_comm = phylo_comm, 
@@ -286,6 +299,7 @@ complete <- pbmclapply(X = 1:length(theta),
                        h_adjust_axis1 = h_adjust_axis1,
                        h_adjust_axis2 = h_adjust_axis2,
                        th = th,
+                       export_folder = getwd(),
                        mc.preschedule = TRUE, 
                        mc.set.seed = FALSE,
                        mc.silent = FALSE, 

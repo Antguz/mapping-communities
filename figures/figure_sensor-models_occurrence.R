@@ -12,12 +12,13 @@ library(rcartocolor)
 library(viridis)
 library(ggplot2)
 library(ggdark)
+library(ggh4x)
 
 #'------------------------------------------------------------------------------
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 # Categorical 
 data <- fread(paste0(root_path, "/08_occurence_performance/performance_summary_occurence.csv"))

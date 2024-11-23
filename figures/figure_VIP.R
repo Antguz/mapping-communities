@@ -15,7 +15,7 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -25,7 +25,7 @@ sensor <- "DESIS"
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
 DESIS_taxo_vip <- fread(paste0(out_path, "taxo", "_vip.csv"))
 DESIS_taxo_vip$type <- "Taxonomic"
-DESIS_phylo_vip <- fread(paste0(out_path, "phylo-log", "_vip.csv"))
+DESIS_phylo_vip <- fread(paste0(out_path, "phylo", "_vip.csv"))
 DESIS_phylo_vip$type <- "Phylogenetic"
 DESIS_func_vip <- fread(paste0(out_path, "func", "_vip.csv"))
 DESIS_func_vip$type <- "Functional"
@@ -46,7 +46,7 @@ sensor <- "EMIT"
 out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
 EMIT_taxo_vip <- fread(paste0(out_path, "taxo", "_vip.csv"))
 EMIT_taxo_vip$type <- "Taxonomic"
-EMIT_phylo_vip <- fread(paste0(out_path, "phylo-log", "_vip.csv"))
+EMIT_phylo_vip <- fread(paste0(out_path, "phylo", "_vip.csv"))
 EMIT_phylo_vip$type <- "Phylogenetic"
 EMIT_func_vip <- fread(paste0(out_path, "func", "_vip.csv"))
 EMIT_func_vip$type <- "Functional"
@@ -103,7 +103,7 @@ vip_summary$sensor <- factor(vip_summary$sensor, levels = c("DESIS",
 # Plot details
 
 #col <- c("#b35806", "#542788")
-col <- c("#a6611a", "#018571")
+col <- c("#e08214", "#8073ac")
 
 
 th_black <- theme_bw() + 
@@ -140,9 +140,10 @@ th_trans <- dark_theme_bw(base_size = 11) +
                                         linetype="solid"),
         strip.text = element_text(color = "black"))
 
-#th <- th_trans
+th <- th_trans
+line_col <- "white"
+
 th <- th_black
-#line_col <- "white"
 line_col <- "black"
 
 #-------------------------------------------------------------------------------

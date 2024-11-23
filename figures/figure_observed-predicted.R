@@ -18,9 +18,8 @@ options(scipen = 100)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-#root_path <- "E:/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "DESIS"
+root_path <- "/media/antonio/Work/MMDB"
+sensor <- "EMIT"
 folder <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
 
 #'------------------------------------------------------------------------------
@@ -28,7 +27,7 @@ folder <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
 
 taxo_performance <- fread(paste0(folder, "/", sensor, "_", "taxo", "_performance.csv"))
 taxo_performance$dimension <- "Taxonomic"
-phylo_performance <- fread(paste0(folder, "/", sensor, "_", "phylo-log", "_performance.csv"))
+phylo_performance <- fread(paste0(folder, "/", sensor, "_", "phylo", "_performance.csv"))
 phylo_performance$dimension <- "Phylogenetic"
 func_performance <- fread(paste0(folder, "/", sensor, "_", "func", "_performance.csv"))
 func_performance$dimension <- "Functional"
@@ -46,7 +45,7 @@ if(dataset == "training") {
   
   taxo <- fread(paste0(folder, "/", sensor, "_", "taxo", "_predicted_training.csv"))
   taxo$dimension <- "Taxonomic"
-  phylo <- fread(paste0(folder, "/", sensor, "_", "phylo-log", "_predicted_training.csv"))
+  phylo <- fread(paste0(folder, "/", sensor, "_", "phylo", "_predicted_training.csv"))
   phylo$dimension <- "Phylogenetic"
   func <- fread(paste0(folder, "/", sensor, "_", "func", "_predicted_training.csv"))
   func$dimension <- "Functional"
@@ -68,7 +67,7 @@ if(dataset == "training") {
   
   taxo <- fread(paste0(folder, "/", sensor, "_", "taxo", "_predicted_testing.csv"))
   taxo$dimension <- "Taxonomic"
-  phylo <- fread(paste0(folder, "/", sensor, "_", "phylo-log", "_predicted_testing.csv"))
+  phylo <- fread(paste0(folder, "/", sensor, "_", "phylo", "_predicted_testing.csv"))
   phylo$dimension <- "Phylogenetic"
   func <- fread(paste0(folder, "/", sensor, "_", "func", "_predicted_testing.csv"))
   func$dimension <- "Functional"
@@ -111,9 +110,10 @@ th_trans <- dark_theme_bw(base_size = 11) +
         plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"))
 
 th <- th_trans
-#th <- th_black
 line_col <- "white"
-#line_col <- "black"
+
+th <- th_black
+line_col <- "black"
 
 point_size <- 2
 point_shape <- 20

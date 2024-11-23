@@ -1,3 +1,10 @@
+#'------------------------------------------------------------------------------
+#' @title Visualize the NDMS as a video
+#'------------------------------------------------------------------------------
+
+#'------------------------------------------------------------------------------
+#' Library
+
 library(gg3D)
 library(stringr)
 library(bit64)
@@ -6,22 +13,16 @@ library(plot3D)
 library(data.table)
 library(ggpubr)
 
-
-
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-
 #'------------------------------------------------------------------------------
-#' Arrange information
+#' Read information
 
-# Communities
-taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
-#taxo_comm <- taxo_comm[order(Axis1, -Axis2, Axis3), ]
-phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
-#phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
-func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
-#func_comm$Axis3 <- -func_comm$Axis3
-#func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
-#fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+# Folder
+root_path <- "/media/antonio/Work/MMDB"
+
+
+taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func.csv"))
 
 #'------------------------------------------------------------------------------
 #' @Plot-functions
@@ -68,17 +69,19 @@ RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
   
 }
 
+# Compute RGB colors
+
 taxo_comm$color <- RGB(taxo_comm$Axis1, 
-                  taxo_comm$Axis2, 
-                  taxo_comm$Axis3, 
-                  min_range = -0.55, 
-                  max_range = 0.55)
+                       taxo_comm$Axis2, 
+                       taxo_comm$Axis3, 
+                       min_range = -0.55, 
+                       max_range = 0.55)
 
 phylo_comm$color <- RGB(phylo_comm$Axis1, 
                         phylo_comm$Axis2, 
                         phylo_comm$Axis3, 
-                       min_range = -0.55, 
-                       max_range = 0.55)
+                        min_range = -0.55, 
+                        max_range = 0.55)
 
 func_comm$color <- RGB(func_comm$Axis1, 
                        func_comm$Axis2, 
@@ -89,7 +92,6 @@ func_comm$color <- RGB(func_comm$Axis1,
 #'------------------------------------------------------------------------------
 #' @Plot-communities
 #-------------------------------------------------------------------------------
-
 
 th <- theme_void(base_size = 15) +
   theme(panel.background = element_rect(fill = "black",
@@ -103,8 +105,10 @@ th <- theme_void(base_size = 15) +
         plot.margin = unit(c(0,0,0,0), 'pt'))
 
 
+# Collector of plots to export
 plot_list <- list()
 
+# Viewing angles
 theta <- c(seq(0, 180, length.out = 180), seq(-180, 0, length.out = 180))  # 36 positions in the full circle
 phi <- c(seq(0, 0, length.out = length(theta)))
 h_adjust_axis1 <- c(seq(1, 0, length.out = 180), seq(0, 1, length.out = 180))
@@ -114,6 +118,7 @@ h_adjust_axis2 <- c(seq(1, 1, length.out = 180), #0-180
                     seq(0, 0, length.out = 60),
                     seq(0, 1, length.out = 30)) #270-360
 
+# Apply loop on viewing angles
 for (i in 1:length(theta)) {
   
   taxo_p <- ggplot(taxo_comm, aes(x = Axis1, 
@@ -194,8 +199,10 @@ for (i in 1:length(theta)) {
   
 }
 
+# Define folder to export plots
 export <- "/home/antonio/Documents/3d/communities"
 
+# Export plots in a loop
 for (i in 1:length(theta)) { #length(theta)
   
   name <- str_pad(i, 4, pad = "0")
@@ -208,7 +215,6 @@ for (i in 1:length(theta)) { #length(theta)
       bg = NA,  
       res = 300)
   p
-  #print(plot_list[[i]])
   dev.off()
   
 }
@@ -295,9 +301,9 @@ h_adjust_axis1 <- c(seq(1, 0, length.out = 180), seq(0, 1, length.out = 180))
 for (i in 1:length(theta)) {
   
   p <- ggplot(plots_fia, aes(x = MDS1, 
-                         y = MDS2, 
-                         z = MDS3, 
-                         colour = A_to_T)) +
+                             y = MDS2, 
+                             z = MDS3, 
+                             colour = A_to_T)) +
     axes_3D(theta = theta[i], 
             phi = phi[i], 
             size = 0.5,

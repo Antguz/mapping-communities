@@ -64,21 +64,27 @@ th_trans <- dark_theme_bw(base_size = 11) +
                                        linewidth = 0))
 
 th <- th_black
-th <- th_trans
 col <- "grey20"
-col <- "white"
 text <- "black"
+line_col <- "red"
+
+th <- th_trans
+col <- "white"
 text <- "white"
+line_col <- "white"
+
+pal <- "plasma"
+pal <- "inferno"
 
 #'------------------------------------------------------------------------------
 #' Plot
 
-max_values <- c(taxo_to_export$max, phylo_to_export$max)
+max_values <- c(taxo_to_export$max, phylo_to_export$max, func_to_export$max)
 max_value <- max_values[which.max(max_values)]
 
 # Plot taxo
 p_taxo <- ggplot() +
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted", colour = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted", colour = line_col) +
   geom_raster(data = taxo_to_export$vox, aes(x = X, y = Y, fill = N)) +
   geom_line(aes(x = taxo_to_export$line$x_line, 
                 y = taxo_to_export$line$y_line), 
@@ -87,7 +93,7 @@ p_taxo <- ggplot() +
               intercept = 0, 
               linetype = "dotted", 
               linewidth = 0.5,
-              colour = "red") +
+              colour = line_col) +
   xlab(expression(paste("Observed T", beta[total]))) +
   ylab("Ordination distance") +
   coord_cartesian(xlim = c(0, 1), 
@@ -96,7 +102,7 @@ p_taxo <- ggplot() +
   scale_x_continuous(n.breaks = 3) +
   scale_y_continuous(n.breaks = 3) +
   scale_fill_viridis_c(name = "Count", 
-                       option = "mako",
+                       option = pal,
                        trans = "log10", 
                        limits = c(1, max_value),  
                        breaks = c(1, 1000, 1000000),
@@ -105,7 +111,7 @@ p_taxo <- ggplot() +
                                 barheight = 0.7, 
                                 title.position = "bottom")) +
   geom_text(aes(label = paste0("Non-metric fit, R2 = ", taxo_to_export$Rst, "\n",
-                               "Linear fit, R2 = ", taxo_to_export$Ral),
+                               " Linear fit, R2 = ", taxo_to_export$Ral),
                 x = -Inf, 
                 y = Inf, 
                 hjust = -0.1, 
@@ -118,7 +124,7 @@ p_taxo <- ggplot() +
 
 # Plot phylo
 p_phylo <- ggplot() +
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted", colour = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted", colour = line_col) +
   geom_raster(data = phylo_to_export$vox, aes(x = X, y = Y, fill = N)) +
   geom_line(aes(x = phylo_to_export$line$x_line, 
                 y = phylo_to_export$line$y_line), 
@@ -127,7 +133,7 @@ p_phylo <- ggplot() +
               intercept = 0, 
               linetype = "dotted", 
               linewidth = 0.5,
-              colour = "red") +
+              colour = line_col) +
   xlab(expression(paste("Observed P", beta[total]))) +
   ylab("Ordination distance") +
   coord_cartesian(xlim = c(0, 1), 
@@ -136,7 +142,7 @@ p_phylo <- ggplot() +
   scale_x_continuous(n.breaks = 3) +
   scale_y_continuous(n.breaks = 3) +
   scale_fill_viridis_c(name = "Count", 
-                       option = "mako",
+                       option = pal,
                        trans = "log10", 
                        limits = c(1, max_value),  
                        breaks = c(1, 1000, 1000000),
@@ -145,7 +151,7 @@ p_phylo <- ggplot() +
                                 barheight = 0.7, 
                                 title.position = "bottom")) +
   geom_text(aes(label = paste0("Non-metric fit, R2 = ", phylo_to_export$Rst, "\n",
-                               "Linear fit, R2 = ", phylo_to_export$Ral),
+                               " Linear fit, R2 = ", phylo_to_export$Ral),
                 x = -Inf,
                 y = Inf,
                 hjust = -0.1,
@@ -158,7 +164,7 @@ p_phylo <- ggplot() +
 
 # Func
 p_func <- ggplot() +
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted", colour = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted", colour = line_col) +
   geom_raster(data = func_to_export$vox, aes(x = X, y = Y, fill = N)) +
   geom_line(aes(x = func_to_export$line$x_line, 
                 y = func_to_export$line$y_line), 
@@ -167,7 +173,7 @@ p_func <- ggplot() +
               intercept = 0, 
               linetype = "dotted", 
               linewidth = 0.5,
-              colour = "red") +
+              colour = line_col) +
   xlab(expression(paste("Observed F", beta[total]))) +
   ylab("Ordination distance") +
   coord_cartesian(xlim = c(0, 1), 
@@ -176,7 +182,7 @@ p_func <- ggplot() +
   scale_x_continuous(n.breaks = 3) +
   scale_y_continuous(n.breaks = 3) +
   scale_fill_viridis_c(name = "Count", 
-                       option = "mako",
+                       option = pal,
                        trans = "log10", 
                        limits = c(1, max_value),  
                        breaks = c(1, 1000, 1000000),
@@ -184,8 +190,8 @@ p_func <- ggplot() +
   guides(fill = guide_colourbar(barwidth = 15, 
                                 barheight = 0.7, 
                                 title.position = "bottom")) +
-  geom_text(aes(label = paste0("Non-metric fit, R^{2} = ", func_to_export$Rst, "\n",
-                               "Linear fit, R^{2} = ", func_to_export$Ral),
+  geom_text(aes(label = paste0("Non-metric fit, R2 = ", func_to_export$Rst, "\n",
+                               " Linear fit, R2 = ", func_to_export$Ral),
                 x = -Inf, 
                 y = Inf, 
                 hjust = -0.1, 
@@ -199,12 +205,12 @@ p_func <- ggplot() +
 
 # Export
 
-panels <- ggarrange(p_taxo, p_phylo, p_phylo, 
+panels <- ggarrange(p_taxo, p_phylo, p_func, 
                     ncol=3, nrow=1,
                     labels = c("A", "B", "C"),
                     font.label =  list(size = 9, face = "plain", color = col),
-                    label.x = 0.02,
-                    label.y = 1.02,
+                    label.x = 0.00,
+                    label.y = 1.00,
                     common.legend = TRUE,
                     legend = "bottom")
 
@@ -216,7 +222,7 @@ panels
 
 dev.off()
 
-png(paste0(root_path, "/figures/", "figure_stressplot.png"), width = 210, height = 80, units = "mm", res = 600, bg = "transparent")
+png(paste0(root_path, "/figures/", "figure_stressplot_transp.png"), width = 210, height = 80, units = "mm", res = 600, bg = "transparent")
 
 panels
 

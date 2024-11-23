@@ -12,10 +12,11 @@ library(ggdark)
 library(parallel)
 library(ggpointdensity)
 library(viridis)
+library(rcartocolor)
 library(smatr)
 library(scales)
 library(ggpubr)
-options(scipen = 100000)
+library(rTLS)
 
 #'------------------------------------------------------------------------------
 #' Working directory
@@ -25,8 +26,6 @@ root_path <- "/media/antonio/Work/MMDB"
 #-------------------------------------------------------------------------------
 #' @Plot-details
 
-col <- c("#fc8d62", "#66c2a5", "#8da0cb")
-
 th_black <- theme_bw() + 
   theme(legend.position = "bottom",
         legend.title.align = 0.5,
@@ -34,34 +33,39 @@ th_black <- theme_bw() +
         panel.grid.minor = element_blank(),
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill= "transparent"),
+        plot.margin = unit(c(10, 10, 1, 1), "pt"),
         rect = element_rect(fill = "transparent"))
 
 th_trans <- dark_theme_bw(base_size = 11) +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
-        #legend.position = c(0.90, 0.90), 
+        legend.position = "bottom", 
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill = "transparent"),
         rect = element_rect(fill = "transparent"),
         legend.title = element_text(colour="white"),
         legend.text = element_text(color = "white"),
         axis.text = element_text(color="white"),
+        plot.margin = unit(c(10, 10, 1, 1), "pt"),
         plot.background = element_rect(colour = "transparent",
                                        fill = "transparent",
                                        linewidth = 0))
 
-th <- th_black
+th <- th_trans
+line <- "white"
+text <- "white"
 
+th <- th_black
 line <- "grey75"
-text <- "grey25"
+text <- "black"
 
 #'------------------------------------------------------------------------------
 #' @Function
 
 mantel_plot <- function(mantel_results, 
-                        exp = expression(paste("Taxonomic dissimilarity (", beta[total], ")")),
+                        exp = expression(paste("T", beta[total], ")")),
                         y_lab = "Spectral dissimilarity",
-                        palette) {
+                        palette = "viridis") {
   
   # Get slopes
   dissimilarities <- mantel_results$frame
@@ -74,7 +78,8 @@ mantel_plot <- function(mantel_results,
     plot <- frame[PLOT_CN == plot_id[X], ]
     
     # Test
-    test <- sma(spectral ~ 0 + Beta, data = plot)
+    test <- sma(spectral ~ Beta, data = plot)
+    #test <- sma(spectral ~ Beta, data = plot)
     elevation <- test$coef[[1]][1,1]
     slope <- test$coef[[1]][2,1]
     
@@ -101,17 +106,31 @@ mantel_plot <- function(mantel_results,
   x <- seq(0.00, 1.00, by = 0.1)
   
   #-----------------------------------------------------------------------------
+  # Count estimations
+  
+  vox <- voxels(cbind(dissimilarities[, 4:3], z = 1), 
+                edge_length = c(0.001, 0.001, 0.001), 
+                threads = 16, 
+                obj.voxels = FALSE)
+  
+  vox[X >= 1.0, X := 0.9995]
+  
+  print(max(vox$N))
+  
+  #-----------------------------------------------------------------------------
   # Plot
   
   p <- ggplot() +
-    geom_hex(data = dissimilarities,#[1:10000,],
-             aes(x = Beta, 
-                 y = spectral),
-             bins = 100) +
-    geom_abline(aes(intercept = 0, 
-                    slope = 1),
-                colour = line,
-                linetype = "dotted") +
+    # geom_hex(data = dissimilarities,#[1:10000,],
+    #          aes(x = Beta, 
+    #              y = spectral),
+    #          bins = 100) +
+    geom_raster(data = vox, 
+                aes(x = X, y = Y, fill = N)) +
+    # geom_abline(aes(intercept = 0, 
+    #                 slope = 1),
+    #             colour = line,
+    #             linetype = "dotted") +
     geom_ribbon(aes(x = x,
                     ymin = pre_mean - pre_sd,
                     ymax = pre_mean + pre_sd),
@@ -123,19 +142,29 @@ mantel_plot <- function(mantel_results,
                 aes(intercept = mean(elevation), 
                     slope = mean(slope)),
                 colour = line) +
-    scale_x_continuous(limits = c(-0.01, 1.01), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
-    scale_y_continuous(limits = c(-0.01, 1.01), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
-    scale_fill_viridis_c(name = "Count", 
+    scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, 0.15), breaks = c(0, 0.05, 0.1, 0.15), expand = c(0, 0)) +
+    scale_fill_viridis_c(name = "Count",
                          option = palette,
-                         trans = "log10", 
-                         limits = c(1, 10000000),  
-                         breaks = c(1, 3162.278, 10000000),
+                         trans = "log10",
+                         limits = c(1, 1000000),
+                         #limits = c(1, max(val)),
+                         breaks = c(1, 1000, 1000000),
                          labels = trans_format("log10", math_format(10^.x))) +
-    xlab(exp) + 
+    # scale_fill_carto_c(name = "Count", 
+    #                    type = "quantitative",
+    #                    palette = palette,
+    #                    trans = "log10",
+    #                    direction = -1,
+    #                    #limits = c(1, 10000000),
+    #                    #breaks = c(1, 3162.278, 10000000),
+    #                    labels = trans_format("log10", math_format(10^.x))) + 
+    xlab(exp) +
     ylab(y_lab) + 
     guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
     geom_text(aes(label = paste0("Slope = ", round(mean(sma$slope), 2), " ± ", round(sd(sma$slope), 2), "\n",
-                                "r = ", round(mantel_results$mantel$statistic, 2), " (p < ", round(mantel_results$mantel$signif, 3), ")"),
+                                 "Intercept = ", round(mean(sma$elevation), 2), " ± ", round(sd(sma$elevation), 2), "\n",
+                                 " r = ", round(mantel_results$mantel, 2), " (p = ", round(mantel_results$mantel_significance, 3), ")"),
                   x = -Inf, 
                   y = Inf, 
                   hjust = -0.1, 
@@ -152,90 +181,91 @@ mantel_plot <- function(mantel_results,
 #-------------------------------------------------------------------------------
 #' @figures
 
-sensor <- "DESIS"
-type <- "taxo"
+pal <- "plasma"
+pal <- "inferno"
+val <- c(3662402, 108170, 17564, 2108734, 88266, 11971)
 
+# DESIS ------------------------------------------------
+sensor <- "DESIS"
+
+type <- "taxo"
 diversity <- "total"
 DESIS_taxo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_taxo_total_fig <- mantel_plot(mantel_results = DESIS_taxo_total,
                                     exp = expression(paste("T", beta[total])),
-                                    palette = "inferno")
+                                    palette = pal) #1030468
+rm(DESIS_taxo_total)
+gc()
 
-diversity <- "replacement"
-DESIS_taxo_replacement <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_taxo_replacement_fig <- mantel_plot(mantel_results = DESIS_taxo_replacement,
-                                          exp = expression(paste("T", beta[replacement])),
-                                          palette = "mako")
-
-diversity <- "richness"
-DESIS_taxo_richness <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_taxo_richness_fig <- mantel_plot(mantel_results = DESIS_taxo_richness,
-                                       exp = expression(paste("T", beta[richness])),
-                                       palette = "viridis")
-
-sensor <- "DESIS"
-type <- "phylo-log"
-
+type <- "phylo"
 diversity <- "total"
 DESIS_phylo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_phylo_fig <- mantel_plot(mantel_results = DESIS_phylo_total,
-                               exp = expression(paste("P", beta[total])),
-                               palette = "inferno")
+DESIS_phylo_total_fig <- mantel_plot(mantel_results = DESIS_phylo_total,
+                                    exp = expression(paste("P", beta[total])),
+                                    palette = pal) #33640
+rm(DESIS_phylo_total)
+gc()
 
-diversity <- "replacement"
-DESIS_phylo_replacement <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_phylo_replacement_fig <- mantel_plot(mantel_results = DESIS_taxo_replacement,
-                                           exp = expression(paste("P", beta[replacement])),
-                                           palette = "mako")
-
-diversity <- "richness"
-DESIS_phylo_richness <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_phylo_richness_fig <- mantel_plot(mantel_results = DESIS_taxo_richness,
-                                        exp = expression(paste("P", beta[richness])),
-                                        palette = "viridis") 
-
-sensor <- "DESIS"
 type <- "func"
-
 diversity <- "total"
 DESIS_func_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_func_fig <- mantel_plot(mantel_results = DESIS_func_total,
-                              exp = expression(paste("F", beta[replacement])),
-                              palette = "inferno")
+DESIS_func_total_fig <- mantel_plot(mantel_results = DESIS_func_total,
+                                     exp = expression(paste("F", beta[total])),
+                                     palette = pal) #37090
+rm(DESIS_func_total)
+gc()
 
-diversity <- "replacement"
-DESIS_func_replacement <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_func_replacement_fig <- mantel_plot(mantel_results = DESIS_func_replacement,
-                                          exp = expression(paste("F", beta[replacement])),
-                                          palette = "mako")
+# EMIT ------------------------------------------------
+sensor <- "EMIT"
 
-diversity <- "richness"
-DESIS_func_richness <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
-DESIS_func_richness_fig <- mantel_plot(mantel_results = DESIS_func_richness,
-                                       exp = expression(paste("F", beta[richness])),
-                                       palette = "viridis") 
+type <- "taxo"
+diversity <- "total"
+EMIT_taxo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMIT_taxo_total_fig <- mantel_plot(mantel_results = EMIT_taxo_total,
+                                    exp = expression(paste("T", beta[total])),
+                                    palette = pal) #1017678
+rm(EMIT_taxo_total)
+gc()
+
+type <- "phylo"
+diversity <- "total"
+EMIT_phylo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMIT_phylo_total_fig <- mantel_plot(mantel_results = EMIT_phylo_total,
+                                     exp = expression(paste("P", beta[total])),
+                                     palette = pal) #37934
+rm(EMIT_phylo_total)
+gc()
+
+type <- "func"
+diversity <- "total"
+EMIT_func_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMIT_func_total_fig <- mantel_plot(mantel_results = EMIT_func_total,
+                                    exp = expression(paste("F", beta[total])),
+                                    palette = pal) #29110
+rm(EMIT_func_total)
+gc()
 
 # Merge plots
-row1 <- ggarrange(DESIS_taxo_fig, DESIS_phylo_fig, DESIS_func_fig, 
+row1 <- ggarrange(DESIS_taxo_total_fig, DESIS_phylo_total_fig, DESIS_func_total_fig, 
                   ncol=3, nrow=1,
                   labels = c("A", "B", "C"),
                   font.label =  list(size = 9, face = "plain", color = text),
                   label.x = 0.02,
                   label.y = 1.05,
                   common.legend = TRUE,
-                  legend = "bottom")
+                  legend = "top")
 
-row2 <- ggarrange(EMIT_taxo_fig, EMIT_phylo_fig, EMIT_func_fig, 
+row2 <- ggarrange(EMIT_taxo_total_fig, EMIT_phylo_total_fig, EMIT_func_total_fig, 
                   ncol=3, nrow=1,
                   labels = c("D", "E", "F"),
                   font.label =  list(size = 9, face = "plain", color = text),
                   label.x = 0.02,
                   label.y = 1.05,
                   common.legend = TRUE,
-                  legend = "bottom")
+                  legend = "top")
 
 # Export
-jpeg(paste0(root_path, "/figures/", "figure_mantel.jpeg"), width = 210, height = 150, units = "mm", res = 600, bg = "white")
+jpeg(paste0(root_path, "/figures/", "figure_mantelb.jpeg"), width = 210, height = 150, units = "mm", res = 600, bg = "white")
 
 annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
                 top = text_grob("Taxonomic                                  Phylogenetic                                  Functional", face = "bold", color = "black"),

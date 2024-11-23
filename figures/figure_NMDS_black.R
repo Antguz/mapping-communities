@@ -27,48 +27,45 @@ sourceCpp("src/probability_rcpp.cpp")
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
-#taxo_comm <- taxo_comm[order(Axis1, -Axis2, Axis3), ]
-phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
-#phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
-func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
-#func_comm$Axis3 <- -func_comm$Axis3
-#func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
-#fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func_total.csv"))
 
-# Get proportions
-proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
-plot <- taxo_comm$PLT_CN
-match_proportions <- match.integer64(plot, proportions$PLT_CN)
-proportions <- proportions[match_proportions,]
+# Axis range
+observed_range <- c(min(c(min(taxo_comm[,2:4]), min(phylo_comm[,2:4]), min(func_comm[,2:4]))),
+                    max(c(max(taxo_comm[,2:4]), max(phylo_comm[,2:4]), max(func_comm[,2:4]))))
 
-# Get probabilities
-taxo_occurance <- fread(paste0(root_path, "/07_model_occurrence/taxo_model-occurrence.csv"))
-taxo_occurance <- taxo_occurance[dataset == "training", ]
-phylo_occurance <- fread(paste0(root_path, "/07_model_occurrence/phylo-log_model-occurrence.csv"))
-phylo_occurance <- phylo_occurance[dataset == "training", ]
-func_occurance <- fread(paste0(root_path, "/07_model_occurrence/func_model-occurrence.csv"))
-func_occurance <- func_occurance[dataset == "training", ]
-
-taxo_prob <- multi_probability(as.matrix(taxo_comm[,-1]),
-                               as.matrix(taxo_occurance[, c(14:17)]))
-taxo_prob <- as.data.table(taxo_prob)/10000
-colnames(taxo_prob) <- taxo_occurance$plant
-
-phylo_prob <- multi_probability(as.matrix(phylo_comm[,-1]),
-                                as.matrix(phylo_occurance[, c(14:17)]))
-phylo_prob <- as.data.table(phylo_prob)/10000
-colnames(phylo_prob) <- phylo_occurance$plant
-
-func_prob <- multi_probability(as.matrix(func_comm[,-1]),
-                               as.matrix(func_occurance[, c(14:17)]))
-func_prob <- as.data.table(func_prob)/10000
-colnames(func_prob) <- func_occurance$plant
+# # Get proportions
+# proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
+# plot <- taxo_comm$PLT_CN
+# match_proportions <- match.integer64(plot, proportions$PLT_CN)
+# proportions <- proportions[match_proportions,]
+# 
+# # Get probabilities
+# taxo_occurance <- fread(paste0(root_path, "/07_model_occurrence/taxo_model-occurrence.csv"))
+# taxo_occurance <- taxo_occurance[dataset == "training", ]
+# phylo_occurance <- fread(paste0(root_path, "/07_model_occurrence/phylo-log_model-occurrence.csv"))
+# phylo_occurance <- phylo_occurance[dataset == "training", ]
+# func_occurance <- fread(paste0(root_path, "/07_model_occurrence/func_model-occurrence.csv"))
+# func_occurance <- func_occurance[dataset == "training", ]
+# 
+# taxo_prob <- multi_probability(as.matrix(taxo_comm[,-1]),
+#                                as.matrix(taxo_occurance[, c(14:17)]))
+# taxo_prob <- as.data.table(taxo_prob)/10000
+# colnames(taxo_prob) <- taxo_occurance$plant
+# 
+# phylo_prob <- multi_probability(as.matrix(phylo_comm[,-1]),
+#                                 as.matrix(phylo_occurance[, c(14:17)]))
+# phylo_prob <- as.data.table(phylo_prob)/10000
+# colnames(phylo_prob) <- phylo_occurance$plant
+# 
+# func_prob <- multi_probability(as.matrix(func_comm[,-1]),
+#                                as.matrix(func_occurance[, c(14:17)]))
+# func_prob <- as.data.table(func_prob)/10000
+# colnames(func_prob) <- func_occurance$plant
 
 # Get domains
 domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
@@ -81,7 +78,7 @@ all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
 #-------------------------------------------------------------------------------
 
 # RGB color
-RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
+RGB <- function(X, Y, Z, min_range = NULL, max_range = NULL) {
   
   if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
     
@@ -131,7 +128,7 @@ ordination_3d <- function(ordination,
                           colvar = NULL,
                           key = TRUE,
                           clab = " ",
-                          axis_range = c(-0.55, 0.55),
+                          axis_range,
                           alpha = 1.0) {
   
   # Plot features
@@ -308,9 +305,9 @@ png(paste0(root_path, "/figures/", "NMDS_RGB_transp.png"),
     res = 600)
 
 par(mfrow=c(1,3), mar = c(0,1.1,1,0), oma = c(0,0,0,0))
-ordination_3d(taxo_comm, title = "Taxonomic", cRGB = TRUE)
-ordination_3d(phylo_comm, title = "Phylogenetic", cRGB = TRUE)
-ordination_3d(func_comm, title = "Functional", cRGB = TRUE)
+ordination_3d(taxo_comm, title = "Taxonomic", cRGB = TRUE, axis_range = observed_range)
+ordination_3d(phylo_comm, title = "Phylogenetic", cRGB = TRUE, axis_range = observed_range)
+ordination_3d(func_comm, title = "Functional", cRGB = TRUE, axis_range = observed_range)
 
 dev.off()
 

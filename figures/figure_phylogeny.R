@@ -22,7 +22,7 @@ options(scipen = 100)
 #' Read information
 
 # Folder root
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 
 # Get tree
@@ -79,6 +79,7 @@ th_trans <- dark_theme_bw(base_size = 11) +
         strip.text = element_text(color = "black"))
 
 th <- th_trans
+th <- th_black
 
 line <- "black"
 text <- "black"
@@ -117,13 +118,6 @@ p <- ggtree(tree, aes(color=group)) %<+% frame +
                  color = frame$mycorrhizal_association, 
                  fill = frame$growth_form), 
              orientation = 'y') + 
-  #geom_facet(panel = "Crown class", 
-  #           data = frame, 
-  #           geom = geom_col, 
-  #           aes(x = frame$CCLCD_mode, 
-  #               color = frame$mycorrhizal_association, 
-  #               fill = frame$growth_form), 
-  #           orientation = 'y') +
   geom_facet(panel = "Wood density", 
              data = frame, 
              geom = geom_col, 
@@ -131,20 +125,20 @@ p <- ggtree(tree, aes(color=group)) %<+% frame +
                  color = frame$mycorrhizal_association, 
                  fill = frame$growth_form), 
              orientation = 'y') +
-  #geom_facet(panel = "Moisture content", 
-  #           data = frame, 
-  #           geom = geom_col, 
-  #           aes(x = frame$MC_PCT_GREEN_WOOD, 
-  #               color = frame$mycorrhizal_association, 
-  #               fill = frame$growth_form), 
-  #           orientation = 'y') +
-  #geom_facet(panel = "Carbon fraction", 
-  #           data = frame, 
-  #           geom = geom_col, 
-  #           aes(x = frame$CARBON_RATIO_LIVE, 
-  #               color = frame$mycorrhizal_association, 
-  #               fill = frame$growth_form), 
-  #           orientation = 'y') +
+  geom_facet(panel = "Moisture content",
+            data = frame,
+            geom = geom_col,
+            aes(x = frame$MC_PCT_GREEN_WOOD,
+                color = frame$mycorrhizal_association,
+                fill = frame$growth_form),
+            orientation = 'y') +
+  geom_facet(panel = "Carbon fraction",
+            data = frame,
+            geom = geom_col,
+            aes(x = frame$CARBON_RATIO_LIVE,
+                color = frame$mycorrhizal_association,
+                fill = frame$growth_form),
+            orientation = 'y') +
   geom_facet(panel = "Shade", 
              data = frame, 
              geom = geom_col, 
@@ -166,13 +160,13 @@ p <- ggtree(tree, aes(color=group)) %<+% frame +
                  color = frame$mycorrhizal_association, 
                  fill = frame$growth_form), 
              orientation = 'y') +
-  #geom_facet(panel = "Leaf area", 
-  #           data = frame, 
-  #           geom = geom_col, 
-  #           aes(x = frame$leaf_area, 
-  #               color = frame$mycorrhizal_association, 
-  #               fill = frame$growth_form), 
-  #           orientation = 'y') +
+  geom_facet(panel = "Leaf area",
+            data = frame,
+            geom = geom_col,
+            aes(x = log10(frame$leaf_area),
+                color = frame$mycorrhizal_association,
+                fill = frame$growth_form),
+            orientation = 'y') +
   geom_facet(panel = "LMA", 
              data = frame, 
              geom = geom_col, 
@@ -195,7 +189,7 @@ p <- ggtree(tree, aes(color=group)) %<+% frame +
 p
 
 png(paste0(root_path, "/figures/phylogenies_trans.png"), 
-    width = 250, 
+    width = 300, 
     height = 200, 
     units = "mm", 
     res = 600, 
@@ -204,4 +198,12 @@ png(paste0(root_path, "/figures/phylogenies_trans.png"),
 p
 dev.off()
 
-
+png(paste0(root_path, "/figures/phylogenies.png"), 
+    width = 300, 
+    height = 200, 
+    units = "mm", 
+    res = 600, 
+    bg = "white", 
+    pointsize = 12)
+p
+dev.off()

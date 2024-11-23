@@ -22,16 +22,10 @@ library(ggpubr)
 library(cowplot)
 
 #'------------------------------------------------------------------------------
-#' @Source_code
-#-------------------------------------------------------------------------------
-
-sourceCpp("src/probability_rcpp.cpp")
-
-#'------------------------------------------------------------------------------
 #' @Function
 #-------------------------------------------------------------------------------
 
-RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
+RGB <- function(X, Y, Z, min_range = -0.50, max_range = 0.50) {
   
   if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
     
@@ -76,16 +70,16 @@ RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
 #-------------------------------------------------------------------------------
 
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 #root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
 #root_path <- "E:/Projects/DESIS_mapping"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_taxo.csv"))
+taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
 #taxo_comm <- taxo_comm[order(Axis1, -Axis2, Axis3), ]
-phylo_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_phylo-log.csv"))
+phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
 #phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
-func_comm <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func_total.csv"))
 #func_comm$Axis3 <- -func_comm$Axis3
 #func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
 #fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
@@ -115,20 +109,20 @@ neon_aoi <- st_read(paste0(root_path, "/GIS/NEON_aoi.gpkg"))
 taxo_col <- RGB(taxo_comm$Axis1, 
            taxo_comm$Axis2, 
            taxo_comm$Axis3,
-           min_range = -0.55, 
-           max_range = 0.55)
+           min_range = NULL, 
+           max_range = NULL)
 
 phylo_col <- RGB(phylo_comm$Axis1, 
                  phylo_comm$Axis2, 
                  phylo_comm$Axis3,
-                 min_range = -0.55, 
-                 max_range = 0.55)
+                 min_range = NULL, 
+                 max_range = NULL)
 
 func_col <- RGB(func_comm$Axis1, 
                 func_comm$Axis2, 
                 func_comm$Axis3,
-                min_range = -0.55, 
-                max_range = 0.55)
+                min_range = NULL, 
+                max_range = NULL)
 
 th <- theme(panel.grid.major = element_line(colour = gray(0.5), 
                                             linetype = "dotted", 
@@ -139,7 +133,7 @@ th <- theme(panel.grid.major = element_line(colour = gray(0.5),
             rect = element_rect(fill = "transparent"),
             plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"))
 
-th <- dark_theme_bw(base_size = 11) +
+th_trans <- dark_theme_bw(base_size = 11) +
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(), 
         #legend.position.inside = c(0.90, 0.90), 
@@ -154,6 +148,8 @@ th <- dark_theme_bw(base_size = 11) +
                                        linewidth=0),
         plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "pt"))
 
+th_selected <- th
+th_selected <- th_trans
 
 taxo <- ggplot() +
   geom_sf(data = states, fill = "grey80", colour = "grey50", linewidth = 0.1) + 
@@ -168,7 +164,7 @@ taxo <- ggplot() +
   scale_x_continuous(breaks = c(-100, -90, -80, -70)) +
   scale_y_continuous(breaks = c(50, 40, 30, 20)) +
   xlab(" ") + ylab("Latitude (°)") +
-  theme_bw() + th
+  theme_bw() + th_selected
 
 phylo <- ggplot() +
   geom_sf(data = states, fill = "grey80", colour = "grey50", linewidth = 0.1) + 
@@ -183,7 +179,7 @@ phylo <- ggplot() +
   scale_x_continuous(breaks = c(-100, -90, -80, -70)) +
   scale_y_continuous(breaks = c(50, 40, 30, 20)) +
   xlab("Longitude (°)") + ylab(" ") +
-  theme_bw() + th
+  theme_bw() + th_selected
 
 func <- ggplot() +
   geom_sf(data = states, fill = "grey80", colour = "grey50", linewidth = 0.1) + 
@@ -198,12 +194,26 @@ func <- ggplot() +
   scale_x_continuous(breaks = c(-100, -90, -80, -70)) +
   scale_y_continuous(breaks = c(50, 40, 30, 20)) +
   xlab(" ") + ylab(" ") +
-  theme_bw() + th
+  theme_bw() + th_selected
 
 
 plot <- ggarrange(taxo, phylo, func, ncol = 3)
 
-png(paste0(root_path, "/figures/", "NMDS_spatial_black.png"),
+# Black
+jpeg(paste0(root_path, "/figures/", "NMDS_spatial.jpeg"),
+    width = 210, 
+    height = 90, 
+    units = "mm", 
+    pointsize = 12,
+    bg = "white",  
+    res = 600)
+
+plot
+
+dev.off()
+
+# Transparent
+png(paste0(root_path, "/figures/", "NMDS_spatial_trans.png"),
     width = 210, 
     height = 90, 
     units = "mm", 
