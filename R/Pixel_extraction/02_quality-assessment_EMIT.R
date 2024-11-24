@@ -8,24 +8,22 @@
 #' used.
 
 #'------------------------------------------------------------------------------
-#' Library
+#' @Library
 
 library(data.table)
 library(ggplot2)
 library(Rcpp)
 library(RcppArmadillo)
-options(scipen = 100)
 
 #'------------------------------------------------------------------------------
-#' Source code
+#' @Source-code
 sourceCpp("src/sam.cpp")
 
 #'------------------------------------------------------------------------------
-#' Arguments
+#' @Cleaning-of-potential-outliers
 
 # Select root path
-root_path <- "/media/antonio/Work/MMDB/02_compile-files"
-#root_path <- "G:/Projects/MMBD/02_compile-files"
+root_path <- "/media/antonio/Work/MMDB/Pixel_extraction/02_compile-files"
 
 # Select sensor
 sensor <- "EMIT"
@@ -38,8 +36,6 @@ spectra <- spectra[`Cloud flag` != 1,]
 spectra <- spectra[`Cirrus flag` != 1,]
 spectra <- spectra[`Water flag` != 1,]
 spectra <- spectra[`Spacecraft Flag` != 1,]
-#spectra <- spectra[`Aggregate Flag` == 1]
-#spectra <- spectra[`Aggregate Flag` == 1]
 
 # Remove date
 scene <- substr(spectra$scene, 1, 44)
@@ -63,6 +59,13 @@ hist(NIR)
 spectra <- spectra[NIR >= 0.1 & NIR <= 0.8,]
 NIR <- spectra$`797.9`
 hist(NIR)
+
+# Filter by EVI
+EVI <- 2.5*((spectra$`797.9` - spectra$`626.37`)/(spectra$`797.9` + 6 * spectra$`626.37` - 7.5 * spectra$`455.17` + 1))
+hist(EVI)
+spectra <- spectra[EVI >= quantile(EVI, 0.01) & EVI <= quantile(EVI, 0.99),]
+EVI <- 2.5*((spectra$`797.9` - spectra$`626.37`)/(spectra$`797.9` + 6 * spectra$`626.37` - 7.5 * spectra$`455.17` + 1))
+hist(EVI)
 
 # Filter by CCI
 #CCI <- (spectra$`529.53` - spectra$`626.37`) / (spectra$`529.53` + spectra$`626.37`)
@@ -108,6 +111,7 @@ master <- spectra[, c("scene", "PLT_CN", "AOD550", "H2O (g cm-2)")]
 master$NDVI <- (spectra$`797.9` - spectra$`626.37`) / (spectra$`797.9` + spectra$`626.37`)
 master$CCI <- (spectra$`529.53` - spectra$`626.37`) / (spectra$`529.53` + spectra$`626.37`)
 master$NIR <- spectra$`797.9`
+master$EVI <- 2.5*((spectra$`797.9` - spectra$`626.37`)/(spectra$`797.9` + 6 * spectra$`626.37` - 7.5 * spectra$`455.17` + 1))
 master$CRI700 <- (1/spectra$`507.21`) - (1/spectra$`700.93`) #(1/R510) - (1/R700)
 master$VOG2 <- (spectra$`738.22` - spectra$`745.68`)/(spectra$`715.84` + spectra$`723.3`)  #(R734 - R747)/(R715 + R726)
 master$NPCI <- (spectra$`678.55` - spectra$`432.89`)/(spectra$`678.55` + spectra$`432.89`) #(R680 - R430)/(R680 + R430)
@@ -117,9 +121,9 @@ master$CMS <- (spectra$`693.47`/spectra$`760.6`) #R694/R760
 master$RDVI <- (spectra$`797.9` - spectra$`671.1`)/ sqrt(spectra$`797.9` + spectra$`671.1`) #(R800 - R670)/sqrt(R800 + R670)
   
 # Remove points based on mahalanobis distance
-mahalanobis_dist <- mahalanobis(master[, 5:14], colMeans(master[, 5:14]), cov(master[, 5:14]))
+mahalanobis_dist <- mahalanobis(master[, 5:15], colMeans(master[, 5:15]), cov(master[, 5:15]))
 hist(mahalanobis_dist)
-threshold <- qchisq(0.95, df = ncol(master[, 5:14]))
+threshold <- qchisq(0.95, df = ncol(master[, 5:15]))
 hist(mahalanobis_dist[mahalanobis_dist <= threshold])
 outliers <- mahalanobis_dist <= threshold
 master <- master[outliers == TRUE, ]

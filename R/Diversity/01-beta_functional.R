@@ -23,7 +23,8 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' @Source-code
 
-setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
+#setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
+setwd("/n/netscratch/jcavender_lab/Everyone/guzman/MMDB")
 source("R/auxiliary/beta_rcpp.R")
 source("R/auxiliary/normalize_tree.R")
 
@@ -114,13 +115,14 @@ functional_diversity <- function(fia,
 #' @example 
 
 #root_path <- "/media/antonio/Work/MMDB"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+#root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB" MSI
+root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
 
 fia <- readRDS(paste0(root_path, "/FIA/01_FIA-reshape/fia_reshape.rds"))
 SPCD <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
 out_path <- paste0(root_path, "/Diversity/beta")
 progress <- TRUE
-threads <- 120
+threads <- 100
 
 functional_diversity(fia, 
                      SPCD, 

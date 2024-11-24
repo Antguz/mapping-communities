@@ -21,8 +21,9 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' @Source-code
 
-setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
-source("R/beta_rcpp.R")
+#setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
+setwd("/n/netscratch/jcavender_lab/Everyone/guzman/MMDB")
+source("R/auxiliary/beta_rcpp.R")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -57,12 +58,13 @@ taxonomic_diversity <- function(fia,
 #' @example 
 
 #root_path <- "/media/antonio/Work/MMDB"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+# root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
 
 fia <- readRDS(paste0(root_path, "/Diversity/beta/master_matched_comm_phylo_VOL.rds"))
 out_path <- paste0(root_path, "/Diversity/beta")
 progress <- TRUE
-threads <- 120
+threads <- 100
 
 taxonomic_diversity(fia, 
                     outpath, 

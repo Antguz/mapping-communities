@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @tile Compile pixel extraction EMIT
+#' @tile Compile pixel extraction files from EMIT
 #'------------------------------------------------------------------------------
 
 #' @description Compile the files of pixel extraction by scene and spectral 
@@ -12,7 +12,6 @@
 
 library(data.table)
 library(bit64)
-options(scipen = 10000)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -22,15 +21,8 @@ options(scipen = 10000)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Work/MMDB"
-folder <- "01_pixel-extraction/EMIT"
-in_path <- paste0(root_path, "/", folder)
-out_path <- paste0(root_path, "/", folder, "/02_spectra") #This will return 3 files
-
-root_path <- "/media/antonio/Work/MMDB"
-folder <- "01_pixel-extraction/EMIT"
-in_path <- "/media/antonio/Work/MMDB/01_pixel-extraction/EMIT"
-out_path <- "/media/antonio/Work/MMDB/02_compile-files" #This will return 3 files
+in_path <- "/media/antonio/Work/MMDB/Pixel_extraction/01_pixel-extraction/EMIT"
+out_path <- "/media/antonio/Work/MMDB/Pixel_extraction/02_compile-files" #This will return 3 files
 
 compile_files(in_path, out_path)
 

@@ -8,24 +8,23 @@
 #' used.
 
 #'------------------------------------------------------------------------------
-#' Library
+#' @Library
 
 library(data.table)
 library(ggplot2)
+library(outliers)
 library(Rcpp)
 library(RcppArmadillo)
-options(scipen = 100)
 
 #'------------------------------------------------------------------------------
-#' Source code
+#' @Source-code
 sourceCpp("src/sam.cpp")
 
 #'------------------------------------------------------------------------------
-#' Arguments
+#' @Cleaning-of-potential-outliers
 
 # Select root path
-root_path <- "/media/antonio/Work/MMDB/02_compile-files"
-#root_path <- "G:/Projects/MMBD/02_compile-files"
+root_path <- "/media/antonio/Work/MMDB/Pixel_extraction/02_compile-files"
 
 # Select sensor
 sensor <- "DESIS"
@@ -55,12 +54,12 @@ spectra <- spectra[NIR >= 1000 & NIR <= 8000,]
 NIR <- spectra$`801.16`
 hist(NIR)
 
-# Filter by CCI
-CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
-hist(CCI)
-spectra <- spectra[CCI >= 0.0 & CCI <= 0.7, ]
-CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
-hist(CCI)
+# Filter by EVI
+EVI <- 2.5*((spectra$`801.16` - spectra$`629.66`)/(spectra$`801.16` + 6 * spectra$`629.66` - 7.5 * spectra$`450.34` + 1))
+hist(EVI)
+spectra <- spectra[EVI >= quantile(EVI, 0.05) & EVI <= quantile(EVI, 0.95),]
+EVI <- 2.5*((spectra$`801.16` - spectra$`629.66`)/(spectra$`801.16` + 6 * spectra$`629.66` - 7.5 * spectra$`450.34` + 1))
+hist(EVI)
 
 # Filter by AOT_550
 AOT_550 <- spectra$`AOT (550 nm) * 100`
@@ -81,8 +80,8 @@ ref_sam <- sam_ref(as.matrix(spectra[, 33:209]), #450 - 900
 hist(ref_sam)
 plot(as.matrix(spectra[which.max(ref_sam), .SD, .SDcols = c(33:209)])[1,])
 
-spectra <- spectra[ref_sam < quantile(ref_sam, 0.95), ]
-ref_sam <- ref_sam[ref_sam < quantile(ref_sam, 0.95)]
+spectra <- spectra[ref_sam < quantile(ref_sam, 0.99), ]
+ref_sam <- ref_sam[ref_sam < quantile(ref_sam, 0.99)]
 
 # Filter using SMA in the visible
 ref_sam_vis <- sam_ref(as.matrix(spectra[, .SD, .SDcols = c(33:120)]),
@@ -99,8 +98,9 @@ ref_sam <- ref_sam[ref_sam_vis < quantile(ref_sam_vis, 0.95)]
 # Get metrics to export
 master <- spectra[, c("folder", "scene", "PLT_CN", "AOT (550 nm) * 100", "WV [cm] * 42")]
 master$NDVI <- (spectra$`801.16` - spectra$`629.66`) / (spectra$`801.16` + spectra$`629.66`)
-master$CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 master$NIR <- spectra$`801.16`
+master$EVI <- EVI <- 2.5*((spectra$`801.16` - spectra$`629.66`)/(spectra$`801.16` + 6 * spectra$`629.66` - 7.5 * spectra$`450.34` + 1))
+master$CCI <- (spectra$`532.33` - spectra$`629.66`) / (spectra$`532.33` + spectra$`629.66`)
 master$CRI700 <- (1/spectra$`509.54`) - (1/spectra$`701.41`) #(1/R510) - (1/R700)
 master$VOG2 <- (spectra$`734.37` - spectra$`747.13`)/(spectra$`714.02` + spectra$`726.85`)  #(R734 - R747)/(R715 + R726)
 master$NPCI <- (spectra$`680.91` - spectra$`429.86`)/(spectra$`680.91` + spectra$`429.86`) #(R680 - R430)/(R680 + R430)
@@ -112,9 +112,9 @@ master$RDVI <- (spectra$`801.16` - spectra$`670.48`)/ sqrt(spectra$`801.16` + sp
 master <- master[!is.infinite(NPCI)]
 
 # Remove points based on mahalanobis distance
-mahalanobis_dist <- mahalanobis(master[, 6:15], colMeans(master[, 6:15]), cov(master[, 6:15]))
+mahalanobis_dist <- mahalanobis(master[, 6:16], colMeans(master[, 6:16]), cov(master[, 6:16]))
 hist(mahalanobis_dist)
-threshold <- qchisq(0.95, df = ncol(master[, 6:15]))
+threshold <- qchisq(0.95, df = ncol(master[, 6:16]))
 hist(mahalanobis_dist[mahalanobis_dist <= threshold])
 outliers <- mahalanobis_dist <= threshold
 master <- master[outliers == TRUE, ]

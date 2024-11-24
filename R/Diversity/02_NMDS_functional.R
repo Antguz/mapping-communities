@@ -56,15 +56,16 @@ ordination <- function(beta, type, diversity, out_path, threads = 1) {
                   engine = "monoMDS",
                   autotransform = FALSE,
                   plot = FALSE,
-                  parallel = threads,
+                  parallel = 1,
                   wascores = FALSE,
                   trace = 3,
                   model = "global",
                   center = FALSE,
                   pc = FALSE,
-                  weakties = FALSE,
-                  halfchange = TRUE,
+                  stress = 1,
+                  halfchange = FALSE,
                   threshold = 1.0,
+                  weakties = FALSE,
                   scaling = FALSE)
   
   # Ordination export
@@ -75,8 +76,9 @@ ordination <- function(beta, type, diversity, out_path, threads = 1) {
 #'------------------------------------------------------------------------------
 #' @example 
 
-#root_path <- "/media/antonio/Work/MMDB"
-root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+# root_path <- "/media/antonio/Work/MMDB"
+# root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
+root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
 
 # Functional
 beta <- paste0(root_path, "/Diversity/beta/beta_func_VOL.rds")

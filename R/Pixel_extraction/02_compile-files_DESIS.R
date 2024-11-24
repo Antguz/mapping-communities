@@ -12,7 +12,6 @@
 
 library(data.table)
 library(bit64)
-options(scipen = 100000000000)
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -22,10 +21,8 @@ options(scipen = 100000000000)
 #'------------------------------------------------------------------------------
 #' @example 
 
-root_path <- "/media/antonio/Extreme Pro/Imagery" #Main folder (you just need to change this)
-folder <- "01_pixel-subtraction"
-in_path <- paste0(root_path, "/", folder)
-out_path <- paste0(root_path, "/", folder, "/02_spectra") #This will return 3 files
+in_path <- "/media/antonio/Work/MMDB/Pixel_extraction/01_pixel-extraction/DESIS"
+out_path <- "/media/antonio/Work/MMDB/Pixel_extraction/02_compile-files" #This will return 3 files
 
 compile_files(in_path, out_path)
 
