@@ -16,12 +16,13 @@ library(bit64)
 library(Rcpp)
 library(RcppArmadillo)
 library(rTLS)
-options(scipen = 10000)
+library(dynutils)
 
 #'------------------------------------------------------------------------------
 #' Source code
 
 sourceCpp("src/goodness_rcpp.cpp")
+source("R/auxiliary/aggregate_plants.R")
 
 #'------------------------------------------------------------------------------
 #' Function
@@ -42,8 +43,8 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
   env <- env[vector_match,]
   
   # Rotate
-  ord_new <- MDSrotate(ord, env[, c("Tavg", "Precipitation")], na.rm = TRUE)
-  rm(list = c("ord", "comm_names"))
+  ord_new <- MDSrotate(ord, env[, c("MAT", "MAP")], na.rm = TRUE)
+  rm(list = c("ord"))
   gc()
   
   #-----------------------------------------------------------------------------
@@ -53,9 +54,56 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
   comm <- ord_new$points
   colnames(comm) <- paste0("Axis", 1:ncol(comm))
   comm <- cbind(data.table(PLT_CN = as.integer64(rownames(comm))), comm)
+  
+  # Scale from -0.5 to 0.5
+  comm[, 2:4] <- scale_uniform(comm[, 2:4], center = 0, max_range = 1)
   fwrite(comm, paste0(out_path, "/NMDS_scores_comm_", type, "_total.csv"))
   
+  # ----------------------------------------------------------------------------
+  # Get species scores
+  
+  # Read species
+  sp <- readRDS(species)
+  vector_match <- match(comm_names, as.integer64(rownames(sp)))
+  sp <- sp[vector_match,]
+  
+  # Get scores
+  sp_scores <- wascores(x = comm[, 2:4], sp, expand = TRUE)
+  sp_scores <- data.table(variable = rownames(sp_scores), sp_scores)
+  fwrite(sp_scores, paste0(out_path, "/NMDS_species-wascores_", type, "_total.csv"))
+  rm(list = c("sp_scores"))
+  
+  # ----------------------------------------------------------------------------
+  # Get traits scores
+  
+  # Read traits
+  traits <- fread(fia_traits)
+  vector_match <- match(colnames(sp), traits$Taxon2)
+  traits <- traits[vector_match, ]
+  meta <- traits[, c("Taxon2", "HTq", "SLq", "WD", "shade", "drought", "waterlogging",
+                    "LMA", "N", "leaf_shape", "leaf_type", "leaf_habit")]
+  communities <- decostand(sp, "total")
+  meta <- aggregate_batch(meta, communities)
+  traits_scores <- wascores(x = comm[, 2:4], meta[,-1], expand = TRUE)
+  traits_scores <- data.table(variable = rownames(traits_scores), traits_scores)
+  fwrite(traits_scores, paste0(out_path, "/NMDS_traits-wascores_", type, "_total.csv"))
+  rm(list = c("traits_scores", "meta"))
+  
+  # ----------------------------------------------------------------------------
+  # Get environmental scores
+  
+  # Read traits
+  env <- na.exclude(env)
+  vector_match <- match(env$PLT_CN, comm$PLT_CN)
+  comm2 <- comm[vector_match,]
+  env_scores <- wascores(x = comm2[, 2:4], env[,-1], expand = TRUE)
+  env_scores <- data.table(variable = rownames(env_scores), env_scores)
+  fwrite(env_scores, paste0(out_path, "/NMDS_env-wascores_", type, "_total.csv"))
+  rm(list = c("env_scores", "comm2"))
+  
+  # ----------------------------------------------------------------------------
   # Get goodness
+  
   gof <- goodness_rcpp(dist = ord_new$dist, 
                        dhat = ord_new$dhat, 
                        nobj = ord_new$nobj, 
@@ -137,31 +185,34 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
 
 root_path <- "/media/antonio/Work/MMDB"
 #root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
+# root_path <- "E:/backup/MMDB"
 
 # Taxonomic
-ordination <- paste0(root_path, "/04_NMDS/NMDS_taxo_total.rds")
-fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
-species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
-out_path <- paste0(root_path, "/04_NMDS")
+ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")
+fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
+species <- paste0(root_path, "/Diversity/beta/master_matched_comm_phylo_VOL.rds")
+fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
+out_path <- paste0(root_path, "/Diversity/NMDS")
 type <- "taxo"
 text <- "Taxonomic"
 postprocessing(ordination, fia_environment, out_path, type, text)
 
 # Phylogenetic
-ordination <- paste0(root_path, "/04_NMDS/NMDS_phylo_total.rds")
-fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
-species <- paste0(root_path, "/03_diversity/master_matched_comm_phylo-VOL.rds")
-out_path <- paste0(root_path, "/04_NMDS")
+ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_phylo_total.rds")
+fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
+species <- paste0(root_path, "/Diversity/beta/master_matched_comm_phylo_VOL.rds")
+fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
+out_path <- paste0(root_path, "/Diversity/NMDS")
 type <- "phylo"
 text <- "Phylogenetic"
 postprocessing(ordination, fia_environment, out_path, type, text)
 
 # Functional
-ordination <- paste0(root_path, "/04_NMDS/NMDS_func_total.rds")
-fia_environment <- paste0(root_path, "/00_FIA/plots_climate.csv")
-species <- paste0(root_path, "/03_diversity/master_matched_comm_func-VOL.rds")
-out_path <- paste0(root_path, "/04_NMDS")
+ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_func_total.rds")
+fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
+species <- paste0(root_path, "/Diversity/beta/master_matched_comm_func_VOL.rds")
+fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
+out_path <- paste0(root_path, "/Diversity/NMDS")
 type <- "func"
 text <- "Functional"
 postprocessing(ordination, fia_environment, out_path, type, text)

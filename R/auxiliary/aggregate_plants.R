@@ -20,49 +20,71 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' Function
 
-aggregate_plants <- function(meta, communities) {
+aggregate_plants <- function(sub_meta, communities) {
   
   # Get PLT_CN
   PLT_CN <- as.integer64(rownames(communities))
   communities <- as.data.table(communities)
   
   # Get taxom
-  sp_meta <- meta$Taxon2
+  sp_meta <- sub_meta$Taxon2
   sp_communities <- colnames(communities)
   
   # Match frames
   sp <- match(sp_communities, sp_meta)
   
   # Create new meta
-  meta_new <- meta[sp, ]
-  meta_new$ID <- 1:nrow(meta_new)
+  meta_new <- sub_meta[sp, ]
+  name <- colnames(meta_new)[2]
+  colnames(meta_new)[2] <- "value"
   
-  # Get species to aggregate
-  colnames(meta_new)[2] <- "groups"
-  group <- unique(meta_new$groups)
-  
-  # Collector
-  complete <- data.table(PLT_CN = PLT_CN)
-  
-  # Apply loop to groups
-  for(i in 1:length(group)) {
+  if(class(meta_new$value) == "numeric") {
     
-    # Subset groups to aggregate
-    sub_group <- subset(meta_new, groups == group[i])
-    sub_community <- communities[, .SD, .SDcols = sub_group$ID]
+    meta_trans <- as.data.table(t(meta_new[,2]))
+    colnames(meta_trans) <- meta_new$Taxon2
+    meta_trans <- meta_trans[rep(1, length(PLT_CN)),]
     
-    # Aggregate groups and create frame
-    sub_community <- rowSums(sub_community)
-    sub_community <- data.table(sub_community)
-    colnames(sub_community) <- group[i]
+    # Matrix multiplication
+    cwm <- as.matrix(communities) * as.matrix(meta_trans)
+    cwm <- rowSums(cwm)
     
-    # Collect frame
-    complete <- cbind(complete, sub_community)
+    # Return
+    complete <- data.table(PLT_CN = PLT_CN,
+                           trait = cwm)
+    colnames(complete)[2] <- name
     
+    return(complete)
+    
+  } else if(class(as.matrix(meta_new)[,2]) == "character") {
+    
+    meta_new$ID <- 1:nrow(meta_new)
+    
+    # Get species to aggregate
+    colnames(meta_new)[2] <- "groups"
+    group <- unique(meta_new$groups)
+    
+    # Collector
+    complete <- data.table(PLT_CN = PLT_CN)
+    
+    # Apply loop to groups
+    for(i in 1:length(group)) {
+      
+      # Subset groups to aggregate
+      sub_group <- subset(meta_new, groups == group[i])
+      sub_community <- communities[, .SD, .SDcols = sub_group$ID]
+      
+      # Aggregate groups and create frame
+      sub_community <- rowSums(sub_community)
+      sub_community <- data.table(sub_community)
+      colnames(sub_community) <- group[i]
+      
+      # Collect frame
+      complete <- cbind(complete, sub_community)
+      
+    }
   }
   
   # Provide 
-  
   return(complete)
   
 }
