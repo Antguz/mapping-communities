@@ -16,81 +16,107 @@ model_tune <- function(meta_training,
                                segments,
                                iscv) {
     
-    t <- X
+    # Get segments
+    axis1_data <- cbind(ordination_training[segments[[X]]$axis1_seg, 1], 
+                        spectra_training[segments[[X]]$axis1_seg,])
     
-    # Homogeneous segments
-    sub_ordination <- ordination_training[segments[[t]],]
-    ncol_ord <- ncol(sub_ordination)
-    sub_spectra <- spectra_training[segments[[t]],]
+    axis2_data <- cbind(ordination_training[segments[[X]]$axis2_seg, 2], 
+                        spectra_training[segments[[X]]$axis2_seg,])
     
-    # Model
-    model_frame <- data.frame(axes = I(as.matrix(sub_ordination)),
-                              bands = I(as.matrix(sub_spectra)))
+    axis3_data <- cbind(ordination_training[segments[[X]]$axis3_seg, 3], 
+                        spectra_training[segments[[X]]$axis3_seg,])
     
-    ml_model <- plsr(axes ~ bands, 
-                     data = model_frame,
-                     validation = "CV",
-                     segments = iscv[[t]],
-                     ncomp = ncomp_max,
-                     center = TRUE,
-                     method = "oscorespls",
-                     maxit = 10000)
-
-    # Performance 
-    RMSEP_train <- pls::RMSEP(object = ml_model,
-                              estimate = "train")
+    # Get models
+    axis1_model <- plsr(Axis1 ~ ., 
+                        data = axis1_data,
+                        validation = "CV",
+                        segments = iscv[[X]]$folds_axis1,
+                        ncomp = ncomp_max,
+                        center = TRUE,
+                        method = "oscorespls",
+                        maxit = 10000)
     
-    RMSEP_CV <- pls::RMSEP(object = ml_model,
-                           estimate = "CV")
+    axis2_model <- plsr(Axis2 ~ ., 
+                        data = axis2_data,
+                        validation = "CV",
+                        segments = iscv[[X]]$folds_axis2,
+                        ncomp = ncomp_max,
+                        center = TRUE,
+                        method = "oscorespls",
+                        maxit = 10000)
     
-    R2_train <- pls::R2(object = ml_model,
-                        estimate = "train")
-    
-    R2_CV <- pls::R2(object = ml_model,
-                     estimate = "CV")
-    
-    PRESS <- ml_model$validation$PRESS
-    
-    # Reshape
-    RMSEP_train <- cbind(data.table(iteration = rep(t, ncol_ord),
-                                    type = rep("RMSEP", ncol_ord),
-                                    estimate = rep("train", ncol_ord),
-                                    Axes = paste0("Axis", 1:ncol_ord)),
-                         as.data.table(RMSEP_train$val[1,1:ncol_ord,]))
-    
-    RMSEP_CV <- cbind(data.table(iteration = rep(t, ncol_ord),
-                                 type = rep("RMSEP", ncol_ord),
-                                 estimate = rep("CV", ncol_ord),
-                                 Axes = paste0("Axis", 1:ncol_ord)),
-                      as.data.table(RMSEP_CV$val[1,1:ncol_ord,]))
-    
-    R2_train <- cbind(data.table(iteration = rep(t, ncol_ord),
-                                 type = rep("R2", ncol_ord),
-                                 estimate = rep("train", ncol_ord),
-                                 Axes = paste0("Axis", 1:ncol_ord)),
-                      as.data.table(R2_train$val[1,1:ncol_ord,]))
-    
-    R2_CV <- cbind(data.table(iteration = rep(t, ncol_ord),
-                              type = rep("R2", ncol_ord),
-                              estimate = rep("CV", ncol_ord),
-                              Axes = paste0("Axis", 1:ncol_ord)),
-                   as.data.table(R2_CV$val[1,1:ncol_ord,]))
-    
-    PRESS <- cbind(data.table(iteration = rep(t, ncol_ord),
-                              type = rep("PRESS", ncol_ord),
-                              estimate = rep("CV", ncol_ord),
-                              Axes = paste0("Axis", 1:ncol_ord),
-                              '(Intercept)' = c(0, 0, 0)),
-                   as.data.table(PRESS))
-    
-    # Collect results
-    results <- rbind(RMSEP_train, RMSEP_CV,
-                     R2_train, R2_CV, PRESS)
+    axis3_model <- plsr(Axis3 ~ ., 
+                        data = axis3_data,
+                        validation = "CV",
+                        segments = iscv[[X]]$folds_axis3,
+                        ncomp = ncomp_max,
+                        center = TRUE,
+                        method = "oscorespls",
+                        maxit = 10000)
     
     # Clean memory
-    rm(list = c("sub_ordination", "ncol_ord", "sub_spectra", 
-                "ml_model", "RMSEP_train", "RMSEP_CV", "R2_train", "R2_CV", "PRESS"))
+    rm(list = c("axis1_data", "axis2_data", "axis3_data"))
+
+    # Performance 
+    axis1_RMSEP_train <- pls::RMSEP(object = axis1_model, estimate = "train")$val[,1,]
+    axis2_RMSEP_train <- pls::RMSEP(object = axis2_model, estimate = "train")$val[,1,]
+    axis3_RMSEP_train <- pls::RMSEP(object = axis3_model, estimate = "train")$val[,1,]
     
+    axis1_RMSEP_CV <- pls::RMSEP(object = axis1_model, estimate = "CV")$val[,1,]
+    axis2_RMSEP_CV <- pls::RMSEP(object = axis2_model, estimate = "CV")$val[,1,]
+    axis3_RMSEP_CV <- pls::RMSEP(object = axis3_model, estimate = "CV")$val[,1,]
+    
+    axis1_R2_train <- pls::R2(object = axis1_model, estimate = "train")$val[,1,]
+    axis2_R2_train <- pls::R2(object = axis2_model, estimate = "train")$val[,1,]
+    axis3_R2_train <- pls::R2(object = axis3_model, estimate = "train")$val[,1,]
+    
+    axis1_R2_CV <- pls::R2(object = axis1_model, estimate = "CV")$val[,1,]
+    axis2_R2_CV <- pls::R2(object = axis2_model, estimate = "CV")$val[,1,]
+    axis3_R2_CV <- pls::R2(object = axis3_model, estimate = "CV")$val[,1,]
+    
+    axis1_PRESS <- c(Intercept = 0, axis1_model$validation$PRESS)
+    axis2_PRESS <- c(Intercept = 0, axis2_model$validation$PRESS)
+    axis3_PRESS <- c(Intercept = 0, axis3_model$validation$PRESS)
+    
+    onasigma <- c(selectNcomp(axis1_model, "onesigma"),
+                  selectNcomp(axis2_model, "onesigma"),
+                  selectNcomp(axis3_model, "onesigma"))
+    
+    randomization <- c(selectNcomp(axis1_model, "randomization"),
+                       selectNcomp(axis2_model, "randomization"),
+                       selectNcomp(axis3_model, "randomization"))
+    
+    min_value <- c(which.min(axis1_RMSEP_CV[-1]),
+                   which.min(axis2_RMSEP_CV[-1]),
+                   which.min(axis3_RMSEP_CV[-1]))
+    
+    # Merge
+    results <- rbind(axis1_RMSEP_train, axis2_RMSEP_train, axis3_RMSEP_train,
+                     axis1_RMSEP_CV, axis2_RMSEP_CV, axis3_RMSEP_CV, 
+                     axis1_R2_train, axis2_R2_train, axis3_R2_train,
+                     axis1_R2_CV, axis2_R2_CV, axis3_R2_CV, 
+                     axis1_PRESS, axis2_PRESS, axis3_PRESS)
+    
+    base <- data.table(Iteration = X,
+                       Axes = rep(c("Axis1", "Axis2", "Axis3"), 5),
+                       Metric = c(rep("RMSEP", 6), rep("R2", 6), rep("PRESS", 3)),
+                       Estimate = c(rep("train", 3), rep("CV", 3), rep("train", 3), rep("CV", 3), rep("PRESS", 3)),
+                       onasigma = rep(onasigma, 5),
+                       randomization = rep(randomization, 5),
+                       abs_min = rep(min_value, 5))
+    
+    results <- cbind(base, results)
+    
+    # Clean memory
+    rm(list = c("axis1_model", "axis2_model", "axis3_model",
+                "axis1_RMSEP_train", "axis2_RMSEP_train", "axis3_RMSEP_train",
+                "axis1_RMSEP_CV", "axis2_RMSEP_CV", "axis3_RMSEP_CV",
+                "axis1_R2_train", "axis2_R2_train", "axis3_R2_train",
+                "axis1_R2_CV", "axis2_R2_CV", "axis3_R2_CV",
+                "axis1_PRESS", "axis2_PRESS", "axis3_PRESS",
+                "onasigma", "randomization", "min_value",
+                "base"))
+                
     return(results)
     
   }
@@ -112,63 +138,8 @@ model_tune <- function(meta_training,
                          mc.allow.recursive = TRUE, 
                          affinity.list = NULL)
   
-  frame <- data.table()
-  
-  for(i in 1:length(complete)) {
-    frame <- rbind(frame, complete[[i]], fill = TRUE)
-  }
-  
-  return(frame)
+  complete <- do.call(rbind, complete)
+  return(complete)
   
 }
 
-selectNcomp_axes <- function(object,
-                             method = "onesigma",
-                             plot = FALSE) {
-  
-  # Optimal
-  optimal <- NA
-  Rmseps <- RMSEP(object, "CV")$val
-  
-  for(i in 1:dim(Rmseps)[2]) {
-    
-    rmseps <- Rmseps[,i,]
-    maxIdx <- object$ncomp + 1
-    absBest <- which.min(rmseps[seq_len(maxIdx)])
-    
-    if (absBest > 0) {
-      
-      if (is.null(origResponse <- object$y)) {
-        origResponse <- c(predict(object, ncomp = 1)[,i,] + residuals(object)[,i,1])
-      }
-      
-      allresids <- cbind(origResponse - (sum(origResponse) - origResponse) / (length(origResponse) - 1),
-                         object$validation$pred[,i,] - origResponse)
-      
-      residsds <- apply(allresids, 2, sd) / sqrt(nrow(allresids))
-      uls <- rmseps - residsds
-      selection <- min(which(uls < rmseps[absBest])) - 1
-      
-      
-      if (isTRUE(plot)) {
-        xvals <- seq_along(rmseps) - 1
-        plot(xvals, rmseps, ylab = "RMSEP",
-             xlab = "Number of components", type = "b")
-        arrows(xvals, uls, xvals, rmseps + residsds,
-               code = 3, col = "gray", angle = 90, length = .1)
-        abline(h = rmseps[absBest], col = "gray", lty = 3)
-        abline(v = absBest - 1, col = "gray", lty = 3)
-        abline(v = selection, col = "blue", lty = 2)
-        legend("topright", legend = c("Abs. minimum", "Selection"),
-               lty = 3:2, col = c("gray", "blue"), bg = "white")
-      }
-    }
-    
-    optimal[i] <- selection
-    
-  }
-  
-  return(optimal)
-  
-}
-  

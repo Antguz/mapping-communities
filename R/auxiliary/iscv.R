@@ -1,43 +1,45 @@
 # Cross-validation strategy
-iscv_strategy <- function(meta, 
-                          vec_projected, 
-                          split, 
+iscv_strategy <- function(meta_split, 
                           segments,
                           threads = 4) {
   
+  meta_split$ID <- paste0(meta_split$STATECD, "_", meta_split$COUNTYCD)
+  
   iscv_application <- function(X,
-                               meta, 
-                               vec_projected, 
-                               split, 
+                               meta_split,
                                segments) {
     
     # Get vector for training and testing
-    split_split <- 1:nrow(meta) %in% split
-    split_seg <- 1:nrow(meta[split,]) %in% segments[[X]]
+    axis1_split_seg <- 1:nrow(meta_split) %in% segments[[X]]$axis1_seg
+    axis2_split_seg <- 1:nrow(meta_split) %in% segments[[X]]$axis2_seg
+    axis3_split_seg <- 1:nrow(meta_split) %in% segments[[X]]$axis3_seg
     
-    # Get training and testing vectors
-    train_vec <- vec_projected[split_split,]
-    train_vec <- train_vec[split_seg,]
-    test_vec <- vec_projected[!split_split,] #[!split_split,]
+    # Split mete
+    axis1_meta_seg <- meta_split[axis1_split_seg,]
+    axis2_meta_seg <- meta_split[axis2_split_seg,]
+    axis3_meta_seg <- meta_split[axis3_split_seg,]
     
-    knndm_folds <- knndm(tpoints = train_vec,
-                         predpoints = test_vec,
-                         space = "geographical",
-                         k = 10,
-                         maxp = 0.5,
-                         clustering = "kmeans",
-                         sampling = "regular")
+    # Folds
+    axis1folds <- CreateSpacetimeFolds(x = axis1_meta_seg,
+                                       spacevar = "ID",
+                                       k = 10)
+    axis2folds <- CreateSpacetimeFolds(x = axis2_meta_seg,
+                                       spacevar = "ID",
+                                       k = 10)
+    axis3folds <- CreateSpacetimeFolds(x = axis3_meta_seg,
+                                       spacevar = "ID",
+                                       k = 10)
     
-    return(knndm_folds$indx_train)
+    return(list(folds_axis1 = axis1folds$index,
+                folds_axis2 = axis2folds$index,
+                folds_axis3 = axis3folds$index))
     
   }
   
   # Parallel processing
   complete <- pbmclapply(X = 1:length(segments), 
                          FUN = iscv_application, 
-                         meta = meta, 
-                         vec_projected = vec_projected, 
-                         split = split,
+                         meta_split = meta_split, 
                          segments = segments,
                          mc.preschedule = TRUE, 
                          mc.set.seed = TRUE,
