@@ -26,7 +26,7 @@ source("R/auxiliary/data_split.R")
 source("R/auxiliary/axis_segmentation.R")
 source("R/auxiliary/iscv.R") 
 source("R/auxiliary/model_tune.R") 
-source("R/figure/figure_optimal_inspection.R") 
+source("figures/figure_optimal_inspection.R") 
 source("R/auxiliary/model_build.R")
 source("R/auxiliary/model_performance.R")
 source("R/auxiliary/pls_vip.R")
@@ -208,7 +208,7 @@ models <- model_tune(meta_training = meta[split,],
 
 # Export for inspection
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
-axis <- "Axis1"
+axis <- "Axis3"
 optimal_figure(models, rAxes = axis, rMetric = "RMSEP", rEstimate = "train")
 optimal_figure(models, rAxes = axis, rMetric = "RMSEP", rEstimate = "CV")
 optimal_figure(models, rAxes = axis, rMetric = "R2", rEstimate = "train")
@@ -228,7 +228,7 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 # Functional c(XX, XX, XX)
 
 # Manual checked
-tune_optimal <- c(11, 10, 9)
+tune_optimal <- c(12, 10, 10)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -249,16 +249,16 @@ final_models <- model_build(meta_training = meta[split,],
 #' @Model_performance
 #-------------------------------------------------------------------------------
 
-training <- model_performance(meta = meta[split,],
-                              ordination = ordination[split,],
-                              spectra = spectra[split,],
+training <- model_performance(meta_split = meta[split,],
+                              ordination_split = ordination[split,],
+                              spectra_split = spectra[split,],
                               models = final_models,
                               tune_optimal = tune_optimal,
                               threads = 25)
 
-testing <- model_performance(meta = meta[!split,],
-                             ordination = ordination[!split,],
-                             spectra = spectra[!split,],
+testing <- model_performance(meta_split = meta[!split,],
+                             ordination_split = ordination[!split,],
+                             spectra_split = spectra[!split,],
                              models = final_models,
                              tune_optimal = tune_optimal,
                              threads = 25)

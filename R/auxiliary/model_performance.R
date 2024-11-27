@@ -1,29 +1,36 @@
 #-------------------------------------------------------------------------------
 # Model Performance Function
-model_performance <- function(meta,
-                              ordination, 
-                              spectra,
+model_performance <- function(meta_split,
+                              ordination_split, 
+                              spectra_split,
                               models,
                               tune_optimal,
                               threads) {
-  
-  # Secure I()
-  ord <- as.matrix(ordination)
-  model_frame <- data.frame(bands = I(as.matrix(spectra)))
   
   #-----------------------------------------------------------------------------
   # Apply prediction function
   application_predict <- function(X,
                                   models,
-                                  spectra,
+                                  spectra_split,
                                   tune_optimal) {
     # Predict new values
-    predicted <- predict(models[[X]], 
-                         newdata = model_frame,
-                         ncom = tune_optimal)
-    predicted <- cbind(predicted[,1,1],
-                       predicted[,2,2],
-                       predicted[,3,3])
+    axis1_predicted <- predict(models[[X]]$axis1_model, 
+                               newdata = spectra_split,
+                               ncom = tune_optimal[1])[,1,]
+    
+    axis2_predicted <- predict(models[[X]]$axis2_model, 
+                               newdata = spectra_split,
+                               ncom = tune_optimal[2])[,1,]
+    
+    axis3_predicted <- predict(models[[X]]$axis3_model, 
+                               newdata = spectra_split,
+                               ncom = tune_optimal[3])[,1,]
+    
+    
+    
+    predicted <- cbind(axis1_predicted,
+                       axis2_predicted,
+                       axis3_predicted)
     predicted <- as.data.frame(predicted)
     colnames(predicted) <- c("Axis1", "Axis2", "Axis3")
     
@@ -35,7 +42,7 @@ model_performance <- function(meta,
   predicted <- pbmclapply(X = 1:length(models), 
                           FUN = application_predict, 
                           models = models,
-                          spectra = spectra,
+                          spectra_split = spectra_split,
                           tune_optimal = tune_optimal,
                           mc.preschedule = TRUE, 
                           mc.set.seed = FALSE,
@@ -47,15 +54,17 @@ model_performance <- function(meta,
 
   #-----------------------------------------------------------------------------
   # Evaluate performance
+  ord <- as.data.frame(ordination_split)
+  
   application_performance <- function(X,
-                                      ordination,
+                                      ord,
                                       predicted) {
     # Predict new values
     iteration <- predicted[[X]]
     collector <- data.table()
     
     # Performance at the Axis level
-    for(i in 1:ncol(ordination)) {
+    for(i in 1:ncol(ordination_split)) {
       per <- parameters(obs = ord[, i], pred = iteration[,i])
       per <- cbind(Axes = paste0("Axis", i),
                    iteration = X,
@@ -64,7 +73,7 @@ model_performance <- function(meta,
     }
     
     # Performance at the Axes level
-    per <- parameters_3d(observed = ordination, 
+    per <- parameters_3d(observed = ordination_split, 
                          predicted_values = as.data.table(iteration))
     
     collector <- cbind(collector, per)
@@ -74,23 +83,19 @@ model_performance <- function(meta,
   }
   
   # Performance in parallel
-  performance <- mclapply(X = 1:length(models),
-                          FUN = application_performance,
-                          ordination = ordination,
-                          predicted = predicted,
-                          mc.preschedule = TRUE, 
-                          mc.set.seed = FALSE,
-                          mc.silent = FALSE, 
-                          mc.cores = threads,
-                          mc.cleanup = TRUE, 
-                          mc.allow.recursive = TRUE, 
-                          affinity.list = NULL)
+  performance <- pbmclapply(X = 1:length(models),
+                            FUN = application_performance,
+                            ord = ord,
+                            predicted = predicted,
+                            mc.preschedule = TRUE, 
+                            mc.set.seed = FALSE,
+                            mc.silent = FALSE, 
+                            mc.cores = threads,
+                            mc.cleanup = TRUE, 
+                            mc.allow.recursive = TRUE, 
+                            affinity.list = NULL)
   
-  frame <- data.table()
-  
-  for(i in 1:length(performance)) {
-    frame <- rbind(frame, performance[[i]], fill = TRUE)
-  }
+  frame <- do.call(rbind, performance)
   
   #-----------------------------------------------------------------------------
   # Get residuals
@@ -135,7 +140,7 @@ model_performance <- function(meta,
     
   }
     
-  predicted_summary <- application_residuals(ordination, predicted)
+  predicted_summary <- application_residuals(ord, predicted)
   
   #-----------------------------------------------------------------------------
   # Get 3D residuals
@@ -157,7 +162,7 @@ model_performance <- function(meta,
     
   }
   
-  residuals_3D_predicted <- residuals_3D(ordination, predicted)
+  residuals_3D_predicted <- residuals_3D(ord, predicted)
   
   #-----------------------------------------------------------------------------
   # Return results

@@ -16,26 +16,50 @@ model_build <- function(meta_training,
                                 iscv,
                                 tune_optimal) {
     
-    t <- X
+    # Get segments
+    axis1_data <- cbind(ordination_training[segments[[X]]$axis1_seg, 1], 
+                        spectra_training[segments[[X]]$axis1_seg,])
     
-    # Homogeneous segments
-    sub_ordination <- ordination_training[segments[[t]],]
-    ncol_ord <- ncol(sub_ordination)
-    sub_spectra <- spectra_training[segments[[t]],]
+    axis2_data <- cbind(ordination_training[segments[[X]]$axis2_seg, 2], 
+                        spectra_training[segments[[X]]$axis2_seg,])
     
-    # Model
-    model_frame <- data.frame(axes = I(as.matrix(sub_ordination)),
-                              bands = I(as.matrix(sub_spectra)))
-    ml_model <- plsr(axes ~ bands, 
-                     data = model_frame,
-                     validation = "CV",
-                     segments = iscv[[t]],
-                     ncomp = max(tune_optimal),
-                     center = TRUE,
-                     method = "oscorespls",
-                     maxit = 10000)
+    axis3_data <- cbind(ordination_training[segments[[X]]$axis3_seg, 3], 
+                        spectra_training[segments[[X]]$axis3_seg,])
     
-    return(ml_model)
+    # Get models
+    axis1_model <- plsr(Axis1 ~ ., 
+                        data = axis1_data,
+                        validation = "CV",
+                        segments = iscv[[X]]$folds_axis1,
+                        ncomp = tune_optimal[1],
+                        center = TRUE,
+                        method = "oscorespls",
+                        maxit = 10000)
+    
+    axis2_model <- plsr(Axis2 ~ ., 
+                        data = axis2_data,
+                        validation = "CV",
+                        segments = iscv[[X]]$folds_axis2,
+                        ncomp = tune_optimal[2],
+                        center = TRUE,
+                        method = "oscorespls",
+                        maxit = 10000)
+    
+    axis3_model <- plsr(Axis3 ~ ., 
+                        data = axis3_data,
+                        validation = "CV",
+                        segments = iscv[[X]]$folds_axis3,
+                        ncomp = tune_optimal[3],
+                        center = TRUE,
+                        method = "oscorespls",
+                        maxit = 10000)
+    
+    # Clean memory
+    rm(list = c("axis1_data", "axis2_data", "axis3_data"))
+    
+    return(list(axis1_model = axis1_model,
+                axis2_model = axis2_model,
+                axis3_model = axis3_model))
     
   }
   
@@ -55,7 +79,6 @@ model_build <- function(meta_training,
                        mc.cleanup = TRUE, 
                        mc.allow.recursive = TRUE, 
                        affinity.list = NULL)
-  
   
   return(complete)
   
