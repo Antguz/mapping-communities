@@ -24,33 +24,36 @@ library(sf)
 #-------------------------------------------------------------------------------
 
 source("R/CWM.R")
-source("R/data_split_CWM.R")
-source("R/model_CWM.R")
-source("R/model_performance.R")
+source("R/auxiliary/CWM.R")
+source("R/auxiliary/data_split_CWM.R")
+source("R/auxiliary/model_CWM.R")
+source("R/auxiliary/model_performance.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 type <- "func"
-out_path <- "/media/antonio/Work/DESIS_mapping/07_model_CWM"
+out_path <- "/media/antonio/Work/MMDB/Models/03_model_CWM"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
 # Meta information
-fia_meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
+fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/05_NMDS/NMDS_scores_comm_", type, ".csv"))
+ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_total.csv"))
 
 # FIA data for aggregation
-inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "-VOL.rds"))
-sp_meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
-aggregation <- CWM_batch(sp_meta[,c(9, 15:26)], inventory)
+inventory <- readRDS(paste0(root_path, "/Diversity/01_beta/master_matched_comm_", type, "_VOL.rds"))
+sp_meta <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
+match <- match(colnames(inventory), sp_meta$Taxon2)
+sp_meta <- sp_meta[match, ]
+aggregation <- CWM_batch(sp_meta[,c("Taxon2", "HTq", "SLq", "WD", "shade", "drought", "waterlogging", "LMA", "N")], 
+                         inventory)
 
 # Test for match
 all.equal(aggregation$PLT_CN, ordination$PLT_CN)

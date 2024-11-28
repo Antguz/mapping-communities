@@ -25,27 +25,26 @@ library(ROSE)
 #' @Source_code
 #-------------------------------------------------------------------------------
 
-source("R/data_split_fortyp.R")
-source("R/model_fortyp.R")
+source("R/auxiliary/data_split_fortyp.R")
+source("R/auxiliary/model_fortyp.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 root_path <- "/media/antonio/Work/MMDB"
 type <- "taxo"
-out_path <- "/media/antonio/Work/MMDB/07_model_fortyp"
+out_path <- "/media/antonio/Work/MMDB/Models/03_models_fortyp"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
 # Meta information
-fia_meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
+fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", type, "_total.csv"))
+ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_total.csv"))
 
 # Test for match
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
@@ -53,9 +52,9 @@ fia_meta <- fia_meta[fia_meta_match,]
 all.equal(ordination$PLT_CN, fia_meta$PLT_CN)
 
 # FIA forest type
-forest_type <- fread(paste0(root_path, "/00_FIA/ENTIRE_COND.csv"))
+forest_type <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_COND.csv"))
 forest_type <- forest_type[, c("PLT_CN", "FORTYPCD")]
-FORTYPCD <- fread(paste0(root_path, "/00_FIA/ENTIRE_REF_FOREST_TYPE.csv"))
+FORTYPCD <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_REF_FOREST_TYPE.csv"))
 FORTYPCD <- FORTYPCD[, c("VALUE", "MEANING")]
 forest_type <- merge(forest_type, FORTYPCD, 
                      by.x = "FORTYPCD", by.y = "VALUE",

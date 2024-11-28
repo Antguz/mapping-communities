@@ -27,34 +27,36 @@ library(ROSE)
 #-------------------------------------------------------------------------------
 
 sourceCpp("src/approximation_rcpp.cpp")
-source("R/aggregate_plants.R")
-source("R/data_split_lineages.R")
-source("R/axes_segmentation.R") 
-source("R/model_lineages.R")
+source("R/auxiliary/aggregate_plants.R")
+source("R/auxiliary/data_split_lineages.R")
+source("R/auxiliary/axes_segmentation.R") 
+source("R/auxiliary/model_lineages.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-#root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
 root_path <- "/media/antonio/Work/MMDB"
 type <- "phylo"
-out_path <- "/media/antonio/Work/MMDB/07_model_occurrence"
+out_path <- "/media/antonio/Work/MMDB/Models/03_model_occurrence"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
 # Meta information
-fia_meta <- fread(paste0(root_path, "/00_FIA/plots_eastern_20230427.csv"))
+fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", type, "_total.csv"))
+ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_total.csv"))
 
 # FIA data for aggregation
-inventory <- readRDS(paste0(root_path, "/03_diversity/master_matched_comm_", type, "_VOL.rds"))
-sp_meta <- fread(paste0(root_path, "/00_FIA/SPCD_meta.csv"))
-aggregation <- aggregate_batch(sp_meta[,c(9, 3, 4, 10, 11, 12, 13, 14)], inventory)
+inventory <- readRDS(paste0(root_path, "/Diversity/01_beta/master_matched_comm_", type, "_VOL.rds"))
+sp_meta <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
+aggregation <- aggregate_batch(sp_meta[,c("Taxon2", "Family", "Genus", "growth_form", 
+                                          "mycorrhizal_association", "leaf_shape", 
+                                          "leaf_type", "leaf_habit")], 
+                               decostand(inventory, "total"))
 #aggregation <- aggregation[, 1:2]
 
 # Test for match
@@ -63,7 +65,7 @@ fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match,]
 all.equal(aggregation$PLT_CN, fia_meta$PLT_CN)
 
-# Select the most abundant genus
+# Select the most abundant groups
 aggregation <- aggregation[, names(aggregation)[-1] := lapply(.SD, function(x) as.integer(x!=0)), 
                                  .SDcols = 2:ncol(aggregation)]
 presence <- colSums(aggregation[,-1])

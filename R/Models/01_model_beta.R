@@ -37,13 +37,13 @@ source("R/auxiliary/pls_coefficients.R")
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "DESIS"
+sensor <- "EMIT"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-type <- "taxo"
+type <- "func"
 diversity <- "total"
 meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 ordination <- fread(paste0(root_path, "/Diversity/NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
@@ -113,8 +113,8 @@ if(type == "taxo") {
 }
 
 # # Outliers
-# outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
-# data <- data[outliers$remove != TRUE, ]
+outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
+data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
@@ -145,10 +145,10 @@ if(sensor == "DESIS") {
 if(type == "taxo") {
   
   if(sensor == "DESIS") {
-    p <- 0.64
+    p <- 0.648
     
   } else if(sensor == "EMIT") {
-    p  <- 0.638
+    p  <- 0.643
   }
   
   # Data-split based on State-County ID
@@ -204,7 +204,7 @@ models <- model_tune(meta_training = meta[split,],
                      iscv = iscv,
                      ncomp_max = 30,
                      ntimes = iterations,
-                     threads = 16)
+                     threads = 10)
 
 # Export for inspection
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
@@ -218,17 +218,17 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 #' @note Do a manual checking of the optimal number of components
 
 ### DESIS 
-# Taxonomic c(18, 12, 11)
-# Phylogenetic c(XX, XX, XX)
-# Functional c(XX, XX, XX)
+# Taxonomic c(12, 10, 10)
+# Phylogenetic c(7, 6, 6)
+# Functional c(9, 6, 8)
 
 ### EMIT
-# Taxonomic c(15, 11, 11)
-# Phylogenetic c(XX, XX, XX)
-# Functional c(XX, XX, XX)
+# Taxonomic c(20, 9, XX)
+# Phylogenetic c(8, 6, 6)
+# Functional c(12, 7, 8)
 
 # Manual checked
-tune_optimal <- c(12, 10, 10)
+tune_optimal <- c(12, 7, 8)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -241,7 +241,7 @@ final_models <- model_build(meta_training = meta[split,],
                             iscv = iscv,
                             tune_optimal = tune_optimal,
                             ntimes = iterations,
-                            threads = 5)
+                            threads = 1)
 
 #saveRDS(final_models, paste0(out_path, "/", sensor, "_final_models.rds")) # Do it if you really need it
 
@@ -306,3 +306,12 @@ fwrite(vip, paste0(out_path, "/", sensor, "_", type, "_vip.csv"))
 #-------------------------------------------------------------------------------
 #' @END
 #-------------------------------------------------------------------------------
+
+plot(predicted_training[Axes == "Axis1"]$observed, predicted_training[Axes == "Axis1"]$predicted)
+plot(predicted_training[Axes == "Axis2"]$observed, predicted_training[Axes == "Axis2"]$predicted)
+plot(predicted_training[Axes == "Axis3"]$observed, predicted_training[Axes == "Axis3"]$predicted)
+
+plot(predicted_testing[Axes == "Axis1"]$observed, predicted_testing[Axes == "Axis1"]$predicted)
+plot(predicted_testing[Axes == "Axis2"]$observed, predicted_testing[Axes == "Axis2"]$predicted)
+plot(predicted_testing[Axes == "Axis3"]$observed, predicted_testing[Axes == "Axis3"]$predicted)
+
