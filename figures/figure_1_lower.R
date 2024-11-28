@@ -71,21 +71,14 @@ RGB <- function(X, Y, Z, min_range = -0.50, max_range = 0.50) {
 
 
 root_path <- "/media/antonio/Work/MMDB"
-#root_path <- "/media/antonio/Extreme_Pro/Projects/DESIS_mapping"
-#root_path <- "E:/Projects/DESIS_mapping"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
-#taxo_comm <- taxo_comm[order(Axis1, -Axis2, Axis3), ]
-phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
-#phylo_comm <- phylo_comm[order(Axis1, -Axis2, Axis3), ]
-func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func_total.csv"))
-#func_comm$Axis3 <- -func_comm$Axis3
-#func_comm <- func_comm[order(Axis1, -Axis2, Axis3), ]
-#fwrite(func_comm, paste0(root_path, "/05_NMDS/NMDS_scores_comm_func.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_func_total.csv"))
 
 # Get domains
-domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+domain <- fread(paste0(root_path, "/FIA/00_FIA/", "plot_domain.csv"))
 mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
 domain <- domain[mat, ]
 all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
@@ -103,7 +96,6 @@ func_sf <- st_as_sf(func_sf, coords = c("LON","LAT"), crs = 4269)
 states <- st_read(paste0(root_path, "/GIS/States.gpkg"))
 neon <- st_read(paste0(root_path, "/GIS/NEON.gpkg"))
 neon_aoi <- st_read(paste0(root_path, "/GIS/NEON_aoi.gpkg"))
-
 
 # Make plot
 taxo_col <- RGB(taxo_comm$Axis1, 
@@ -200,7 +192,7 @@ func <- ggplot() +
 plot <- ggarrange(taxo, phylo, func, ncol = 3)
 
 # Black
-jpeg(paste0(root_path, "/figures/", "NMDS_spatial.jpeg"),
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "NMDS_spatial.jpeg"),
     width = 210, 
     height = 90, 
     units = "mm", 
@@ -213,7 +205,7 @@ plot
 dev.off()
 
 # Transparent
-png(paste0(root_path, "/figures/", "NMDS_spatial_trans.png"),
+png(paste0(root_path, "/figures/Manuscript_white/", "NMDS_spatial_trans.png"),
     width = 210, 
     height = 90, 
     units = "mm", 
