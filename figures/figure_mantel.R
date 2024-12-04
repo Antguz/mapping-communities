@@ -86,7 +86,8 @@ mantel_plot <- function(mantel_results,
     # Results
     return(data.table(PLOT_CN = X,
                       elevation = elevation,
-                      slope = slope))
+                      slope = slope,
+                      rsquar = test$r2[[1]]))
     
   }
   
@@ -121,16 +122,8 @@ mantel_plot <- function(mantel_results,
   # Plot
   
   p <- ggplot() +
-    # geom_hex(data = dissimilarities,#[1:10000,],
-    #          aes(x = Beta, 
-    #              y = spectral),
-    #          bins = 100) +
     geom_raster(data = vox, 
                 aes(x = X, y = Y, fill = N)) +
-    # geom_abline(aes(intercept = 0, 
-    #                 slope = 1),
-    #             colour = line,
-    #             linetype = "dotted") +
     geom_ribbon(aes(x = x,
                     ymin = pre_mean - pre_sd,
                     ymax = pre_mean + pre_sd),
@@ -148,23 +141,15 @@ mantel_plot <- function(mantel_results,
                          option = palette,
                          trans = "log10",
                          limits = c(1, 1000000),
-                         #limits = c(1, max(val)),
                          breaks = c(1, 1000, 1000000),
+                         begin = 0.1,
                          labels = trans_format("log10", math_format(10^.x))) +
-    # scale_fill_carto_c(name = "Count", 
-    #                    type = "quantitative",
-    #                    palette = palette,
-    #                    trans = "log10",
-    #                    direction = -1,
-    #                    #limits = c(1, 10000000),
-    #                    #breaks = c(1, 3162.278, 10000000),
-    #                    labels = trans_format("log10", math_format(10^.x))) + 
     xlab(exp) +
     ylab(y_lab) + 
     guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
-    geom_text(aes(label = paste0("Slope = ", round(mean(sma$slope), 2), " ± ", round(sd(sma$slope), 2), "\n",
-                                 "Intercept = ", round(mean(sma$elevation), 2), " ± ", round(sd(sma$elevation), 2), "\n",
-                                 " r = ", round(mantel_results$mantel, 2), " (p = ", round(mantel_results$mantel_significance, 3), ")"),
+    geom_text(aes(label = paste0("Intercept = ", round(mean(sma$elevation), 2), " ± ", round(sd(sma$elevation), 2), "\n",
+                                 " Slope = ", round(mean(sma$slope), 2), " ± ", round(sd(sma$slope), 2), "\n",
+                                 "Mantel test = ", round(mantel_results$mantel, 2), " (p = ", round(mantel_results$mantel_significance, 3), ")"),
                   x = -Inf, 
                   y = Inf, 
                   hjust = -0.1, 
@@ -173,7 +158,7 @@ mantel_plot <- function(mantel_results,
               size = 2.5) +
     th
   #p
-    
+   
   return(p)
   
 }
@@ -181,38 +166,38 @@ mantel_plot <- function(mantel_results,
 #-------------------------------------------------------------------------------
 #' @figures
 
-pal <- "plasma"
+# pal <- "cividis"
 pal <- "inferno"
-val <- c(3662402, 108170, 17564, 2108734, 88266, 11971)
+val <- c(2818764, 96846, 28862, 1944694, 87958, 19058)
 
 # DESIS ------------------------------------------------
 sensor <- "DESIS"
 
 type <- "taxo"
 diversity <- "total"
-DESIS_taxo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+DESIS_taxo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_taxo_total_fig <- mantel_plot(mantel_results = DESIS_taxo_total,
                                     exp = expression(paste("T", beta[total])),
-                                    palette = pal) #1030468
-rm(DESIS_taxo_total)
+                                    palette = pal) #2818764
+# rm(DESIS_taxo_total)
 gc()
 
 type <- "phylo"
 diversity <- "total"
-DESIS_phylo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+DESIS_phylo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_phylo_total_fig <- mantel_plot(mantel_results = DESIS_phylo_total,
                                     exp = expression(paste("P", beta[total])),
-                                    palette = pal) #33640
-rm(DESIS_phylo_total)
+                                    palette = pal) #96846
+# rm(DESIS_phylo_total)
 gc()
 
 type <- "func"
 diversity <- "total"
-DESIS_func_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+DESIS_func_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_func_total_fig <- mantel_plot(mantel_results = DESIS_func_total,
                                      exp = expression(paste("F", beta[total])),
-                                     palette = pal) #37090
-rm(DESIS_func_total)
+                                     palette = pal) #28862
+# rm(DESIS_func_total)
 gc()
 
 # EMIT ------------------------------------------------
@@ -220,29 +205,29 @@ sensor <- "EMIT"
 
 type <- "taxo"
 diversity <- "total"
-EMIT_taxo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMIT_taxo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_taxo_total_fig <- mantel_plot(mantel_results = EMIT_taxo_total,
                                     exp = expression(paste("T", beta[total])),
                                     palette = pal) #1017678
-rm(EMIT_taxo_total)
+# rm(EMIT_taxo_total)
 gc()
 
 type <- "phylo"
 diversity <- "total"
-EMIT_phylo_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMIT_phylo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_phylo_total_fig <- mantel_plot(mantel_results = EMIT_phylo_total,
                                      exp = expression(paste("P", beta[total])),
-                                     palette = pal) #37934
-rm(EMIT_phylo_total)
+                                     palette = pal) #87958
+# rm(EMIT_phylo_total)
 gc()
 
 type <- "func"
 diversity <- "total"
-EMIT_func_total <- readRDS(paste0(root_path, "/06_mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMIT_func_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_func_total_fig <- mantel_plot(mantel_results = EMIT_func_total,
                                     exp = expression(paste("F", beta[total])),
-                                    palette = pal) #29110
-rm(EMIT_func_total)
+                                    palette = pal) #19058
+# rm(EMIT_func_total)
 gc()
 
 # Merge plots
@@ -265,7 +250,7 @@ row2 <- ggarrange(EMIT_taxo_total_fig, EMIT_phylo_total_fig, EMIT_func_total_fig
                   legend = "top")
 
 # Export
-jpeg(paste0(root_path, "/figures/", "figure_mantelb.jpeg"), width = 210, height = 150, units = "mm", res = 600, bg = "white")
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "figure_mantel.jpeg"), width = 230, height = 170, units = "mm", res = 600, bg = "white")
 
 annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
                 top = text_grob("Taxonomic                                  Phylogenetic                                  Functional", face = "bold", color = "black"),
@@ -273,7 +258,7 @@ annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
 
 dev.off()
 
-png(paste0(root_path, "/figures/", "figure_mantel_black.png"), width = 210, height = 150, units = "mm", res = 600, bg = "transparent")
+png(paste0(root_path, "/figures/Manuscript_white/", "figure_mantel.png"), width = 230, height = 170, units = "mm", res = 600, bg = "transparent")
 
 annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
                 top = text_grob("Taxonomic                                  Phylogenetic                                  Functional", face = "bold", color = text),

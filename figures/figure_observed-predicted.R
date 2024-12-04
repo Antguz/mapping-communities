@@ -13,14 +13,13 @@ library(ggdark)
 library(ggpointdensity)
 library(rcartocolor)
 library(viridis)
-options(scipen = 100)
 
 #'------------------------------------------------------------------------------
 #' Working directory
 
 root_path <- "/media/antonio/Work/MMDB"
 sensor <- "EMIT"
-folder <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
+folder <- paste0(root_path, "/Models/01_model_beta/", sensor)
 
 #'------------------------------------------------------------------------------
 #' Read information
@@ -204,58 +203,59 @@ plot_function <- function(performance,
   
 }
 
+lim <- c(-0.65, 0.65)
 
 taxo1 <- plot_function(performance[dimension == "Taxonomic" & Axes == "Axis1",], 
                        predicted[dimension == "Taxonomic" & Axes == "Axis1",], 
-                       limits_range = c(-0.55, 0.55),
+                       limits_range = lim,
                        breaks = c(-0.5, 0, 0.5),
                        axis = 1)
 
 phylo1 <- plot_function(performance[dimension == "Phylogenetic" & Axes == "Axis1",], 
                         predicted[dimension == "Phylogenetic" & Axes == "Axis1",], 
-                        limits_range = c(-0.55, 0.55),
+                        limits_range = lim,
                         breaks = c(-0.5, 0, 0.5),
                         axis = 1)
 
 func1 <- plot_function(performance[dimension == "Functional" & Axes == "Axis1",], 
                        predicted[dimension == "Functional" & Axes == "Axis1",], 
-                       limits_range = c(-0.55, 0.55),
+                       limits_range = lim,
                        breaks = c(-0.5, 0, 0.5),
                        axis = 1)
 
 taxo2 <- plot_function(performance[dimension == "Taxonomic" & Axes == "Axis2",], 
                        predicted[dimension == "Taxonomic" & Axes == "Axis2",], 
-                       limits_range = c(-0.55, 0.55),
+                       limits_range = lim,
                        breaks = c(-0.5, 0, 0.5),
                        axis = 2)
 
 phylo2 <- plot_function(performance[dimension == "Phylogenetic" & Axes == "Axis2",], 
                         predicted[dimension == "Phylogenetic" & Axes == "Axis2",], 
-                        limits_range = c(-0.55, 0.55),
+                        limits_range = lim,
                         breaks = c(-0.5, 0, 0.5),
                         axis = 2)
 
 func2 <- plot_function(performance[dimension == "Functional" & Axes == "Axis2",], 
                        predicted[dimension == "Functional" & Axes == "Axis2",], 
-                       limits_range = c(-0.55, 0.55),
+                       limits_range = lim,
                        breaks = c(-0.5, 0, 0.5),
                        axis = 2)
 
 taxo3 <- plot_function(performance[dimension == "Taxonomic" & Axes == "Axis3",], 
                        predicted[dimension == "Taxonomic" & Axes == "Axis3",], 
-                       limits_range = c(-0.55, 0.55),
+                       limits_range = lim,
                        breaks = c(-0.5, 0, 0.5),
                        axis = 3)
 
 phylo3 <- plot_function(performance[dimension == "Phylogenetic" & Axes == "Axis3",], 
                         predicted[dimension == "Phylogenetic" & Axes == "Axis3",], 
-                        limits_range = c(-0.55, 0.55),
+                        limits_range = lim,
                         breaks = c(-0.5, 0, 0.5),
                         axis = 3)
 
 func3 <- plot_function(performance[dimension == "Functional" & Axes == "Axis3",], 
                        predicted[dimension == "Functional" & Axes == "Axis3",], 
-                       limits_range = c(-0.55, 0.55),
+                       limits_range = lim,
                        breaks = c(-0.5, 0, 0.5),
                        axis = 3)
 
@@ -280,7 +280,7 @@ axis3 <- ggarrange(taxo3, phylo3, func3, ncol=3, nrow=1,
                    label.y = 1.05)
 
 # Export JPEG
-jpeg(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, ".jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/", sensor, "_predicted_", dataset, ".jpeg"), 
      width = 210, 
      height = 190, 
      units = "mm", 
@@ -297,7 +297,7 @@ dev.off()
 
 # PNG
 
-png(paste0(root_path, "/figures/", sensor, "_predicted_", dataset, "_trans.png"), 
+png(paste0(root_path, "/figures/Manuscript_white/", sensor, "_predicted_", dataset, "_trans.png"), 
      width = 210, 
      height = 190, 
      units = "mm", 

@@ -22,7 +22,7 @@ root_path <- "/media/antonio/Work/MMDB"
 
 # DESIS
 sensor <- "DESIS"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor, "/", sensor, "_")
 DESIS_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
 DESIS_taxo_coefficients$type <- "Taxonomic"
 DESIS_phylo_coefficients <- fread(paste0(out_path, "phylo", "_coefficients.csv"))
@@ -44,7 +44,7 @@ DESIS$Coefficient <- DESIS$Coefficient*10000
 
 # EMIT
 sensor <- "EMIT"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor, "/", sensor, "_")
 EMIT_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
 EMIT_taxo_coefficients$type <- "Taxonomic"
 EMIT_phylo_coefficients <- fread(paste0(out_path, "phylo", "_coefficients.csv"))
@@ -195,7 +195,7 @@ EMIT_plot
 
 # Export JPEG
 
-jpeg(paste0(root_path, "/figures/PLSR_coefficients.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/PLSR_coefficients.jpeg"), 
      width = 220, 
      height = 110, 
      pointsize = 12, 
@@ -212,7 +212,7 @@ dev.off()
 
 # Export PNG
 
-png(paste0(root_path, "/figures/PLSR_coefficients.png"), 
+png(paste0(root_path, "/figures/Manuscript_white/PLSR_coefficients.png"), 
      width = 220, 
      height = 110, 
      pointsize = 12, 

@@ -1,5 +1,4 @@
-model_lineages <- function(fia_meta,
-                           ordination,
+model_lineages <- function(ordination,
                            aggregation,
                            data_split,
                            iterations = 100,
@@ -10,7 +9,6 @@ model_lineages <- function(fia_meta,
   
   # Get model application in batch
   apply_occurrence <- function(X,
-                               fia_meta,
                                ordination,
                                aggregation,
                                data_split,
@@ -47,76 +45,68 @@ model_lineages <- function(fia_meta,
       
       #---------------------------------------------------------------------------
       # Down sampling
-      down_train <- ROSE(occurrence ~ ., data = data_training)$data
+      split <- split_fortyp(data_training$occurrence, split = 0.85)
+      
+      #---------------------------------------------------------------------------
+      # Class balance
+      down_train <- ROSE(occurrence ~ ., data = data_training[split,])$data
       down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
       
       #---------------------------------------------------------------------------
       # Perform model
       
-      # Model features
-      ctrl <- trainControl(method = "cv", 
-                           number = 10,
-                           classProbs = TRUE,
-                           summaryFunction = twoClassSummary,
-                           savePredictions = TRUE)
-      
       # Model
-      plsFit <- train(occurrence ~ .,
-                      data = down_train,
-                      method = "glm",
-                      trControl = ctrl,
-                      metric = "ROC")
+      model <- glm(occurrence ~ Axis1 + Axis2 + Axis3, 
+                   data = down_train, 
+                   family = binomial(link = "logit"))
       
       #---------------------------------------------------------------------------
       # Performance on training
       
+      train_pred <- ifelse(predict(model, data_training, type = "response") > 0.5, 
+                           "presence", 
+                           "absence")
+      train_pred <- factor(train_pred, levels = c("presence", "absence"))
+      
       training <- data.frame(obs = data_training$occurrence,
-                             pred = predict(plsFit, 
-                                            newdata = data_training),
-                             presence = predict(plsFit, 
-                                                newdata = data_training, 
-                                                type = "prob")[,1],
-                             absence = predict(plsFit, 
-                                               newdata = data_training, 
-                                               type = "prob")[,2])
+                             pred = train_pred,
+                             presence = predict(model, data_training, type = "response"),
+                             absence = 1 - predict(model, data_training, type = "response"))
       
       training_performance <- c(defaultSummary(training, 
-                                               lev = levels(data_training$occurrence)),
+                                               lev = levels(training$obs)),
                                 twoClassSummary(training, 
-                                                lev = levels(data_training$occurrence)),
+                                                lev = levels(training$obs)),
                                 prSummary(training, 
-                                          lev = levels(data_training$occurrence)),
-                                mnLogLoss(training, 
-                                          lev = levels(data_testing$occurrence)))
+                                          lev = levels(training$obs)))
       
       #---------------------------------------------------------------------------
       # Performance on testing
       
+      test_pred <- ifelse(predict(model, data_testing, type = "response") > 0.5, 
+                          "presence", 
+                          "absence")
+      test_pred <- factor(test_pred, levels = c("presence", "absence"))
+      
       testing <- data.frame(obs = data_testing$occurrence,
-                            pred = predict(plsFit, newdata = data_testing),
-                            presence = predict(plsFit, 
-                                               newdata = data_testing, 
-                                               type = "prob")[,1],
-                            absence = predict(plsFit, 
-                                              newdata = data_testing, 
-                                              type = "prob")[,2])
+                            pred = test_pred,
+                            presence = predict(model, data_testing, type = "response"),
+                            absence = 1 - predict(model, data_testing, type = "response"))
       
       testing_performance <- c(defaultSummary(testing, 
-                                              lev = levels(data_testing$occurrence)),
+                                              lev = levels(testing$obs)),
                                twoClassSummary(testing, 
-                                               lev = levels(data_testing$occurrence)),
+                                               lev = levels(testing$obs)),
                                prSummary(testing, 
-                                         lev = levels(data_testing$occurrence)),
-                               mnLogLoss(testing, 
-                                         lev = levels(data_testing$occurrence)))
+                                         lev = levels(testing$obs)))
       
       #---------------------------------------------------------------------------
       # Collect data
       training <- as.data.table(training)
       testing <- as.data.table(testing)
       
-      collect <- rbind(c(training_performance, plsFit$finalModel$coefficients),
-                       c(testing_performance, plsFit$finalModel$coefficients))
+      collect <- rbind(c(training_performance, model$coefficients),
+                       c(testing_performance, model$coefficients))
       collect <- as.data.table(collect)
       collect <- cbind(plant = c(group_name, group_name), 
                        iteration = c(ii, ii),
@@ -136,7 +126,6 @@ model_lineages <- function(fia_meta,
   # Parallel processing
   complete <- pbmclapply(X = 2:groups, 
                          FUN = apply_occurrence, 
-                         fia_meta = fia_meta,
                          ordination = ordination,
                          aggregation = aggregation,
                          data_split = data_split,
@@ -149,8 +138,30 @@ model_lineages <- function(fia_meta,
                          mc.allow.recursive = TRUE, 
                          affinity.list = NULL)
   
-  complete <- do.call(rbind.data.frame, complete)
+  complete <- do.call(rbind, complete)
   
   return(complete)
+  
+}
+
+
+split_fortyp <- function(occurrence,
+                         split = 0.85) {
+  
+  vec <- integer()
+  
+  split_frame <- data.table(sample = 1:length(occurrence), occurrence = occurrence)
+  
+  # Presence
+  presence <- split_frame[occurrence == "presence",]
+  train_presence <- sample(1:nrow(presence), floor(nrow(presence)*split))
+  vec <- c(vec, presence$sample[train_presence])
+  
+  # Absence
+  absence <- split_frame[occurrence == "absence",]
+  train_absence <- sample(1:nrow(absence), floor(nrow(absence)*split))
+  vec <- c(vec, absence$sample[train_absence])
+  
+  return(vec)
   
 }

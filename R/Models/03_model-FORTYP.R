@@ -16,9 +16,8 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-library(CAST)
-library(sf)
-library(plotROC)
+# library(CAST)
+# library(plotROC)
 library(ROSE)
 
 #'------------------------------------------------------------------------------
@@ -108,8 +107,7 @@ data_split <- readRDS(paste0(out_path, "/split_fortyp.rds"))
 #-------------------------------------------------------------------------------
 
 # Create model
-model <- model_fortyp(fia_meta = fia_meta,
-                      forest_type = forest_type,
+model <- model_fortyp(forest_type = forest_type,
                       ordination = ordination[, 1:4],
                       data_split = data_split,
                       iterations = 100,

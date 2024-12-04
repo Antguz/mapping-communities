@@ -14,19 +14,17 @@ library(bit64)
 library(Rcpp)
 library(RcppArmadillo)
 library(RcppProgress)
-options(scipen = 100000)
 
 #'------------------------------------------------------------------------------
 #' Source code
 
-#setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
 sourceCpp("src/sam.cpp")
 sourceCpp("src/mantel_rcpp.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
 #' @param sensor
-#' @param spectral_path
+#' @param spectra_disimilarity
 #' @param diversity
 #' @param beta_path
 #' @param beta_type
@@ -36,7 +34,7 @@ sourceCpp("src/mantel_rcpp.cpp")
 #'------------------------------------------------------------------------------
 #' Function
 mantel_test <- function(sensor,
-                        spectral_path,
+                        spectra_disimilarity,
                         beta_path, 
                         diversity,
                         beta_type,
@@ -44,59 +42,33 @@ mantel_test <- function(sensor,
                         threads) {
   
   #'----------------------------------------------------------------------------
-  # Get spectral data
+  # Get info from spectral dissimilarity
   
-  spectra <- fread(spectral_path)
-  
-  if(sensor == "DESIS") {
-    
-    spectra <- spectra[, .SD, .SDcols = c(2, 39:192)] # Bands from 450 to 901
-    
-  } else if(sensor == "EMIT") {
-    
-    spectra <- spectra[, .SD, .SDcols = c(2, 
-                                          32:142, # from 447.74 to 1265.17
-                                          174:204, #from 1488.07 to 1720
-                                          243:298)] #from 2015.60 to 2424.25
-    
-  }
-  
-  # Clean spectra frame
-  plot_cn <- spectra$PLT_CN
-  spectra <- spectra[, -1]
-  spectra <- as.data.frame(spectra)
-  rownames(spectra) <- plot_cn
-  
-  # Get distance
-  spectral_distance <-  sam(as.matrix(spectra), threads = threads) 
-  colnames(spectral_distance) <- as.character(plot_cn)
-  rownames(spectral_distance) <- as.character(plot_cn)
-  
-  # Remove and clean
-  rm(list = c("spectra", "plot_cn")) 
-  gc()
+  PLOT_CN_spectra <- colnames(spectra_disimilarity)
+  PLOT_CN_spectra <- as.integer64(PLOT_CN_spectra)
   
   #'----------------------------------------------------------------------------
   # Get beta data
   beta <- readRDS(beta_path)
+  PLOT_CN_beta <- colnames(beta$Btotal)
+  PLOT_CN_beta <- as.integer64(PLOT_CN_beta)
   
   if(beta_type == "total") {
     Beta <- beta$Btotal/10000
   } else if(beta_type == "replacement") {
-    Beta <- beta$Brepl/10000
+    Beta <- (beta$Brepl/10000) / (beta$Btotal/10000)
+    Beta[is.nan(Beta)] <- 0
   } else if(beta_type == "richness") {
-    Beta <- beta$Brich/10000
+    Beta <- (beta$Brich/10000) / (beta$Btotal/10000)
+    Beta[is.nan(Beta)] <- 0
   }
   
   rm("beta")
   gc()
   
   # Get plot cn
-  PLOT_CN_spectra <- colnames(spectral_distance)
-  PLOT_CN_spectra <- as.integer64(PLOT_CN_spectra)
-  
-  PLOT_CN_beta <- colnames(Beta)
-  PLOT_CN_beta <- as.integer64(PLOT_CN_beta)
+  colnames(Beta) <- as.character(PLOT_CN_beta)
+  rownames(Beta) <- as.character(PLOT_CN_beta)
   
   #'----------------------------------------------------------------------------
   #' Match spectral distance and beta diversity
@@ -109,7 +81,7 @@ mantel_test <- function(sensor,
   #'----------------------------------------------------------------------------
   #' Compute mantel test
   mantel_Beta <- mantel_rcpp(mat1 = Beta, 
-                             mat2 = spectral_distance,
+                             mat2 = spectra_disimilarity,
                              nperm = 999,
                              threads = threads,
                              progress = TRUE)
@@ -120,8 +92,8 @@ mantel_test <- function(sensor,
   #' Melt frames
   
   # As data.table
-  spectral_distance <- as.data.table(spectral_distance)
-  spectral_distance$PLOT_CN <- colnames(spectral_distance)
+  spectral_distance <- as.data.table(spectra_disimilarity)
+  spectral_distance$PLOT_CN <- colnames(spectra_disimilarity)
   Beta <- as.data.table(Beta)
   Beta$PLOT_CN <- colnames(Beta)
   
@@ -164,22 +136,34 @@ mantel_test <- function(sensor,
 #---------------------------------------------------------
 #' @DESIS
 
-#root_path <- "/panfs/jay/groups/17/cavender/guzman/MMDB"
 root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
-spectral_path <- paste0(root_path, 
-                        "/05_match_spectra-stand/", 
-                        sensor, "/", sensor, "_spectra_SW.csv")
-output_path <- paste0(root_path, "/06_mantel")
-threads <- 20
+
+# Spectra from plots used
+data <- readRDS(paste0(root_path, "/Models/01_model_beta/DESIS/DESIS_taxo_data.rds"))
+data <- data[, c("scene", "PLT_CN")]
+
+# Spectra avaiable but contaminated
+spectra <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/DESIS/DESIS_spectra_SG.csv"))
+spectra <- merge(data, spectra, by = c("scene", "PLT_CN"), all.x = TRUE, all.y = FALSE)
+
+# Select bands for sam
+spectra <- spectra[, .SD, .SDcols = c(2, 53:228)] #"446.53" to "896.53"
+spectra_disimilarity <- sam(as.matrix(spectra[,-1]), threads = 26, progress = TRUE)
+colnames(spectra_disimilarity) <- as.character(spectra$PLT_CN)
+rownames(spectra_disimilarity) <- as.character(spectra$PLT_CN)
+
+# Select output
+output_path <- paste0(root_path, "/Diversity/03_Mantel")
+threads <- 22
 
 #---------------------------------------------------------
 # Taxonomic
 diversity <- "taxo"
-beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
+beta_path <- paste0(root_path, "/Diversity/01_beta/beta_", diversity, "_VOL.rds")
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "taxo",
             beta_path = beta_path, 
             beta_type = "total",
@@ -188,7 +172,7 @@ mantel_test(sensor = "DESIS",
 gc()
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "taxo",
             beta_path = beta_path, 
             beta_type = "replacement",
@@ -197,7 +181,7 @@ mantel_test(sensor = "DESIS",
 gc()
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "taxo",
             beta_path = beta_path,  
             beta_type = "richness",
@@ -210,7 +194,7 @@ diversity <- "phylo"
 beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "phylo",
             beta_path = beta_path, 
             beta_type = "total",
@@ -219,7 +203,7 @@ mantel_test(sensor = "DESIS",
 gc()
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "phylo",
             beta_path = beta_path, 
             beta_type = "replacement",
@@ -228,7 +212,7 @@ mantel_test(sensor = "DESIS",
 gc()
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "phylo",
             beta_path = beta_path,  
             beta_type = "richness",
@@ -241,7 +225,7 @@ diversity <- "func"
 beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "func",
             beta_path = beta_path, 
             beta_type = "total",
@@ -250,7 +234,7 @@ mantel_test(sensor = "DESIS",
 gc()
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "func",
             beta_path = beta_path, 
             beta_type = "replacement",
@@ -259,116 +243,44 @@ mantel_test(sensor = "DESIS",
 gc()
 
 mantel_test(sensor = "DESIS", 
-            spectral_path = spectral_path,
+            spectra_disimilarity = spectra_disimilarity,
             diversity = "func",
             beta_path = beta_path,  
             beta_type = "richness",
             output_path = output_path,
             threads = threads)
 gc()
-
 
 #---------------------------------------------------------
 #' @EMIT
 
 root_path <- "/media/antonio/Work/MMDB"
 sensor <- "EMIT"
-spectral_path <- paste0(root_path, 
-                        "/05_match_spectra-stand/", 
-                        sensor, "/", sensor, "_spectra_SW.csv")
-output_path <- paste0(root_path, "/06_mantel")
-threads <- 12
+
+# Spectra from plots used
+data <- readRDS(paste0(root_path, "/Models/01_model_beta/EMIT/EMIT_taxo_data.rds"))
+data <- data[, c("scene", "PLT_CN")]
+
+# Spectra avaiable but contaminated
+spectra <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/EMIT/EMIT_spectra_SG.csv"))
+spectra <- merge(data, spectra, by = c("scene", "PLT_CN"), all.x = TRUE, all.y = FALSE)
+
+# Select bands for sam
+spectra <- spectra[, .SD, .SDcols = c(2, 
+                                      42:152,
+                                      184:211,
+                                      252:308)]
+spectra_disimilarity <- sam(as.matrix(spectra[,-1]), threads = 26, progress = TRUE)
+colnames(spectra_disimilarity) <- as.character(spectra$PLT_CN)
+rownames(spectra_disimilarity) <- as.character(spectra$PLT_CN)
+
+# Select output
+output_path <- paste0(root_path, "/Diversity/03_Mantel")
+threads <- 20
 
 #---------------------------------------------------------
 # Taxonomic
 diversity <- "taxo"
 beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "taxo",
-            beta_path = beta_path, 
-            beta_type = "total",
-            output_path = output_path, 
-            threads = threads)
-gc()
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "taxo",
-            beta_path = beta_path, 
-            beta_type = "replacement",
-            output_path = output_path,
-            threads = threads)
-gc()
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "taxo",
-            beta_path = beta_path,  
-            beta_type = "richness",
-            output_path = output_path,
-            threads = threads)
-gc()
-
-# Phylogenetic
-diversity <- "phylo"
-beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "phylo",
-            beta_path = beta_path, 
-            beta_type = "total",
-            output_path = output_path, 
-            threads = threads)
-gc()
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "phylo",
-            beta_path = beta_path, 
-            beta_type = "replacement",
-            output_path = output_path,
-            threads = threads)
-gc()
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "phylo",
-            beta_path = beta_path,  
-            beta_type = "richness",
-            output_path = output_path,
-            threads = threads)
-gc()
-
-# Functional
-diversity <- "func"
-beta_path <- paste0(root_path, "/03_diversity/beta_", diversity, "_VOL.rds")
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "func",
-            beta_path = beta_path, 
-            beta_type = "total",
-            output_path = output_path, 
-            threads = threads)
-gc()
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "func",
-            beta_path = beta_path, 
-            beta_type = "replacement",
-            output_path = output_path,
-            threads = threads)
-gc()
-
-mantel_test(sensor = "EMIT", 
-            spectral_path = spectral_path,
-            diversity = "func",
-            beta_path = beta_path,  
-            beta_type = "richness",
-            output_path = output_path,
-            threads = threads)
-gc()
+hg
+# Error in vecseq(f__, len__, if (allow.cartesian || notjoin || !anyDuplicated(f__, : Join results in more than 2^31 rows (internal vecseq reached physical limit). Very likely misspecified join. Check for duplicate key values in i each of which join to the same group in x over and over again. If that's ok, try by=.EACHI to run j for each group to avoid the large allocation. Otherwise, please search for this error message in the FAQ, Wiki, Stack Overflow and data.table issue tracker for advice.

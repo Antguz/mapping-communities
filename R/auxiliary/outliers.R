@@ -11,13 +11,13 @@ library(outliers)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
-sensor <- "EMIT"
-folder <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
+root_path <- "/media/antonio/Work/MMDB"
+sensor <- "DESIS"
+folder <- paste0(root_path, "/Models/01_model_beta/test/", sensor)
 
 taxo <- fread(paste0(folder, "/", sensor, "_", "taxo", "_predicted_training.csv"))
 taxo$type <- "Taxonomic"
-phylo <- fread(paste0(folder, "/", sensor, "_", "phylo-log", "_predicted_training.csv"))
+phylo <- fread(paste0(folder, "/", sensor, "_", "phylo", "_predicted_training.csv"))
 phylo$type <- "Phylogenetic"
 func <- fread(paste0(folder, "/", sensor, "_", "func", "_predicted_training.csv"))
 func$type <- "Functional"
@@ -32,23 +32,23 @@ predicted_sd <- dcast(predicted_sd, Axes + sample ~ type)
 residuals <- dcast(residuals, Axes + sample ~ type)
 residuals_sd <- dcast(residuals_sd, Axes + sample ~ type)
 
-top <- 0.9991
-low <- 0.0009
+top <- 0.99
+low <- 0.01
 
 predicted_sd <- predicted_sd[, .(sample = sample,
-                                 Taxonomic = scores(Taxonomic, type = "chi", prob = TRUE),
-                                 Phylogenetic = scores(Phylogenetic, type = "chi", prob = TRUE),
-                                 Functional = scores(Functional, type = "chi", prob = TRUE)), by = "Axes"]
+                                 Taxonomic = scores(Taxonomic, type = "z", prob = TRUE),
+                                 Phylogenetic = scores(Phylogenetic, type = "z", prob = TRUE),
+                                 Functional = scores(Functional, type = "z", prob = TRUE)), by = "Axes"]
 
 residuals <- residuals[, .(sample = sample,
-                           Taxonomic = scores(Taxonomic, type = "chi", prob = TRUE),
-                           Phylogenetic = scores(Phylogenetic, type = "chi", prob = TRUE),
-                           Functional = scores(Functional, type = "chi", prob = TRUE)), by = "Axes"]
+                           Taxonomic = scores(Taxonomic, type = "z", prob = TRUE),
+                           Phylogenetic = scores(Phylogenetic, type = "z", prob = TRUE),
+                           Functional = scores(Functional, type = "z", prob = TRUE)), by = "Axes"]
 
 residuals_sd <- residuals_sd[, .(sample = sample,
-                                 Taxonomic = scores(Taxonomic, type = "chi", prob = TRUE),
-                                 Phylogenetic = scores(Phylogenetic, type = "chi", prob = TRUE),
-                                 Functional = scores(Functional, type = "chi", prob = TRUE)), by = "Axes"]
+                                 Taxonomic = scores(Taxonomic, type = "z", prob = TRUE),
+                                 Phylogenetic = scores(Phylogenetic, type = "z", prob = TRUE),
+                                 Functional = scores(Functional, type = "z", prob = TRUE)), by = "Axes"]
 
 predicted_sd[Taxonomic >= top, Taxonomic := NA]
 predicted_sd[Phylogenetic >= top, Phylogenetic := NA]
@@ -88,5 +88,21 @@ plot_to_keep[predicted_sd == TRUE | residuals == TRUE | residuals_sd == TRUE, re
 plot_to_keep[is.na(remove), remove := FALSE]
 nrow(plot_to_keep[remove == TRUE,])/nrow(plot_to_keep)
 nrow(plot_to_keep) - nrow(plot_to_keep[remove == TRUE,])
+plot_to_keep <- plot_to_keep[, c("sample", "remove")]
 
-fwrite(plot_to_keep, paste0(root_path, "/06_model_beta/EMIT_outliers.csv"))
+# Second
+
+taxo <- fread(paste0(folder, "/", sensor, "_", "taxo", "_residuals_3D_training.csv"))
+taxo$type <- "Taxonomic"
+phylo <- fread(paste0(folder, "/", sensor, "_", "phylo", "_residuals_3D_training.csv"))
+phylo$type <- "Phylogenetic"
+func <- fread(paste0(folder, "/", sensor, "_", "func", "_residuals_3D_training.csv"))
+func$type <- "Functional"
+
+all <- cbind(taxo= taxo$residuals_3D, phylo= phylo$residuals_3D, func= func$residuals_3D)
+mahal_dist <- mahalanobis(all, colMeans(all), cov(all))
+threshold <- qchisq(0.99, df = ncol(all))
+plot_to_keep[mahal_dist >= threshold, remove := TRUE]
+nrow(plot_to_keep[remove == TRUE])
+
+fwrite(plot_to_keep, paste0(root_path, "/Models/01_model_beta/test/", sensor, "_outliers.csv"))

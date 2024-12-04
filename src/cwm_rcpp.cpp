@@ -33,8 +33,8 @@ arma::vec cwm(arma::mat axes,
 
 // [[Rcpp::export]]
 List multi_cwm(arma::mat axes, 
-                    arma::mat mcoefficients,
-                    arma::vec plants) {
+               arma::mat mcoefficients,
+               arma::vec plants) {
   
   // N observations and axes
   int nr = axes.n_rows;
@@ -88,4 +88,69 @@ List multi_cwm(arma::mat axes,
   // Return a list containing two matrices
   return List::create(mean_cwm, error_cwm);
   
-}  
+} 
+
+// Prediction of CWM using coefficients for a single traits
+// [[Rcpp::export]]
+arma::mat cwm_coeff_prediction(arma::mat axes,
+                               arma::mat coefficients,
+                               arma::vec intercept) {
+  
+  // N observations and axes
+  int nsamples = axes.n_rows;
+  int niterations = coefficients.n_rows;
+  int naxes = axes.n_cols;
+  
+  // Vector to fill
+  arma::mat results(nsamples, niterations);
+  
+  // Sum the intercept and get probability
+  for (int r = 0; r < nsamples; r++) {
+    
+    //Pixel of interest
+    arma::rowvec ipixel = axes.row(r);
+    
+    //N models multiplication (m)
+    arma::mat coef_multi = coefficients.each_row() % ipixel;
+    
+    arma::vec coef_sum = arma::sum(coef_multi, 1) + intercept;
+    
+    // Storage result
+    results.row(r) = trans(coef_sum);
+    
+  }
+
+  return results;
+  
+} 
+
+// Prediction of CWM using cofficients for several traits
+// arma::cube cube_cwm_coeff_prediction(arma::mat axes,
+//                                      arma::cube cube_coefficients,
+//                                      arma::mat mat_intercept) {
+//   
+//   // Get n of traits coefficients to predict
+//   int ntraits = cube_coefficients.n_slices;
+//   
+//   // Vector to fill
+//   arma::mat results(nsamples, niterations);
+//   
+//   // Sum the intercept and get probability
+//   for (int r = 0; r < nsamples; r++) {
+//     
+//     //Pixel of interest
+//     arma::rowvec ipixel = axes.row(r);
+//     
+//     //N models multiplication (m)
+//     arma::mat coef_multi = coefficients.each_row() % ipixel;
+//     
+//     arma::vec coef_sum = arma::sum(coef_multi, 1) + intercept;
+//     
+//     // Storage result
+//     results.row(r) = trans(coef_sum);
+//     
+//   }
+//   
+//   return results;
+//   
+// }  

@@ -8,8 +8,6 @@
 
 library(bit64)
 library(data.table)
-library(rcartocolor)
-library(viridis)
 library(ggplot2)
 library(ggdark)
 
@@ -17,13 +15,13 @@ library(ggdark)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 # Categorical 
-data <- fread(paste0(root_path, "/07_model_fortyp/taxo_model-FORTYP.csv"))
+data <- fread(paste0(root_path, "/Models/04_fortyp_performance/performance_summary_fortyp.csv"))
 data <- data[order(plant),]
-data$plants <- as.factor(data$plant)
-data$plants <- factor(data$plants, levels = rev(as.character(unique(data$plants))))
+data$plant <- as.factor(data$plant)
+data$plant <- factor(data$plant, levels = rev(as.character(unique(data$plant))))
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -72,7 +70,7 @@ text <- "black"
 
 # Melt dataset
 summary_performance <- melt(data, 
-                            id.vars = c("dataset", "plants"),
+                            id.vars = c("sensor", "dataset", "plant"),
                             measure.vars = c("Accuracy", "Sens", "Spec", "ROC"),
                             variable.name = "metric",
                             value.name = "performance")
@@ -137,8 +135,7 @@ png(paste0(root_path, "/figures/FIA-models-fortype.png"),
     height = 240, 
     units = "mm", 
     res = 600, 
-    bg = "white",
-    #bg = "transparent", 
+    bg = "transparent", 
     pointsize = 14)
 p
 dev.off()

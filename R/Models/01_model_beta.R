@@ -43,10 +43,10 @@ sensor <- "EMIT"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-type <- "func"
+type <- "taxo"
 diversity <- "total"
 meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
-ordination <- fread(paste0(root_path, "/Diversity/NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
+ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
 ncol_ordination <- ncol(ordination) - 1
 match_meta <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_match_usefull.csv"))
 spectra <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_spectra_SW.csv"))
@@ -121,6 +121,7 @@ if(sensor == "DESIS") {
   
   saveRDS(data, paste0(out_path, "/DESIS_", type,"_data.rds"))
   meta <- data[, .SD, .SDcols = 1:28]
+  fwrite(meta[, c("PLT_CN", "LAT", "LON")], paste0(out_path, "/DESIS_", type, "_location.csv"))
   ordination <- data[, .SD, .SDcols = 29:(28+ncol_ordination)]
   ordination <- ordination[, 1:3]
   spectra <- data[, .SD, .SDcols = (29+ncol_ordination):ncol(data)]
@@ -128,8 +129,9 @@ if(sensor == "DESIS") {
   
 } else if(sensor == "EMIT") {
   
-  saveRDS(data, paste0(out_path, "/EMIT_data.rds"))
+  saveRDS(data, paste0(out_path, "/EMIT_", type, "_data.rds"))
   meta <- data[, .SD, .SDcols = 1:27]
+  fwrite(meta[, c("PLT_CN", "LAT", "LON")], paste0(out_path, "/EMIT_", type, "_location.csv"))
   ordination <- data[, .SD, .SDcols = 28:(27+ncol_ordination)]
   ordination <- ordination[, 1:3]
   spectra <- data[, .SD, .SDcols = (28+ncol_ordination):ncol(data)]

@@ -17,13 +17,11 @@ library(caret)
 library(Rcpp)
 library(vegan)
 library(CAST)
-library(sf)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
 #-------------------------------------------------------------------------------
 
-source("R/CWM.R")
 source("R/auxiliary/CWM.R")
 source("R/auxiliary/data_split_CWM.R")
 source("R/auxiliary/model_CWM.R")
@@ -53,7 +51,7 @@ sp_meta <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
 match <- match(colnames(inventory), sp_meta$Taxon2)
 sp_meta <- sp_meta[match, ]
 aggregation <- CWM_batch(sp_meta[,c("Taxon2", "HTq", "SLq", "WD", "shade", "drought", "waterlogging", "LMA", "N")], 
-                         inventory)
+                         decostand(inventory, "total"))
 
 # Test for match
 all.equal(aggregation$PLT_CN, ordination$PLT_CN)

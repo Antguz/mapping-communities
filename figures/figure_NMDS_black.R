@@ -30,13 +30,12 @@ sourceCpp("src/probability_rcpp.cpp")
 root_path <- "/media/antonio/Work/MMDB"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func_total.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_func_total.csv"))
 
 # Axis range
-observed_range <- c(min(c(min(taxo_comm[,2:4]), min(phylo_comm[,2:4]), min(func_comm[,2:4]))),
-                    max(c(max(taxo_comm[,2:4]), max(phylo_comm[,2:4]), max(func_comm[,2:4]))))
+observed_range <- c(-0.5, 0.5)
 
 # # Get proportions
 # proportions <- fread(paste0(root_path, "/00_FIA/proportions.csv"))
@@ -78,7 +77,7 @@ all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
 #-------------------------------------------------------------------------------
 
 # RGB color
-RGB <- function(X, Y, Z, min_range = NULL, max_range = NULL) {
+RGB <- function(X, Y, Z, min_range = -0.5, max_range = 0.5) {
   
   if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
     

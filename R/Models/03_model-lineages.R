@@ -16,10 +16,6 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-library(CAST)
-library(sf)
-library(plotROC)
-library(MLmetrics)
 library(ROSE)
 
 #'------------------------------------------------------------------------------
@@ -29,7 +25,6 @@ library(ROSE)
 sourceCpp("src/approximation_rcpp.cpp")
 source("R/auxiliary/aggregate_plants.R")
 source("R/auxiliary/data_split_lineages.R")
-source("R/auxiliary/axes_segmentation.R") 
 source("R/auxiliary/model_lineages.R")
 
 #'------------------------------------------------------------------------------
@@ -99,8 +94,7 @@ data_split <- readRDS(paste0(out_path, "/split_lineages.rds"))
 #-------------------------------------------------------------------------------
 
 # Create model
-model <- model_lineages(fia_meta = fia_meta,
-                        ordination = ordination,
+model <- model_lineages(ordination = ordination,
                         aggregation = aggregation,
                         data_split = data_split,
                         iterations = 100,

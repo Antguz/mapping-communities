@@ -14,20 +14,21 @@ library(bit64)
 library(parallel)
 library(Rcpp)
 library(RcppArmadillo)
+library(pbmcapply)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
 #-------------------------------------------------------------------------------
 
 sourceCpp("src/cwm_rcpp.cpp")
-source("R/model_performance.R")
+source("R/auxiliary/model_performance.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/DESIS_mapping"
-out_path <- "/media/antonio/Work/DESIS_mapping/08_CWM_performance"
+root_path <- "/media/antonio/Work/MMDB"
+out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
 
 #-------------------------------------------------------------------------------
 #' @Probabilities-function
@@ -47,17 +48,19 @@ get_CWM <- function(predicted, coefficients) {
   pred <- dcast(pred, sample ~ Axes)
   
   # Get probabilities
-  trait <- as.vector(as.matrix(coefficients[, 1]))
+  #trait <- as.vector(as.matrix(coefficients[, 1]))
   obs_cwm <- multi_cwm(as.matrix(obs[,-1]), 
-                       as.matrix(coefficients[, -1]))
+                       as.matrix(coefficients[, -1]),
+                       as.numeric(as.factor(coefficients$plant)))
   pred_cwm <- multi_cwm(as.matrix(pred[,-1]),
-                        as.matrix(coefficients[, -1]))
+                        as.matrix(coefficients[, -1]),
+                        as.numeric(as.factor(coefficients$plant)))
   
   # Make it data.table
-  obs_cwm <- as.data.table(obs_cwm)
-  colnames(obs_cwm) <- trait
-  pred_cwm <- as.data.table(pred_cwm)
-  colnames(pred_cwm) <- trait
+  obs_cwm <- as.data.table(obs_cwm[[1]])
+  colnames(obs_cwm) <- levels(as.factor(coefficients$plant))
+  pred_cwm <- as.data.table(pred_cwm[[1]])
+  colnames(pred_cwm) <- levels(as.factor(coefficients$plant))
   
   # Return list
   list(obs = obs_cwm,
@@ -101,19 +104,23 @@ performance_batch <- function(all_cwm) {
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 # Training
 dataset <- "training"
 type <- "func"
-coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
+
+# Get glm coefficients
+coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
 
-predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
+# Get predicted axes
+predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
+# Predict CWM based on coefficients
 func_CWM <- get_CWM(predicted, coefficients)
 func_perf <- performance_batch(func_CWM)
 func_CWM$perf <- func_perf
@@ -123,12 +130,12 @@ saveRDS(func_CWM,
 # Testing
 dataset <- "testing"
 type <- "func"
-coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
+coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
 
-predicted <- fread(paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/",
+predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 func_CWM <- get_CWM(predicted, coefficients)
@@ -141,28 +148,28 @@ saveRDS(func_CWM,
 #' @Collect-performance
 #-------------------------------------------------------------------------------
 
-folder_path <- paste0(root_path, "/08_CWM_performance")
+folder_path <- out_path
 
-files <- list.files(path = folder_path, 
-                    pattern = ".rds", 
+files <- list.files(path = folder_path,
+                    pattern = ".rds",
                     recursive = TRUE,
                     include.dirs = TRUE)
 
 data <- data.table()
 
 for(i in 1:length(files)) {
-  
+
   sensor <- strsplit(files[i], "_")[[1]][1]
   type <- strsplit(files[i], "_")[[1]][2]
   dataset <- strsplit(files[i], "_")[[1]][3]
-  
+
   performance <- readRDS(paste0(folder_path, "/", files[i]))$perf
   performance$sensor <- sensor
   performance$type <- type
   performance$dataset <- dataset
-  
+
   data <- rbind(data, performance)
-  
+
 }
 
-fwrite(data, paste0(root_path, "/08_CWM_performance/performance_summary_CWM.csv"))
+fwrite(data, paste0(out_path, "/performance_summary_CWM.csv"))

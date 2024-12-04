@@ -17,30 +17,35 @@ library(ggdark)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/Projects/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
 
 # Categorical 
-cwm <- fread(paste0(root_path, "/08_CWM_performance/performance_summary_CWM2.csv"))
-cwm$Model <- "CWM"
+cwm <- fread(paste0(root_path, "/Models/04_CWM_performance/performance_summary_CWM.csv"))
 
-data <- rbind(cwm)
-data <- data[dataset == "testing",]
+# Melt
+data <- melt(cwm, 
+             id.vars = c("sensor", "plants", "dataset"),
+             measure.vars = c("R2", "BIAS", "RMSE", "perRMSE"),
+             value.name = "performance",
+             variable.name = "metric")
 
-data[type == "taxo", type := "Taxonomic"]
-data[type == "phylo-log", type := "Phylogenetic"]
-data[type == "func", type := "Functional"]
-data$type <- as.factor(data$type)
-data$type <- factor(data$type, levels = c("Taxonomic", "Phylogenetic", "Functional"))
+data$plants <- as.factor(data$plants)
+data$plants <- factor(data$plants, 
+                      levels = rev(c("HTq", "SLq", "WD", "shade", "drought", "waterlogging",
+                                     "LMA", "N")),
+                      labels = rev(c("Tree height (max)", "Slenderness",
+                                                  "Wood density",
+                                                  "Shade tolerance index", 
+                                                  "Drought tolerance index", 
+                                                  "Waterlogging tolerance index",
+                                                  "Leaf mass area", "Nitrogen")))
 
+data$dataset <- as.factor(data$dataset)
+data$dataset <- factor(data$dataset, 
+                       levels = c("training", "testing"),
+                       labels = c("Training", "Testing"))
 
-
-data$name <- as.factor(data$name)
-data$name <- factor(data$name, levels = rev(c("Tree height (max)",  "Crown class (mode)", "Slenderness",
-                                                  "Carbon fraction", "Moisture content", 
-                                                  "Shade tolerance index", "Drought tolerance index", "Waterlogging tolerance index",
-                                                  "Leaf area", "Leaf mass area", "Nitrogen", "Wood density")))
-
-unique(data$name)
+unique(data$plants)
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -80,27 +85,27 @@ th_trans <- dark_theme_bw(base_size = 14) +
         strip.text = element_text(color = "black"))
 
 th <- th_trans
-#th <- th_black
+
+th <- th_black
 line <- "black"
 text <- "black"
 
 #-------------------------------------------------------------------------------
 #' @Plot 
 
-unique(data$Model)
 
-p <- ggplot(data[Model == "CWM"]) +
-  geom_point(aes(x = perRMSE, 
-                 y = name, 
-                 colour = type,
-                 fill = type,
-                 shape = type),
+p <- ggplot(data) +
+  geom_point(aes(x = performance, 
+                 y = plants, 
+                 colour = sensor,
+                 fill = interaction(sensor, dataset),
+                 shape = interaction(sensor, dataset)),
              size = 2) +
-  coord_cartesian(xlim = c(0.04, 0.5), expand = TRUE) +
-  scale_shape_manual("Dimension of biodiversity", values = c(21, 22, 23)) +
-  scale_fill_manual("Dimension of biodiversity", values = c("#af8dc3", "#d8b365", "#7fbf7b")) +
-  scale_colour_manual("Dimension of biodiversity", values = c("#762a83", "#8c510a", "#1b7837")) +
-  facet_grid(. ~ sensor) +
+  #coord_cartesian(xlim = c(0.04, 0.5), expand = TRUE) +
+  scale_shape_manual("Dataset", values = c(16, 17, 21, 22)) +
+  scale_fill_manual("Dataset", values = c(NA, NA, "#e08214", "#8073ac")) +
+  scale_colour_manual("Sensor", values = c("#e08214", "#8073ac")) +
+  facet_grid(. ~ metric, scales="free") +
   xlab("%RMSE") + ylab("Community-weigted mean") +
   th
 
