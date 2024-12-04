@@ -124,33 +124,38 @@ arma::mat cwm_coeff_prediction(arma::mat axes,
   
 } 
 
-// Prediction of CWM using cofficients for several traits
-// arma::cube cube_cwm_coeff_prediction(arma::mat axes,
-//                                      arma::cube cube_coefficients,
-//                                      arma::mat mat_intercept) {
-//   
-//   // Get n of traits coefficients to predict
-//   int ntraits = cube_coefficients.n_slices;
-//   
-//   // Vector to fill
-//   arma::mat results(nsamples, niterations);
-//   
-//   // Sum the intercept and get probability
-//   for (int r = 0; r < nsamples; r++) {
-//     
-//     //Pixel of interest
-//     arma::rowvec ipixel = axes.row(r);
-//     
-//     //N models multiplication (m)
-//     arma::mat coef_multi = coefficients.each_row() % ipixel;
-//     
-//     arma::vec coef_sum = arma::sum(coef_multi, 1) + intercept;
-//     
-//     // Storage result
-//     results.row(r) = trans(coef_sum);
-//     
-//   }
-//   
-//   return results;
-//   
-// }  
+//Prediction of CWM using coefficients for several traits
+// [[Rcpp::export]]
+arma::cube cube_cwm_coeff_prediction(arma::mat axes,
+                                     arma::cube cube_coefficients, 
+                                     arma::mat mat_intercept) { 
+  
+  // axes: cols are axes, rows observations
+  // cube_coefficients: cols are coefficients, rows iterations, slices traits
+  // mat_intercept: cols are traits, rows iterations
+
+  // Get n of traits coefficients to predict
+  int samples = axes.n_rows;
+  int ntraits = cube_coefficients.n_slices;
+  int iterations = cube_coefficients.n_rows;
+
+  // Vector to fill
+  arma::cube results(samples, iterations, ntraits);
+
+  // Sum the intercept and get probability
+  for (int s = 0; s < ntraits; s++) {
+
+    //Get coefficients and intercept of the trait of interest
+    arma::mat coef = cube_coefficients.slice(s);
+    arma::vec interp = mat_intercept.col(s);
+    
+    //Get prediction by coefficients
+    arma::mat trait_predicted = cwm_coeff_prediction(axes, coef, interp);
+    
+    //Storage
+    results.slice(s) = trait_predicted;
+  }
+
+  return results;
+
+}
