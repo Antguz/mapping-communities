@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Visualize performance of occurrence models of forest types
+#' @title Visualize performance of trait models of CWM
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -18,12 +18,29 @@ library(ggh4x)
 
 root_path <- "/media/antonio/Work/MMDB"
 
-# Categorical 
-data <- fread(paste0(root_path, "/Models/04_fortyp_performance/performance_summary_fortyp.csv"))
-data <- data[order(plant),]
-data$plant <- as.factor(data$plant)
-data$plant <- factor(data$plant, levels = rev(as.character(unique(data$plant))))
+# Read files 
+data <- fread(paste0(root_path, "/Models/04_CWM_performance/performance_summary_CWM.csv"))
+
+# Rename parameters
 data$perRMSE <- data$perRMSE*100
+data[plant == "LMA",]$RMSE <- data[plant == "LMA",]$RMSE/10
+data[plant == "LMA",]$BIAS <- data[plant == "LMA",]$BIAS/10
+
+data <- data[order(plant),]
+data[plant == "HTq", plant := "Maximun tree height"]
+data[plant == "SLq", plant := "Slenderness"]
+data[plant == "WD", plant := "Wood density"]
+data[plant == "shade", plant := "Shade tolerance index"]
+data[plant == "drought", plant := "Drought tolerance index"]
+data[plant == "waterlogging", plant := "Waterlogging tolerance index"]
+data[plant == "leaf_area", plant := "Leaf area"]
+data[plant == "LMA", plant := "Leaf mass area"]
+data[plant == "N", plant := "Nitrogen"]
+
+data$plant <- as.factor(data$plant)
+data$plant <- factor(data$plant, levels = rev(c("Maximun tree height",  "Slenderness",
+                                                  "Shade tolerance index", "Drought tolerance index", "Waterlogging tolerance index",
+                                                  "Leaf area", "Leaf mass area", "Nitrogen", "Wood density")))
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -34,7 +51,7 @@ th_black <- theme_bw() +
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill= "transparent"),
         rect = element_rect(fill = "transparent"),
-        plot.margin = unit(c(0.5, 2, 0.5, 0.5), "pt"),
+        plot.margin = unit(c(0.5, 2.0, 0.5, 0.5), "pt"),
         legend.position= c("top"), 
         strip.background = element_rect(color="black", 
                                         fill="black", 
@@ -55,7 +72,7 @@ th_trans <- dark_theme_bw(base_size = 14) +
         plot.background = element_rect(colour = "transparent",
                                        fill = "transparent",
                                        linewidth=0),
-        plot.margin = unit(c(0.5, 2, 0.5, 0.5), "pt"),
+        plot.margin = unit(c(0.5, 2.0, 0.5, 0.5), "pt"),
         strip.background = element_rect(color="white", 
                                         fill="white", 
                                         linewidth=1.5, 
@@ -91,7 +108,7 @@ summary_all <- summary_performance[, .(mean = mean(performance)),
                                    by = c("sensor", "dataset", "metric")]
 
 # Summary of results
-summary_performance <- summary_performance[, .(mean = mean(performance)),
+summary_performance <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
                                            by = c("sensor", "dataset", "metric", "plant")]
 
 
@@ -99,14 +116,19 @@ my_labeller <- as_labeller(c(R2= "italic(R)^2", BIAS ="BIAS", RMSE = "RMSE", per
                            default = label_parsed)
 
 p <- ggplot(summary_performance) +
+  geom_linerange(aes(xmin = mean - sd,
+                     xmax = mean + sd,
+                     y = plant,
+                     colour = interaction(sensor, dataset)),
+                 alpha = 0.75) +
   geom_point(aes(x = mean, 
                  y = plant,
                  colour = interaction(sensor, dataset),
                  fill = interaction(sensor, dataset),
                  shape = interaction(sensor, dataset)),
-             size = 2,
+             size = 1.5,
              #colour = "grey",
-             #position = position_jitterdodge(dodge.width=0.4, jitter.width=0),
+             position = position_jitterdodge(dodge.width=0.4, jitter.width=0),
              alpha = 0.75) +
   geom_vline(data = summary_all,
              aes(xintercept = mean, 
@@ -116,19 +138,19 @@ p <- ggplot(summary_performance) +
   scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99", "#e66101", "#5e3c99")) +
   scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99", "transparent", "transparent")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dotted", "dashed", "dashed")) +
-  xlab("Values") + ylab("FIA forest type") +
+  xlab("Values") + ylab("Community-weigted mean") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
-                               scale_x_continuous(limits = c(-0.20, 0.20), breaks = c(-0.15, 0.0, 0.15)),
-                               scale_x_continuous(limits = c(0, 0.35), breaks = c(0, 0.15, 0.3)),
-                               scale_x_continuous(limits = c(15, 40), breaks = c(20, 30, 40)))) +
+                               scale_x_continuous(limits = c(-0.07, 0.07), breaks = c(-0.05, 0.0, 0.05)),
+                               scale_x_continuous(limits = c(0, 2), breaks = c(0, 1.0, 2)),
+                               scale_x_continuous(limits = c(15, 25), breaks = c(15, 20, 25)))) +
   th
 
 p 
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_FORTYP-models.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_CWM-models.jpg"), 
      width = 210, 
-     height = 240, 
+     height = 150, 
      units = "mm", 
      res = 600, 
      bg = "white",
@@ -138,12 +160,12 @@ p
 dev.off()
 
 
-png(paste0(root_path, "/figures/Manuscript_white/satellite_FORTYP-models.png"), 
-    width = 220, 
-    height = 240, 
+png(paste0(root_path, "/figures/Manuscript_white/satellite_CWM-models.png"), 
+    width = 210, 
+    height = 200, 
     units = "mm", 
     res = 600, 
-    bg = "transparent", 
+    bg = "transparent",
     pointsize = 14)
 p
 dev.off()

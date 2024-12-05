@@ -30,81 +30,11 @@ source("R/auxiliary/model_performance.R")
 root_path <- "/media/antonio/Work/MMDB"
 out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
 
-#-------------------------------------------------------------------------------
-#' @Probabilities-function
-#-------------------------------------------------------------------------------
-
-#' @param predicted Axes predictions from spaceborne spectroscopy
-#' @param coefficients Coefficients (and intercept) value from the occurrence models
-
-get_CWM <- function(predicted, coefficients) {
-  
-  # Select columns
-  obs <- predicted[, c("Axes", "sample", "observed")]
-  pred <- predicted[, c("Axes", "sample", "predicted")]
-  
-  # Dcast columns
-  obs <- dcast(obs, sample ~ Axes)
-  pred <- dcast(pred, sample ~ Axes)
-  
-  # Get probabilities
-  #trait <- as.vector(as.matrix(coefficients[, 1]))
-  obs_cwm <- multi_cwm(as.matrix(obs[,-1]), 
-                       as.matrix(coefficients[, -1]),
-                       as.numeric(as.factor(coefficients$plant)))
-  pred_cwm <- multi_cwm(as.matrix(pred[,-1]),
-                        as.matrix(coefficients[, -1]),
-                        as.numeric(as.factor(coefficients$plant)))
-  
-  # Make it data.table
-  obs_cwm <- as.data.table(obs_cwm[[1]])
-  colnames(obs_cwm) <- levels(as.factor(coefficients$plant))
-  pred_cwm <- as.data.table(pred_cwm[[1]])
-  colnames(pred_cwm) <- levels(as.factor(coefficients$plant))
-  
-  # Return list
-  list(obs = obs_cwm,
-       pred = pred_cwm)
-  
-}
-
-#-------------------------------------------------------------------------------
-#' @Performance-function
-#-------------------------------------------------------------------------------
-
-#' @param all_probabilities A list with the observed and predicted probabilities
-
-performance_batch <- function(all_cwm) {
-  
-  application_performance <- function(X,
-                                      all_cwm) {
-    
-    # Predict new values
-    per <- parameters(obs = as.matrix(all_cwm$obs)[, X], 
-                      pred = as.matrix(all_cwm$pred)[,X])
-    
-    return(per)
-  }
-  
-  # Performance in parallel
-  performance <- pbmclapply(X = 1:ncol(all_cwm$obs),
-                            FUN = application_performance,
-                            all_cwm = all_cwm,
-                            mc.cores = 28)
-  
-  performance <- do.call(rbind.data.frame, performance)
-  performance <- cbind(plants = colnames(all_cwm$obs),
-                       performance)
-  
-  return(performance)
-  
-}
-
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT"
 
 # Training
 dataset <- "training"
@@ -121,10 +51,8 @@ predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict CWM based on coefficients
-func_CWM <- get_CWM(predicted, coefficients)
-func_perf <- performance_batch(func_CWM)
-func_CWM$perf <- func_perf
-saveRDS(func_CWM, 
+func_perf <- performance_batch(predicted, coefficients)
+saveRDS(func_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 
 # Testing
@@ -138,10 +66,8 @@ coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
-func_CWM <- get_CWM(predicted, coefficients)
-func_perf <- performance_batch(func_CWM)
-func_CWM$perf <- func_perf
-saveRDS(func_CWM, 
+func_perf <- performance_batch(predicted, coefficients)
+saveRDS(func_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 
 #-------------------------------------------------------------------------------
@@ -163,7 +89,7 @@ for(i in 1:length(files)) {
   type <- strsplit(files[i], "_")[[1]][2]
   dataset <- strsplit(files[i], "_")[[1]][3]
 
-  performance <- readRDS(paste0(folder_path, "/", files[i]))$perf
+  performance <- readRDS(paste0(folder_path, "/", files[i]))
   performance$sensor <- sensor
   performance$type <- type
   performance$dataset <- dataset

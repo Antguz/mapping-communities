@@ -3,98 +3,15 @@
 using namespace arma;
 using namespace Rcpp;
 
-// [[Rcpp::export]]
-arma::vec cwm(arma::mat axes, 
-              arma::rowvec coefficients) {
-  
-  // N observations and axes
-  int nr = axes.n_rows;
-  int nc = axes.n_cols;
-  
-  // Vector to fill
-  arma:vec ans(nr);
-  
-  // Sum the intercept and get probability
-  for (int r = 0; r < nr; r++) {
-    
-    double value = coefficients[0];
-    
-    for (int c = 0; c < nc; c++) {
-      value += coefficients[(c+1)] * axes(r, c);
-    }
-    
-    ans[r] = value;
-    
-  } 
-  
-  return ans;
-  
-} 
-
-// [[Rcpp::export]]
-List multi_cwm(arma::mat axes, 
-               arma::mat mcoefficients,
-               arma::vec plants) {
-  
-  // N observations and axes
-  int nr = axes.n_rows;
-  int ncoef = mcoefficients.n_rows;
-  
-  // Vector to fill
-  arma::mat prob(nr, ncoef);
-  arma::mat pcol;
-  
-  // Sum the intercept and get probability
-  for (int j = 0; j < ncoef; j++) {
-    
-    arma::rowvec coef = mcoefficients.row(j);
-    arma::mat pcol = cwm(axes, coef);
-    prob.col(j) = pcol.reshape(nr, 1);
-    
-  }  
-  
-  // Find the unique elements in the vector
-  arma::vec unique_plants = arma::unique(plants);
-  int nplants = unique_plants.n_elem;
-  
-  // Matrix to return
-  arma::mat mean_cwm(nr, nplants);
-  arma::mat error_cwm(nr, nplants);
-  
-  // Get mean and error
-  for(int k = 0; k < nr; k++) {
-    
-    // Select pixel
-    arma::rowvec pixel = prob.row(k);
-    
-    for(int i = 0; i < nplants; i++) {
-      
-      // Select plants within pixel for metrics
-      arma::vec values = pixel(find(plants == unique_plants[i]));
-      
-      double n_root = sqrt(values.n_elem);
-      double pixel_mean = mean(values);
-      double pixel_sd = stddev(values);
-      double pixel_z = 1.96*(pixel_sd/n_root);
-      double pixel_error = (pixel_mean + pixel_z) - (pixel_mean - pixel_z);
-      
-      //Fill results
-      mean_cwm(k, i) = pixel_mean;
-      error_cwm(k, i) = pixel_error;
-      
-    }
-  }
-  
-  // Return a list containing two matrices
-  return List::create(mean_cwm, error_cwm);
-  
-} 
-
 // Prediction of CWM using coefficients for a single traits
 // [[Rcpp::export]]
 arma::mat cwm_coeff_prediction(arma::mat axes,
                                arma::mat coefficients,
                                arma::vec intercept) {
+  
+  // axes: cols are axes, rows observations
+  // coefficients: cols are coefficients, rows iterations
+  // intercept: a vector of intercepts
   
   // N observations and axes
   int nsamples = axes.n_rows;
@@ -158,4 +75,52 @@ arma::cube cube_cwm_coeff_prediction(arma::mat axes,
 
   return results;
 
+}
+
+// Summary of prediction of CWM using coefficients for several traits
+// [[Rcpp::export]]
+List summary_cwm(arma::mat axes,
+                 arma::cube cube_coefficients, 
+                 arma::mat mat_intercept) {
+  
+  // Get n of traits coefficients to predict
+  int samples = axes.n_rows;
+  int ntraits = cube_coefficients.n_slices;
+  int iterations = cube_coefficients.n_rows;
+  
+  // Get results
+  arma::cube results = cube_cwm_coeff_prediction(axes,
+                                                 cube_coefficients,
+                                                 mat_intercept);
+  
+  // Mat to fill
+  arma::mat summary_mean(samples, ntraits);
+  arma::mat summary_error(samples, ntraits);
+  
+  // Sum the intercept and get probability
+  for(int t = 0; t < ntraits; t++) {
+    
+    // Get a slice of results
+    arma::mat sub = results.slice(t);
+   
+    // Get summary
+    for(int p = 0; p < samples; ++p) {
+      
+      // Get metrics
+      double n_root = sqrt(iterations);
+      double pixel_mean = arma::mean(sub.row(p));
+      double pixel_sd = arma::stddev(sub.row(p));
+      double pixel_z = 1.96*(pixel_sd/n_root);
+      double pixel_error = (pixel_mean + pixel_z) - (pixel_mean - pixel_z);
+      
+      // Store results
+      summary_mean(p, t) = pixel_mean;
+      summary_error(p, t) = pixel_error;
+      
+    }
+  }
+  
+  // Return a list containing two matrices
+  return List::create(summary_mean, summary_error);
+  
 }

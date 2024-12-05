@@ -101,7 +101,7 @@ summary_all <- summary_performance[, .(mean = mean(performance)),
                                    by = c("sensor", "dataset", "metric")]
 
 # Summary of results
-summary_performance <- summary_performance[, .(mean = mean(performance)),
+summary_performance <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
                                            by = c("sensor", "dataset", "metric", "plant")]
 
 
@@ -121,16 +121,18 @@ summary_performance$plant <- factor(summary_performance$plant, levels = rev(c("A
                                                                                "Prunus", "Quercus", "Ulmus",
                                                                                "Arbuscular mycorrhizal", "Ectomycorrhizal")))
 
-
 p <- ggplot(summary_performance) +
+  geom_linerange(aes(xmin = mean - sd,
+                     xmax = mean + sd,
+                     y = plant,
+                     colour = interaction(sensor, dataset)),
+                 alpha = 0.75) +
   geom_point(aes(x = mean, 
                  y = plant,
                  colour = interaction(sensor, dataset),
                  fill = interaction(sensor, dataset),
                  shape = interaction(sensor, dataset)),
-             size = 2,
-             #colour = "grey",
-             #position = position_jitterdodge(dodge.width=0.4, jitter.width=0),
+             size = 1,
              alpha = 0.75) +
   geom_vline(data = summary_all,
              aes(xintercept = mean, 
