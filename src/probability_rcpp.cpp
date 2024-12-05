@@ -30,7 +30,7 @@ arma::mat prob_coeff_prediction(arma::mat axes,
     //N models multiplication (m)
     arma::mat coef_multi = coefficients.each_row() % ipixel;
     arma::vec coef_sum = arma::sum(coef_multi, 1) + intercept;
-    arma::vec coef_prob = (exp(coef_sum)/(1+exp(coef_sum)));
+    arma::vec coef_prob = (1/(1+exp(coef_sum)));
     
     // Storage result
     results.row(r) = trans(coef_prob);

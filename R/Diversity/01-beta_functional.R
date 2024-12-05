@@ -68,11 +68,29 @@ functional_diversity <- function(fia,
   species <- as.data.frame(species)
   species_tips <- species$Taxon2
   
-  # Scale
-  species[, 3:10] <- scale(species[, 3:10])
+  # # Scale
+  # species[, 3:10] <- scale(species[, 3:10])
+  # 
+  # # Get distance
+  # trait_distance <- dist(species[, c(3:10)],
+  #                        method= "euclidean",
+  #                        diag = TRUE,
+  #                        upper = TRUE)
+  # 
+  # # Tree
+  # func <- hclust(trait_distance, "average")
+  # func <- ape::as.phylo(func)
+  # func$tip.label <- species_tips
+  # 
+  # # Normalize tree
+  # func <- normalize_tree(func)
+  
+  # Run a PCA
+  pca <- rda(species[, c(3:10)], scale = TRUE)
+  val <- scores(pca, choices = c(1, 2, 3), display = "sites")
   
   # Get distance
-  trait_distance <- dist(species[, c(3:13)], 
+  trait_distance <- dist(val, 
                          method= "euclidean", 
                          diag = TRUE, 
                          upper = TRUE)
@@ -81,7 +99,7 @@ functional_diversity <- function(fia,
   func <- hclust(trait_distance, "average")
   func <- ape::as.phylo(func)
   func$tip.label <- species_tips
-
+  
   # Normalize tree
   func <- normalize_tree(func)
   
