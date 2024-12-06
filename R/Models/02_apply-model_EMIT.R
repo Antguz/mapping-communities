@@ -58,16 +58,16 @@ apply_model <- function(X,
   
   # Mask for NIR
   NIR <- rast_spectra$`805.361755371093`
-  NIR[NIR < 0.3] <- 1
-  NIR[NIR >= 0.3 & NIR <= 0.8] <- 0
+  NIR[NIR < 0.1] <- 1
+  NIR[NIR >= 0.1 & NIR <= 0.8] <- 0
   NIR[NIR > 0.8] <- 1
   
   # Mask for NDVI
   NDVI <- (rast_spectra$`805.361755371093` - rast_spectra$`686.010314941406`) / 
           (rast_spectra$`805.361755371093` + rast_spectra$`686.010314941406`)
   NDVI[NDVI == Inf] <- 0
-  NDVI[NDVI >= 0.50] <- 2
-  NDVI[NDVI < 0.50] <- 0
+  NDVI[NDVI >= 0.40] <- 2
+  NDVI[NDVI < 0.40] <- 0
   NDVI[NDVI == 0] <- 1
   NDVI[NDVI == 2] <- 0
   
@@ -97,6 +97,7 @@ apply_model <- function(X,
   
   # Release memory
   rm(list = c('rast_spectra', 'rast_mask', 'data_mask','NDVI', 'NIR', 'cells_match'))
+  gc()
   
   #---------------------------------------------------------
   # Transform raster files
@@ -106,7 +107,7 @@ apply_model <- function(X,
   sw <- EMIT_transform(spectra = data_spectra[, .SD, .SDcols = 2:ncol(data_spectra)], 
                        EMIT_bands = EMIT_bands,
                        cell = cell,
-                       new_bands = seq(min(EMIT_bands), max(EMIT_bands), by = 7.43),
+                       new_bands = seq(min(EMIT_bands), max(EMIT_bands), by = 7.5),
                        threads = 1)
   
   # Subset bands
@@ -249,7 +250,7 @@ apply_model <- function(X,
 root_path <- "/media/antonio/Work/MMDB"
 
 # Source code
-source("R/EMIT-transform.R")
+source("R/auxiliary/EMIT-transform.R")
 sourceCpp("src/beta_predict_pls.cpp")
 
 # Scenes frame
@@ -281,17 +282,17 @@ frame_scenes <- merge(frame_scenes,
 # Coefficients
 type <- "taxo"
 coefficients_taxonomic <- fread(paste0(root_path,
-                                       "/06_model_beta/SW_beta_PLS/EMIT/EMIT_",
+                                       "/Models/01_model_beta/EMIT/EMIT_",
                                        type,
                                        "_coefficients.csv"))
-type <- "phylo-log"
+type <- "phylo"
 coefficients_phylogenetic <- fread(paste0(root_path,
-                                          "/06_model_beta/SW_beta_PLS/EMIT/EMIT_",
+                                          "/Models/01_model_beta/EMIT/EMIT_",
                                           type,
                                           "_coefficients.csv"))
 type <- "func"
 coefficients_functional <- fread(paste0(root_path,
-                                        "/06_model_beta/SW_beta_PLS/EMIT/EMIT_",
+                                        "/Models/01_model_beta/EMIT/EMIT_",
                                         type,
                                         "_coefficients.csv"))
 # Out paths
