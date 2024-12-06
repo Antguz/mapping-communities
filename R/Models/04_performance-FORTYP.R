@@ -22,6 +22,7 @@ library(RcppArmadillo)
 
 sourceCpp("src/probability_rcpp.cpp")
 source("R/auxiliary/model_performance.R")
+source("R/auxiliary/performance_batch_FORTYR.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
@@ -100,5 +101,3 @@ for(i in 1:length(files)) {
 }
 
 fwrite(data, paste0(out_path, "/performance_summary_fortyp.csv"))
-
-

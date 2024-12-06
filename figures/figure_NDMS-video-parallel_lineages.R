@@ -31,7 +31,6 @@ source("R/auxiliary/aggregate_plants.R")
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-root_path <- "G:/Projects/MMDB"
 
 #'------------------------------------------------------------------------------
 #' Func ordination
@@ -93,14 +92,14 @@ for(i in 1:length(plant)) {
   
 }
 
-phylo_modelled <- summary_cwm(as.matrix(phylo_comm[, c(-1, -5)]),
-                              coef_array, 
-                              intercept_mat)[[1]]
+phylo_modelled <- summary_prob(as.matrix(phylo_comm[, c(-1, -5)]),
+                               coef_array, 
+                               intercept_mat)[[1]]
 phylo_modelled <- as.data.table(phylo_modelled)/10000
 colnames(phylo_modelled) <- plant
 
 #'------------------------------------------------------------------------------
-#' @Plot-CWM
+#' @Plot-Lineages
 #-------------------------------------------------------------------------------
 
 # Plot features
@@ -213,7 +212,7 @@ application <- function(X,
 }
 
 # Acer / length(theta)
-pbmclapply(X = 1:10,  
+pbmclapply(X = 1:length(theta),  
            FUN = application, 
            phylo_comm = phylo_comm, 
            phylo_observed_plant = aggregation$Acer,
@@ -229,13 +228,13 @@ pbmclapply(X = 1:10,
            th = th,
            mc.preschedule = TRUE, 
            mc.set.seed = FALSE,
-           #mc.silent = FALSE, 
-           mc.cores = 1,
+           mc.silent = FALSE, 
+           mc.cores = 25,
            mc.cleanup = TRUE, 
            mc.allow.recursive = TRUE)
 
 # Quercus
-pbmclapply(X = 1:2, #length(theta),  
+pbmclapply(X = 1:length(theta), #length(theta),  
            FUN = application, 
            phylo_comm = phylo_comm, 
            phylo_observed_plant = aggregation$Quercus,
@@ -251,13 +250,13 @@ pbmclapply(X = 1:2, #length(theta),
            th = th,
            mc.preschedule = TRUE, 
            mc.set.seed = FALSE,
-           #mc.silent = FALSE, 
-           mc.cores = 1,
+           mc.silent = FALSE, 
+           mc.cores = 25,
            mc.cleanup = TRUE, 
            mc.allow.recursive = TRUE)
 
 # Pinus
-pbmclapply(X = 1:10, #length(theta),  
+pbmclapply(X = 1:length(theta), #length(theta),  
            FUN = application, 
            phylo_comm = phylo_comm, 
            phylo_observed_plant = aggregation$Pinus,
@@ -273,8 +272,8 @@ pbmclapply(X = 1:10, #length(theta),
            th = th,
            mc.preschedule = TRUE, 
            mc.set.seed = FALSE,
-           #mc.silent = FALSE, 
-           mc.cores = 1,
+           mc.silent = FALSE, 
+           mc.cores = 25,
            mc.cleanup = TRUE, 
            mc.allow.recursive = TRUE)
 

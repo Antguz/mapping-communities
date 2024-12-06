@@ -94,7 +94,7 @@ data_split <- readRDS(paste0(out_path, "/split_lineages.rds"))
 #-------------------------------------------------------------------------------
 
 # Create model
-model <- model_lineages(ordination = ordination,
+model <- model_lineages(ordination = ordination[, 2:4],
                         aggregation = aggregation,
                         data_split = data_split,
                         iterations = 100,

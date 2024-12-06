@@ -22,6 +22,7 @@ library(pbmcapply)
 
 sourceCpp("src/cwm_rcpp.cpp")
 source("R/auxiliary/model_performance.R")
+source("R/auxiliary/performance_batch_CWM.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
@@ -34,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 # Training
 dataset <- "training"

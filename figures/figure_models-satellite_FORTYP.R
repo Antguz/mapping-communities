@@ -123,8 +123,8 @@ p <- ggplot(summary_performance) +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.20, 0.20), breaks = c(-0.15, 0.0, 0.15)),
-                               scale_x_continuous(limits = c(0, 0.35), breaks = c(0, 0.15, 0.3)),
-                               scale_x_continuous(limits = c(15, 40), breaks = c(20, 30, 40)))) +
+                               scale_x_continuous(limits = c(0, 0.37), breaks = c(0, 0.15, 0.3)),
+                               scale_x_continuous(limits = c(10, 40), breaks = c(15, 25, 35)))) +
   th
 
 p 

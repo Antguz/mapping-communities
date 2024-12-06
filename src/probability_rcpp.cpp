@@ -79,9 +79,9 @@ arma::cube cube_prob_coeff_prediction(arma::mat axes,
 
 // Summary of prediction of CWM using coefficients for several traits
 // [[Rcpp::export]]
-List summary_cwm(arma::mat axes,
-                 arma::cube cube_coefficients, 
-                 arma::mat mat_intercept) {
+List summary_prob(arma::mat axes,
+                  arma::cube cube_coefficients, 
+                  arma::mat mat_intercept) {
   
   // Get n of traits coefficients to predict
   int samples = axes.n_rows;

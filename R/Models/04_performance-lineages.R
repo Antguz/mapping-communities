@@ -22,6 +22,7 @@ library(RcppArmadillo)
 
 sourceCpp("src/probability_rcpp.cpp")
 source("R/auxiliary/model_performance.R")
+source("R/auxiliary/performance_batch_lineages.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
@@ -34,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_occurence_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #### Phylogenetic training ####
 dataset <- "training"

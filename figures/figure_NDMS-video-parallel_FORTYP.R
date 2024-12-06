@@ -30,7 +30,6 @@ sourceCpp("src/probability_rcpp.cpp")
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-root_path <- "G:/Projects/MMDB"
 
 #'------------------------------------------------------------------------------
 #' Taxo ordination
@@ -52,7 +51,7 @@ fia_meta <- fia_meta[fia_meta_match,]
 all.equal(taxo_comm$PLT_CN, fia_meta$PLT_CN)
 
 # FIA forest type
-forest_type <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_COND.csv"),  fill=TRUE)
+forest_type <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_COND.csv"))
 forest_type <- forest_type[, c("PLT_CN", "FORTYPCD")]
 FORTYPCD <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_REF_FOREST_TYPE.csv"))
 FORTYPCD <- FORTYPCD[, c("VALUE", "MEANING")]
@@ -69,40 +68,39 @@ all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
 # Clean forest type
 to_remove <- c(181, 183, 223, 380, 382, 383, 803, 807, 925, 926, 
                932, 950, 951, 952, 953, 954, 955, 981, 999)
-forest_type <- forest_type[!forest_type$FORTYPCD %in% to_remove, ]
-forest_type <- forest_type[!is.na(FORTYP),]
+forest_type <- forest_type[forest_type$FORTYPCD %in% to_remove, FORTYP := NA]
 forest_type <- forest_type[, c("PLT_CN", "FORTYP")]
 
 # ------------------------------------------------------------------------------
-# Phylo modelled
+# Taxo modelled
 
 # Get glm coefficients
-coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
-                             type, "_model-occurrence.csv"))
+coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
+                             type, "_model-FORTYP.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 14:17)]
 
 # Reshape coefficients
-plant <- unique(coefficients$plant)
-coef_array <- array(dim = c(100, 3, length(plant)))
-intercept_mat <- matrix(nrow = 100, ncol = length(plant))
+models <- unique(coefficients$forty)
+coef_array <- array(dim = c(100, 3, length(models)))
+intercept_mat <- matrix(nrow = 100, ncol = length(models))
 
-for(i in 1:length(plant)) {
+for(i in 1:length(models)) {
   
-  sub <- coefficients[plant == plant[i]]
+  sub <- coefficients[forty == models[i]]
   coef_array[,,i] <- as.matrix(sub[, 3:5])
   intercept_mat[,i] <- sub$`(Intercept)`
   
 }
 
-phylo_modelled <- summary_cwm(as.matrix(phylo_comm[, c(-1, -5)]),
-                              coef_array, 
-                              intercept_mat)[[1]]
-phylo_modelled <- as.data.table(phylo_modelled)/10000
-colnames(phylo_modelled) <- plant
+fortyp_modelled <- summary_prob(as.matrix(taxo_comm[, c(-1, -5)]),
+                                coef_array, 
+                                intercept_mat)[[1]]
+fortyp_modelled <- as.data.table(fortyp_modelled)/10000
+colnames(fortyp_modelled) <- models
 
 #'------------------------------------------------------------------------------
-#' @Plot-CWM
+#' @Plot-FORTYP
 #-------------------------------------------------------------------------------
 
 # Plot features
@@ -129,13 +127,14 @@ th <- theme_void(base_size = 15) +
 
 # Vizual plot
 application <- function(X,
-                        phylo_comm, 
-                        phylo_observed_plant,
-                        phylo_modelled_plant,
+                        taxo_comm, 
+                        forest_type,
+                        taxo_modelled_plant,
                         legend, 
                         pallete,
                         export, 
                         class,
+                        exp_name,
                         theta, 
                         phi, 
                         h_adjust_axis1,
@@ -144,13 +143,16 @@ application <- function(X,
   
   i <- X
   
-  Occurrence <- ifelse(phylo_observed_plant == 1, "Presence", "Absence")
-  Occurrence <- factor(Occurrence, levels = c("Presence", "Absence"))
+  Occurrence <- forest_type
+  Occurrence[FORTYP == class, Occurrence := "Presence"]
+  Occurrence[FORTYP != class, Occurrence := "Absence"]
+  Occurrence[is.na(FORTYP), Occurrence := "Absence"]
+  Occurrence <- factor(Occurrence$Occurrence, levels = c("Presence", "Absence"))
   
-  phylo_2 <- ggplot(phylo_comm, aes(x = Axis1, 
-                                    y = Axis2, 
-                                    z = Axis3,
-                                    color = Occurrence)) +
+  taxo_2 <- ggplot(taxo_comm, aes(x = Axis1, 
+                                  y = Axis2, 
+                                  z = Axis3,
+                                  color = Occurrence)) +
     axes_3D(theta = theta[i], 
             phi = phi[i], 
             linewidth = 0.5,
@@ -172,10 +174,10 @@ application <- function(X,
     guides(color = guide_legend(override.aes = list(size = 3), title.position = "bottom")) +
     th
   
-  phylo_3 <- ggplot(phylo_comm, aes(x = Axis1, 
+  taxo_3 <- ggplot(taxo_comm, aes(x = Axis1, 
                                     y = Axis2, 
                                     z = Axis3,
-                                    color = phylo_modelled_plant)) +
+                                    color = taxo_modelled_plant)) +
     axes_3D(theta = theta[i], 
             phi = phi[i], 
             linewidth = 0.5,
@@ -198,7 +200,7 @@ application <- function(X,
     th 
   
   name <- str_pad(i, 4, pad = "0")
-  file_name = paste0(export, "/", class, "_", name, ".png", sep="")
+  file_name = paste0(export, "/", exp_name, "_", name, ".png", sep="")
   png(file_name,
       width = 400, 
       height = 210, 
@@ -206,7 +208,7 @@ application <- function(X,
       pointsize = 32,
       bg = NA,  
       res = 300)
-  print(ggarrange(phylo_2, phylo_3, ncol = 2, common.legend = FALSE,
+  print(ggarrange(taxo_2, taxo_3, ncol = 2, common.legend = FALSE,
                   legend = "bottom"))
   dev.off()
   
@@ -214,16 +216,17 @@ application <- function(X,
   
 }
 
-# Acer / length(theta)
-pbmclapply(X = 1:10,  
+# Red maple / lowland
+pbmclapply(X = 1:length(theta),  
            FUN = application, 
-           phylo_comm = phylo_comm, 
-           phylo_observed_plant = aggregation$Acer,
-           phylo_modelled_plant = phylo_modelled$Acer,
+           taxo_comm = taxo_comm, 
+           forest_type = forest_type,
+           taxo_modelled_plant = fortyp_modelled$`Red maple / lowland`,
            legend = "Occurrence probability", 
            pallete = viridis(1000),
-           export = paste0(root_path, "/figures/video/occurrence/Acer"), 
-           class = "Acer",
+           export = paste0(root_path, "/figures/video/FORTYP/Red-maple_lowland"), 
+           class = "Red maple / lowland",
+           exp_name = "Red-maple-lowland",
            theta = theta, 
            phi = phi, 
            h_adjust_axis1 = h_adjust_axis1,
@@ -231,21 +234,22 @@ pbmclapply(X = 1:10,
            th = th,
            mc.preschedule = TRUE, 
            mc.set.seed = FALSE,
-           #mc.silent = FALSE, 
-           mc.cores = 1,
+           mc.silent = FALSE, 
+           mc.cores = 25,
            mc.cleanup = TRUE, 
            mc.allow.recursive = TRUE)
 
-# Quercus
-pbmclapply(X = 1:2, #length(theta),  
+# White oak / red oak / hickory
+pbmclapply(X = 1:length(theta),  
            FUN = application, 
-           phylo_comm = phylo_comm, 
-           phylo_observed_plant = aggregation$Quercus,
-           phylo_modelled_plant = phylo_modelled$Quercus,
+           taxo_comm = taxo_comm, 
+           forest_type = forest_type,
+           taxo_modelled_plant = fortyp_modelled$`White oak / red oak / hickory`,
            legend = "Occurrence probability", 
            pallete = viridis(1000),
-           export = paste0(root_path, "/figures/video/occurrence/Quercus"), 
-           class = "Quercus",
+           export = paste0(root_path, "/figures/video/FORTYP/White-oak_red-oak_hickory"), 
+           class = "White oak / red oak / hickory",
+           exp_name = "White-oak_red-oak_hickory",
            theta = theta, 
            phi = phi, 
            h_adjust_axis1 = h_adjust_axis1,
@@ -253,30 +257,8 @@ pbmclapply(X = 1:2, #length(theta),
            th = th,
            mc.preschedule = TRUE, 
            mc.set.seed = FALSE,
-           #mc.silent = FALSE, 
-           mc.cores = 1,
-           mc.cleanup = TRUE, 
-           mc.allow.recursive = TRUE)
-
-# Pinus
-pbmclapply(X = 1:10, #length(theta),  
-           FUN = application, 
-           phylo_comm = phylo_comm, 
-           phylo_observed_plant = aggregation$Pinus,
-           phylo_modelled_plant = phylo_modelled$Pinus,
-           legend = "Occurrence probability", 
-           pallete = viridis(1000),
-           export = paste0(root_path, "/figures/video/occurrence/Pinus"), 
-           class = "Pinus",
-           theta = theta, 
-           phi = phi, 
-           h_adjust_axis1 = h_adjust_axis1,
-           h_adjust_axis2 = h_adjust_axis2,
-           th = th,
-           mc.preschedule = TRUE, 
-           mc.set.seed = FALSE,
-           #mc.silent = FALSE, 
-           mc.cores = 1,
+           mc.silent = FALSE, 
+           mc.cores = 25,
            mc.cleanup = TRUE, 
            mc.allow.recursive = TRUE)
 

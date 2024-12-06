@@ -27,7 +27,6 @@ model_lineages <- function(ordination,
     # Reshape data
     frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, 2:4])
     colnames(frame) <- c("occurrence", "Axis1", "Axis2", "Axis3") 
-    frame[occurrence > 0, occurrence := 1]
     frame$occurrence <- as.character(frame$occurrence)
     frame[occurrence == "0", occurrence := "absence"]
     frame[occurrence == "1", occurrence := "presence"]

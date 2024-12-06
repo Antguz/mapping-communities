@@ -16,8 +16,6 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-# library(CAST)
-# library(plotROC)
 library(ROSE)
 
 #'------------------------------------------------------------------------------
@@ -68,8 +66,7 @@ all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
 # Clean forest type
 to_remove <- c(181, 183, 223, 380, 382, 383, 803, 807, 925, 926, 
                932, 950, 951, 952, 953, 954, 955, 981, 999)
-forest_type <- forest_type[!forest_type$FORTYPCD %in% to_remove, ]
-forest_type <- forest_type[!is.na(FORTYP),]
+forest_type <- forest_type[forest_type$FORTYPCD %in% to_remove, FORTYP := NA]
 forest_type <- forest_type[, c("PLT_CN", "FORTYP")]
 
 # Match meta, NMDS, and forest type
