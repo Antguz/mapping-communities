@@ -280,7 +280,7 @@ sourceCpp("src/beta_predict_pls.cpp")
 
 # Apply in a batch of scenes
 root_path <- "/media/antonio/Work/MMDB"
-scenes <- list.files(path = paste0(root_path, "/00_imagery/DESIS/test"),
+scenes <- list.files(path = paste0(root_path, "/00_imagery/DESIS"),
                      full.names = TRUE,
                      recursive = FALSE)
 type <- "taxo"

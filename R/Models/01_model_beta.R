@@ -13,7 +13,6 @@ library(caret)
 library(pls)
 library(plsVarSel)
 library(CAST)
-library(sf)
 library(parallel)
 library(pbmcapply)
 library(bit64)
@@ -37,7 +36,7 @@ source("R/auxiliary/pls_coefficients.R")
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information

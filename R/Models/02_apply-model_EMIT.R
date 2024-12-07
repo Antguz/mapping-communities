@@ -52,6 +52,7 @@ apply_model <- function(X,
   rast_mask <- rast(mask)
   names(rast_mask)<- c("cloud", "cirrus", "water", "spacecraft", "dilated",
                        "AOD550", "H20", "mask")
+  rast_mask$mask <- rast_mask$mask - rast_mask$dilated
   
   #---------------------------------------------------------
   # Define mask
@@ -278,6 +279,7 @@ frame_scenes <- merge(frame_scenes,
                       by = "time",
                       all.x = TRUE,
                       all.y = TRUE)
+frame_scenes <- na.exclude(frame_scenes)
 
 # Coefficients
 type <- "taxo"
@@ -310,7 +312,7 @@ run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)),
                   mc.preschedule = TRUE,
                   mc.set.seed = FALSE,
                   mc.silent = FALSE,
-                  mc.cores = 2,
+                  mc.cores = 1,
                   mc.cleanup = TRUE,
                   mc.allow.recursive = TRUE,
                   affinity.list = NULL)
