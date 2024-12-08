@@ -47,24 +47,43 @@ apply_model_CWM <- function(X,
                                              na.rm = TRUE))
   ordination <- as.matrix(frame_scene[, 2:4]/1000)
   
+  # Reshape coefficients
+  traits <- unique(coefficients$plant)
+  coef_array <- array(dim = c(100, 3, length(traits)))
+  intercept_mat <- matrix(nrow = 100, ncol = length(traits))
+  
+  for(i in 1:length(traits)) {
+    
+    sub <- coefficients[plant == traits[i]]
+    coef_array[,,i] <- as.matrix(sub[, 3:5])
+    intercept_mat[,i] <- sub$`(Intercept)`
+    
+  }
+  
   # Order coefficients for naming
-  coefficients <- coefficients[order(plant)]
-  cwm_traits <- unique(coefficients$plant)
-  coefficients$plant <- factor(coefficients$plant, levels = cwm_traits)
+  # coefficients <- coefficients[order(plant)]
+  # cwm_traits <- unique(coefficients$plant)
+  # coefficients$plant <- factor(coefficients$plant, levels = cwm_traits)
   
   #---------------------------------------------------------
   # Estimate CWM based on coefficients
-  plant_cwm <- multi_cwm(ordination,
-                         as.matrix(coefficients[, 2:5]),
-                         as.numeric(coefficients$plant))
+  plant_cwm <- summary_cwm(ordination,
+                           coef_array,
+                           intercept_mat)
+  
+  # plant_cwm <- multi_cwm(ordination,
+  #                        as.matrix(coefficients[, 2:5]),
+  #                        as.numeric(coefficients$plant))
   
   #---------------------------------------------------------
   #Scaling results
   
-  for(i in 1:length(cwm_traits)) {
-    scale <- scaling[plant == cwm_traits[i]]
-    plant_cwm[[1]][,i] <- plant_cwm[[1]][,i]*scale$scale[1]
-    plant_cwm[[2]][,i] <- plant_cwm[[2]][,i]*scale$scale[1]*1000
+  for(i in 1:length(traits)) {
+    # scale <- scaling[plant == traits[i]]
+    # plant_cwm[[1]][,i] <- plant_cwm[[1]][,i]*scale$scale[1]
+    # plant_cwm[[2]][,i] <- plant_cwm[[2]][,i]*scale$scale[1]*1000
+    plant_cwm[[1]][,i] <- plant_cwm[[1]][,i]*100
+    plant_cwm[[2]][,i] <- plant_cwm[[2]][,i]*100000
   }
   
   #--------------------------------------------------------
@@ -72,12 +91,12 @@ apply_model_CWM <- function(X,
   
   cwm_scene_mean <- subset(predicted_scene, 1)
   cwm_scene_mean[] <- NA
-  cwm_scene_mean <- rep(cwm_scene_mean, length(cwm_traits))
+  cwm_scene_mean <- rep(cwm_scene_mean, length(traits))
   cwm_scene_error <- cwm_scene_mean
   cwm_scene_mean[frame_scene$cell] <- plant_cwm[[1]]
   cwm_scene_error[frame_scene$cell] <- plant_cwm[[2]]
-  names(cwm_scene_mean) <- cwm_traits
-  names(cwm_scene_error) <- cwm_traits
+  names(cwm_scene_mean) <- traits
+  names(cwm_scene_error) <- traits
   
   #-----------------------------------------------------------
   # Scene export
@@ -86,12 +105,12 @@ apply_model_CWM <- function(X,
   scene_name <- scene_name[length(scene_name)]
   
   if(sensor == "DESIS") {
-    scene_name <- strsplit(scene_name, "DESIS-L3A")[[1]][2]
+    scene_name <- strsplit(scene_name, "DESIS-L3C")[[1]][2]
     scene_name <- paste0("DESIS-L4C", scene_name)
     
   } else if(sensor == "EMIT") {
     scene_name <- strsplit(scene_name, "EMIT-L3C")[[1]][2]
-    scene_name <- paste0("DESIS-L4C", scene_name)
+    scene_name <- paste0("EMIT-L4C", scene_name)
   }
   
   scene_name <- strsplit(scene_name, "NDMS-functional-composition.tif")[[1]][1]
@@ -104,14 +123,14 @@ apply_model_CWM <- function(X,
   #Export
   writeRaster(x = cwm_scene_mean,
               filename = output_raster_mean,
-              names = cwm_traits,
+              names = traits,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
   
   writeRaster(x = cwm_scene_error,
               filename = output_raster_error,
-              names = cwm_traits,
+              names = traits,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
@@ -127,20 +146,20 @@ apply_model_CWM <- function(X,
 
 # Define root path, sensor, and coefficients
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "DESIS"
+sensor <- "EMIT"
 type <- "func"
 
 # Read coefficients
-coefficients <- fread(paste0(root_path, "/07_model_CWM/", 
+coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- coefficients[dataset == "training", 
                              c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]
 
 # Read scaling factor
-scaling <- fread(paste0(root_path, "/07_model_CWM/CWM_scale.csv"))
+# scaling <- fread(paste0(root_path, "/07_model_CWM/CWM_scale.csv"))
 
 # Define inputs and outputs folder
-folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/Functional")
+folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/L3C")
 output_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L4/CWM")
 
 # Select files to process
@@ -151,11 +170,11 @@ functional_composition <- list.files(path = folder_path,
 
 # Parallel processing
 run <- pbmclapply(X = 1:length(functional_composition), 
-                  FUN = apply_model_cwm, 
+                  FUN = apply_model_CWM, 
                   sensor = sensor,
                   functional_composition = functional_composition, 
                   coefficients = coefficients, 
-                  scaling = scaling,
+                  scaling = NA,
                   output_path = output_path,
                   mc.preschedule = TRUE, 
                   mc.set.seed = FALSE,

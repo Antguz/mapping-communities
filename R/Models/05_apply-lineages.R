@@ -43,27 +43,45 @@ apply_model_occurence <- function(X,
   frame_scene <- as.data.table(as.data.frame(predicted_scene, cells = TRUE, na.rm = TRUE))
   ordination <- as.matrix(frame_scene[, 2:4]/1000)
   
+  # Reshape coefficients
+  models <- unique(coefficients$plant)
+  coef_array <- array(dim = c(100, 3, length(models)))
+  intercept_mat <- matrix(nrow = 100, ncol = length(models))
+
+  for(i in 1:length(models)) {
+
+    sub <- coefficients[plant == models[i]]
+    coef_array[,,i] <- as.matrix(sub[, 3:5])
+    intercept_mat[,i] <- sub$`(Intercept)`
+
+  }
+  
   # Order coefficients for naming
-  coefficients <- coefficients[order(plant)]
-  plant_group <- unique(coefficients$plant)
-  coefficients$plant <- factor(coefficients$plant, levels = plant_group)
+  # coefficients <- coefficients[order(plant)]
+  # coefficients$plant <- factor(coefficients$plant)
+  # models <- levels(coefficients$plant)
   
   #---------------------------------------------------------
   # Estimate probabilities based on coefficients
-  plant_probabilities <- multi_probability(ordination, 
-                                           as.matrix(coefficients[, 2:5]),
-                                           as.numeric(coefficients$plant))
+  plant_probabilities <- summary_prob(ordination,
+                                      coef_array,
+                                      intercept_mat)
+  
+  # plant_probabilities <- multi_probability(ordination, 
+  #                                          as.matrix(coefficients[, 2:5]),
+  #                                          as.numeric(coefficients$plant),
+  #                                          threads = 25)
   
   #--------------------------------------------------------
   #Get a scene frame
   species_scene_mean <- subset(predicted_scene, 1)
   species_scene_mean[] <- NA
-  species_scene_mean <- rep(species_scene_mean, length(plant_group))
+  species_scene_mean <- rep(species_scene_mean, length(models))
   species_scene_error <- species_scene_mean
   species_scene_mean[frame_scene$cell] <- plant_probabilities[[1]]
   species_scene_error[frame_scene$cell] <- plant_probabilities[[2]]
-  names(species_scene_mean) <- plant_group
-  names(species_scene_error) <- plant_group
+  names(species_scene_mean) <- models
+  names(species_scene_error) <- models
   
   #-----------------------------------------------------------
   # Scene export
@@ -72,12 +90,12 @@ apply_model_occurence <- function(X,
   scene_name <- scene_name[length(scene_name)]
   
   if(sensor == "DESIS") {
-    scene_name <- strsplit(scene_name, "DESIS-L3A")[[1]][2]
+    scene_name <- strsplit(scene_name, "DESIS-L3B")[[1]][2]
     scene_name <- paste0("DESIS-L4B", scene_name)
     
   } else if(sensor == "EMIT") {
     scene_name <- strsplit(scene_name, "EMIT-L3B")[[1]][2]
-    scene_name <- paste0("DESIS-L4B", scene_name)
+    scene_name <- paste0("EMIT-L4B", scene_name)
   }
   
   scene_name <- strsplit(scene_name, "NDMS-phylogenetic-composition.tif")[[1]][1]
@@ -90,14 +108,14 @@ apply_model_occurence <- function(X,
   #Export
   writeRaster(x = species_scene_mean,
               filename = output_raster_mean,
-              names = plant_group,
+              names = models,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
   
   writeRaster(x = species_scene_error,
               filename = output_raster_error,
-              names = plant_group,
+              names = models,
               NAflag = -9999,
               overwrite= TRUE,
               datatype = "INT4S")
@@ -113,17 +131,20 @@ apply_model_occurence <- function(X,
 
 # Define root path, sensor, and coefficients
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "DESIS"
-type <- "phylo-log"
+sensor <- "EMIT"
+type <- "phylo"
 
 # Read coefficients
-coefficients <- fread(paste0(root_path, "/07_model_occurrence/", 
+coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
                              type, "_model-occurrence.csv"))
 coefficients <- coefficients[dataset == "training", 
                              c("plant", "(Intercept)", "Axis1", "Axis2", "Axis3")]
 
+select <- c("Fagaceae", "Pinaceae", "Sapindaceae", "Fagus", "Acer")
+coefficients <- coefficients[coefficients$plant %in% select, ]
+
 # Define inputs and outputs folder
-folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/Phylogenetic")
+folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/L3B")
 output_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L4/Occurrence")
 
 # Select files to process
