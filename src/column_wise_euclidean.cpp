@@ -12,12 +12,14 @@
 using namespace arma;
 
 // [[Rcpp::export]]
-arma::mat column_wise_euclidean(const arma::mat& X, 
+arma::mat column_wise_euclidean(const arma::mat X, 
+                                const arma::mat Y,
                                 int n_threads,
                                 bool progress = true) {
   
   arma::uword n = X.n_rows;
-  arma::mat dist_matrix(n, n, arma::fill::zeros);
+  arma::uword ny = Y.n_rows;
+  arma::mat dist_matrix(n, ny, arma::fill::zeros);
   
   //create progress
   Progress p(n, progress);
@@ -31,17 +33,16 @@ arma::mat column_wise_euclidean(const arma::mat& X,
   
   //Loop for distance
 #pragma omp parallel for
-  for (arma::uword i = 0; i < n; ++i) {
+  for (arma::uword i = 0; i < n; i++) {
     
     if (! Progress::check_abort() ) {
       p.increment(); // update progress
     }
     
-    for (arma::uword j = i + 1; j < n; ++j) {
+    for (arma::uword j = 0; j < ny; j++) {
       
-      double dist = arma::norm(X.row(i) - X.row(j), 2);
+      double dist = arma::norm(X.row(i) - Y.row(j), 2);
       dist_matrix(i, j) = dist;
-      dist_matrix(j, i) = dist; // Ensure symmetry
     } 
   }
   
