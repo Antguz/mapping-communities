@@ -42,7 +42,7 @@ statecd_countycd <- unique(meta$STATECD_COUNTYCD)
 landmark <- function(X = 1:length(statecd_countycd),
                      statecd_countycd,
                      meta,
-                     fraction = 0.01) {
+                     fraction = 0.005) {
   
   sub <- meta[STATECD_COUNTYCD == statecd_countycd[X],]
   samp <- sample(sub$ID_to_select, 1, replace = FALSE)

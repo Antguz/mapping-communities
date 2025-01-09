@@ -29,7 +29,7 @@ select_landmarks <- function(x,
   # naive -> just subsample the cell ids
   dist_2lm <- column_wise_euclidean(x[landmarks_vector, , drop = FALSE], x, n_threads = threads)
   dist_2lm <- zapsmall(dist_2lm)
-  colnames(dist_2lm) <- colnames(x)[landmarks_vector]
+  colnames(dist_2lm) <- colnames(x)
   rownames(dist_2lm) <- colnames(x)[landmarks_vector]
   
   dist_2lm

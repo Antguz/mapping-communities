@@ -22,7 +22,7 @@ arma::mat column_wise_euclidean(const arma::mat X,
   arma::mat dist_matrix(n, ny, arma::fill::zeros);
   
   //create progress
-  Progress p(n, progress);
+  Progress p(n*ny, progress);
   
   // Parallel for speed
 #ifdef _OPENMP
@@ -32,17 +32,17 @@ arma::mat column_wise_euclidean(const arma::mat X,
 #endif
   
   //Loop for distance
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
   for (arma::uword i = 0; i < n; i++) {
-    
-    if (! Progress::check_abort() ) {
-      p.increment(); // update progress
-    }
-    
     for (arma::uword j = 0; j < ny; j++) {
+      
+      if (! Progress::check_abort() ) {
+        p.increment(); // update progress
+      }
       
       double dist = arma::norm(X.row(i) - Y.row(j), 2);
       dist_matrix(i, j) = dist;
+      
     } 
   }
   
