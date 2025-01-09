@@ -12,6 +12,7 @@ library(assertthat)
 library(Rcpp)
 library(RcppArmadillo)
 library(irlba)
+library(bit64)
 
 #'------------------------------------------------------------------------------
 #' @Source-code
@@ -26,7 +27,7 @@ select_landmarks <- function(x,
                              threads = 25) {
   
   # naive -> just subsample the cell ids
-  dist_2lm <- column_wise_euclidean(x[landmarks_vector, , drop = FALSE], n_threads = threads)
+  dist_2lm <- column_wise_euclidean(x[landmarks_vector, , drop = FALSE], x, n_threads = threads)
   dist_2lm <- zapsmall(dist_2lm)
   colnames(dist_2lm) <- colnames(x)[landmarks_vector]
   rownames(dist_2lm) <- colnames(x)[landmarks_vector]
@@ -45,7 +46,7 @@ cmdscale_landmarks <- function(dist_2lm, ndim = 3, rescale = TRUE) {
   
   ix_lm <- attr(dist_2lm, "landmark_ix")
   if (is.null(ix_lm)) {
-    ix_lm <- match(rownames(dist_2lm), colnames(dist_2lm))
+    ix_lm <- match(as.integer64(rownames(dist_2lm)), as.integer64(colnames(dist_2lm)))
   }
   
   # short hand notations
@@ -94,8 +95,3 @@ cmdscale_landmarks <- function(dist_2lm, ndim = 3, rescale = TRUE) {
   dimred
   
 }
-
-library(Matrix)
-x <- Matrix::rsparsematrix(1000, 1000, .01)
-dim(lmds(x, ndim = 3))
-dim(x)
