@@ -13,7 +13,7 @@ library(bit64)
 #'------------------------------------------------------------------------------
 #' @Source-code
 
-source("R/auxiliary/lmds.R")
+#source("R/auxiliary/lmds.R")
 
 #'------------------------------------------------------------------------------
 #' @Function
@@ -22,15 +22,14 @@ comm_lMDS <- function(comm_landmark, beta, output, threads) {
   
   # Get PLT_CN
   PLT_CN <- as.integer64(rownames(beta$Btotal))
-  #PLT_CN <- as.integer64(rownames(x))
   
   # Match landmarks
   match_landmarks <- match(comm_landmark, PLT_CN)
   
   # Get landmarks
   beta_landmarks <- select_landmarks(x = beta$Btotal/10000,
-                                     landmarks_vector = match_landmarks,
-                                     threads = 30)
+                                     landmarks_vector = 1:nrow(beta$Btotal),
+                                     threads = threads)
   # Get MDS
   beta_lmds <- cmdscale_landmarks(beta_landmarks, ndim = 3, rescale = TRUE)
   
@@ -43,10 +42,64 @@ comm_lMDS <- function(comm_landmark, beta, output, threads) {
 #' @Application
 
 # Define root path
-root_path <- "/media/antonio/Work/MMDB"
+#root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
+source("/n/netscratch/jcavender_lab/Everyone/guzman/MMDB/R/auxiliary/lmds.R")
 comm_landmark <- readRDS(paste0(root_path, "/Diversity/01_beta/comm_landmarks.rds"))
-threads <- 99
+threads <- 100
 
-beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_taxo_VOL.rds"))
-output <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL.rds")
+# Taxo
+
+# beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_taxo_VOL.rds"))
+# output <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL.rds")
+# comm_lMDS(comm_landmark, beta, output, threads)
+# rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_taxo_VOL_decosand.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL_decosand.rds")
 comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+# Phylo
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_phylo_VOL.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_phylo_VOL_decostand.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL_decostand.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_phylo_VOL_norm.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL_norm.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_phylo_VOL_decostand_norm.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL_decostand_norm.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+# Func
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_func_VOL.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_func_VOL_decostand.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL_decostand.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_func_VOL_norm.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL_norm.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))
+
+beta <- readRDS(paste0(root_path, "/Diversity/01_beta/beta_func_VOL_decostand_norm.rds"))
+output <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL_decostand_norm.rds")
+comm_lMDS(comm_landmark, beta, output, threads)
+rm(list = c('beta', 'output'))

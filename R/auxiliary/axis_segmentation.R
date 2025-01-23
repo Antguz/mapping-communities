@@ -1,10 +1,10 @@
 axis_segmentation <- function(ordination_split, 
-                              weigths_split,
+                              # weigths_split,
                               fraction = 0.85,
                               threads = 20) {
   # Frames
   axis1_frame <- data.table(axes = ordination_split$Axis1,
-                            weigths = weigths_split,
+                            # weigths = weigths_split,
                             groups = cut(ordination_split$Axis1,
                                          breaks = hist(ordination_split$Axis1, breaks = 10)$breaks,
                                          include.lowest = TRUE,
@@ -12,7 +12,7 @@ axis_segmentation <- function(ordination_split,
                             ID = 1:nrow(ordination_split))
   
   axis2_frame <- data.table(axes = ordination_split$Axis2,
-                            weigths = weigths_split,
+                            # weigths = weigths_split,
                             groups = cut(ordination_split$Axis2,
                                          breaks = hist(ordination_split$Axis2, breaks = 10)$breaks,
                                          include.lowest = TRUE,
@@ -20,7 +20,7 @@ axis_segmentation <- function(ordination_split,
                             ID = 1:nrow(ordination_split))
   
   axis3_frame <- data.table(axes = ordination_split$Axis3,
-                            weigths = weigths_split,
+                            # weigths = weigths_split,
                             groups = cut(ordination_split$Axis3,
                                          breaks = hist(ordination_split$Axis3, breaks = 10)$breaks,
                                          include.lowest = TRUE,

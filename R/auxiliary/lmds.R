@@ -12,23 +12,24 @@ library(assertthat)
 library(Rcpp)
 library(RcppArmadillo)
 library(irlba)
+library(dynutils)
 library(bit64)
 
 #'------------------------------------------------------------------------------
 #' @Source-code
 
 sourceCpp("src/column_wise_euclidean.cpp")
+#sourceCpp("/n/netscratch/jcavender_lab/Everyone/guzman/MMDB/src/column_wise_euclidean.cpp")
 
 #'------------------------------------------------------------------------------
 #' @Function
 
 select_landmarks <- function(x,
                              landmarks_vector,
-                             threads = 25) {
+                             threads = 32) {
   
   # naive -> just subsample the cell ids
   dist_2lm <- column_wise_euclidean(x[landmarks_vector, , drop = FALSE], x, n_threads = threads)
-  dist_2lm <- zapsmall(dist_2lm)
   colnames(dist_2lm) <- colnames(x)
   rownames(dist_2lm) <- colnames(x)[landmarks_vector]
   

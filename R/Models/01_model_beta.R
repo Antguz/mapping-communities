@@ -30,7 +30,7 @@ source("R/auxiliary/model_build.R")
 source("R/auxiliary/model_performance.R")
 source("R/auxiliary/pls_vip.R")
 source("R/auxiliary/pls_coefficients.R")
-
+# 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
@@ -42,10 +42,11 @@ sensor <- "DESIS"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-type <- "taxo"
+type <- "func"
 diversity <- "total"
 meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
-ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
+# ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
+ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_", diversity,".csv"))
 ncol_ordination <- ncol(ordination) - 1
 match_meta <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_match_usefull.csv"))
 spectra <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_spectra_SW.csv"))
@@ -94,8 +95,8 @@ data <- merge(ordination,
               by = "PLT_CN", all.x = TRUE, all.y = FALSE)
 
 # New frames
-data <- na.exclude(data)
-data <- data[order(PLT_CN)]
+# data <- na.exclude(data)
+# data <- data[order(PLT_CN)]
 
 # Save order for other simulations
 if(type == "taxo") {
@@ -112,8 +113,8 @@ if(type == "taxo") {
 }
 
 # # Outliers
-outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
-data <- data[outliers$remove != TRUE, ]
+# outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
+# data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
@@ -124,7 +125,6 @@ if(sensor == "DESIS") {
   ordination <- data[, .SD, .SDcols = 29:(28+ncol_ordination)]
   ordination <- ordination[, 1:3]
   spectra <- data[, .SD, .SDcols = (29+ncol_ordination):ncol(data)]
-  weigths <- (data$gof - min(data$gof)) / (quantile(data$gof, 0.95) - min(data$gof))
   
 } else if(sensor == "EMIT") {
   
@@ -134,7 +134,6 @@ if(sensor == "DESIS") {
   ordination <- data[, .SD, .SDcols = 28:(27+ncol_ordination)]
   ordination <- ordination[, 1:3]
   spectra <- data[, .SD, .SDcols = (28+ncol_ordination):ncol(data)]
-  weigths <- (data$gof - min(data$gof)) / (quantile(data$gof, 0.95) - min(data$gof))
   
 }
 
@@ -153,7 +152,8 @@ if(type == "taxo") {
   }
   
   # Data-split based on State-County ID
-  split <- data_split(meta, p = p)
+  # split <- data_split(meta, p = p)
+  split <- 1:nrow(meta)
   
   # Percentage of samples for training
   length(split)/nrow(meta) # % For training
@@ -173,7 +173,6 @@ split <- readRDS(paste0(out_path, "/", sensor, "_split.rds"))
 
 # Segments
 segments <- axis_segmentation(ordination_split = ordination[split,], 
-                              weigths_split = weigths[split],
                               fraction = 0.85,
                               threads = 20)
 
@@ -192,6 +191,7 @@ iscv <- iscv_strategy(meta_split = meta[split, ],
 # Export strategy
 saveRDS(iscv, paste0(out_path, "/", sensor, "_", type, "_iscv.rds"))
 iscv <- readRDS(paste0(out_path, "/", sensor, "_", type, "_iscv.rds"))
+gc()
 
 #-------------------------------------------------------------------------------
 #' @Model tune estimation
@@ -219,17 +219,17 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 #' @note Do a manual checking of the optimal number of components
 
 ### DESIS 
-# Taxonomic c(12, 10, 10)
-# Phylogenetic c(7, 6, 6)
-# Functional c(9, 6, 8)
+# Taxonomic c(22, 10, 22)
+# Phylogenetic c(23, 7, 7)
+# Functional c(22, 6, 8)
 
 ### EMIT
-# Taxonomic c(20, 9, XX)
-# Phylogenetic c(8, 6, 6)
+# Taxonomic c(26, 11, 7)
+# Phylogenetic c(28, 4, 8)
 # Functional c(12, 7, 8)
 
 # Manual checked
-tune_optimal <- c(12, 7, 8)
+tune_optimal <- c(22, 6, 8)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -257,36 +257,37 @@ training <- model_performance(meta_split = meta[split,],
                               tune_optimal = tune_optimal,
                               threads = 25)
 
-testing <- model_performance(meta_split = meta[!split,],
-                             ordination_split = ordination[!split,],
-                             spectra_split = spectra[!split,],
-                             models = final_models,
-                             tune_optimal = tune_optimal,
-                             threads = 25)
+# testing <- model_performance(meta_split = meta[!split,],
+#                              ordination_split = ordination[!split,],
+#                              spectra_split = spectra[!split,],
+#                              models = final_models,
+#                              tune_optimal = tune_optimal,
+#                              threads = 25)
 
 # Export performance values
 performance_training <- training$performance
 performance_training$type <- "Training"
-performance_testing <- testing$performance
-performance_testing$type <- "Testing"
-performance <- rbind(performance_training, performance_testing)
+# performance_testing <- testing$performance
+# performance_testing$type <- "Testing"
+# performance <- rbind(performance_training, performance_testing)
+performance <- rbind(performance_training)
 fwrite(performance, paste0(out_path, "/", sensor, "_", type, "_performance.csv"))
 
 # Export predicted values
 predicted_training <- training$predicted
 predicted_training$type <- "Training"
 fwrite(predicted_training, paste0(out_path, "/", sensor, "_", type, "_predicted_training.csv"))
-predicted_testing <- testing$predicted
-predicted_testing$type <- "Testing"
-fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_testing.csv"))
+# predicted_testing <- testing$predicted
+# predicted_testing$type <- "Testing"
+# fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_testing.csv"))
 
 # Export three-dimensional residuals
 residuals_3D_training <- training$residuals_3D
 residuals_3D_training$type <- "Training"
 fwrite(residuals_3D_training, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_training.csv"))
-residuals_3D_testing <- testing$residuals_3D
-residuals_3D_testing$type <- "Testing"
-fwrite(residuals_3D_testing, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_testing.csv"))
+# residuals_3D_testing <- testing$residuals_3D
+# residuals_3D_testing$type <- "Testing"
+# fwrite(residuals_3D_testing, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_testing.csv"))
 
 #-------------------------------------------------------------------------------
 #' @Model_coefficients
@@ -308,11 +309,11 @@ fwrite(vip, paste0(out_path, "/", sensor, "_", type, "_vip.csv"))
 #' @END
 #-------------------------------------------------------------------------------
 
-plot(predicted_training[Axes == "Axis1"]$observed, predicted_training[Axes == "Axis1"]$predicted)
-plot(predicted_training[Axes == "Axis2"]$observed, predicted_training[Axes == "Axis2"]$predicted)
-plot(predicted_training[Axes == "Axis3"]$observed, predicted_training[Axes == "Axis3"]$predicted)
+plot(predicted_training[Axes == "Axis1"]$predicted, predicted_training[Axes == "Axis1"]$observed)
+plot(predicted_training[Axes == "Axis2"]$predicted, predicted_training[Axes == "Axis2"]$observed)
+plot(predicted_training[Axes == "Axis3"]$predicted, predicted_training[Axes == "Axis3"]$observed)
 
-plot(predicted_testing[Axes == "Axis1"]$observed, predicted_testing[Axes == "Axis1"]$predicted)
-plot(predicted_testing[Axes == "Axis2"]$observed, predicted_testing[Axes == "Axis2"]$predicted)
-plot(predicted_testing[Axes == "Axis3"]$observed, predicted_testing[Axes == "Axis3"]$predicted)
+plot(predicted_testing[Axes == "Axis1"]$predicted, predicted_testing[Axes == "Axis1"]$observed)
+plot(predicted_testing[Axes == "Axis2"]$predicted, predicted_testing[Axes == "Axis2"]$observed)
+plot(predicted_testing[Axes == "Axis3"]$predicted, predicted_testing[Axes == "Axis3"]$observed)
 

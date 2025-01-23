@@ -42,10 +42,10 @@ statecd_countycd <- unique(meta$STATECD_COUNTYCD)
 landmark <- function(X = 1:length(statecd_countycd),
                      statecd_countycd,
                      meta,
-                     fraction = 0.005) {
+                     fraction = 0.1) {
   
   sub <- meta[STATECD_COUNTYCD == statecd_countycd[X],]
-  samp <- sample(sub$ID_to_select, 1, replace = FALSE)
+  samp <- sample(sub$ID_to_select, ceiling(nrow(sub)*fraction), replace = FALSE)
   return(samp)
   
 }
@@ -55,7 +55,7 @@ comm_landmarks <- lapply(X = 1:length(statecd_countycd),
                          FUN = landmark,
                          statecd_countycd = statecd_countycd,
                          meta = meta,
-                         fraction = 0.01)
+                         fraction = 0.1)
 
 comm_landmarks <- do.call(c, comm_landmarks)
 comm_landmarks <- comm_landmarks[order(comm_landmarks)]

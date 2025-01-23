@@ -67,6 +67,7 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
   sp <- readRDS(species)
   vector_match <- match(comm_names, as.integer64(rownames(sp)))
   sp <- sp[vector_match,]
+  sp <- decostand(as.matrix(sp), method = "hellinger")
   
   # Get scores
   sp_scores <- wascores(x = comm[, 2:4], sp, expand = TRUE)
@@ -192,31 +193,31 @@ root_path <- "/media/antonio/Work/MMDB"
 
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")
-ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL.rds")
+ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL_hellinger.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_phylo_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
-out_path <- paste0(root_path, "/Diversity/03_MDS-post")
+out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "taxo"
 text <- "Taxonomic"
 postprocessing(ordination, fia_environment, out_path, type, text)
 
 # Phylogenetic
-ordination <- paste0(root_path, "/Diversity/02_NMDS/NMDS_phylo_total.rds")
+ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL_hellinger_norm.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
-species <- paste0(root_path, "/Diversity/beta/master_matched_comm_phylo_VOL.rds")
+species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_phylo_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
-out_path <- paste0(root_path, "/Diversity/NMDS")
+out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "phylo"
 text <- "Phylogenetic"
 postprocessing(ordination, fia_environment, out_path, type, text)
 
 # Functional
-ordination <- paste0(root_path, "/Diversity/02_NMDS/NMDS_func_total.rds")
+ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL_hellinger_norm.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_func_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
-out_path <- paste0(root_path, "/Diversity/02_NMDS")
+out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "func"
 text <- "Functional"
 postprocessing(ordination, fia_environment, out_path, type, text)
