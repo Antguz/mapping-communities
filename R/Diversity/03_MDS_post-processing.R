@@ -21,14 +21,21 @@ library(dynutils)
 #'------------------------------------------------------------------------------
 #' Source code
 
-sourceCpp("src/goodness_rcpp.cpp")
+# sourceCpp("src/goodness_rcpp.cpp")
+sourceCpp("src/euclidean_distance.cpp")
 source("R/auxiliary/MDS_rotate.R")
 source("R/auxiliary/aggregate_plants.R")
 
 #'------------------------------------------------------------------------------
 #' Function
 
-postprocessing <- function(ordination, fia_environment, out_path, type, text) {
+postprocessing <- function(ordination, 
+                           beta,
+                           fia_environment, 
+                           threads = 25, 
+                           out_path, 
+                           type, 
+                           text) {
   
   # ----------------------------------------------------------------------------
   # Read ordination
@@ -67,13 +74,13 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
   sp <- readRDS(species)
   vector_match <- match(comm_names, as.integer64(rownames(sp)))
   sp <- sp[vector_match,]
-  sp <- decostand(as.matrix(sp), method = "hellinger")
+  sp1 <- decostand(as.matrix(sp), method = "hellinger")
   
   # Get scores
-  sp_scores <- wascores(x = comm[, 2:4], sp, expand = TRUE)
+  sp_scores <- wascores(x = comm[, 2:4], sp1, expand = TRUE)
   sp_scores <- data.table(variable = rownames(sp_scores), sp_scores)
   fwrite(sp_scores, paste0(out_path, "/MDS_species-wascores_", type, "_total.csv"))
-  rm(list = c("sp_scores"))
+  rm(list = c("sp_scores", "sp1"))
   
   # ----------------------------------------------------------------------------
   # Get traits scores
@@ -91,7 +98,7 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
   traits_scores <- wascores(x = comm[, 2:4], meta[,-1], expand = TRUE)
   traits_scores <- data.table(variable = rownames(traits_scores), traits_scores)
   fwrite(traits_scores, paste0(out_path, "/MDS_traits-wascores_", type, "_total.csv"))
-  rm(list = c("traits_scores", "meta"))
+  rm(list = c("traits_scores", "meta", "sp", "communities"))
   
   # ----------------------------------------------------------------------------
   # Get environmental scores
@@ -103,71 +110,48 @@ postprocessing <- function(ordination, fia_environment, out_path, type, text) {
   env_scores <- wascores(x = comm2[, 2:4], env[,-1], expand = TRUE)
   env_scores <- data.table(variable = rownames(env_scores), env_scores)
   fwrite(env_scores, paste0(out_path, "/MDS_env-wascores_", type, "_total.csv"))
-  rm(list = c("env_scores", "comm2"))
+  rm(list = c("env_scores", "comm2", "env", "comm"))
   
   # ----------------------------------------------------------------------------
   # Get goodness
   
-  gof <- goodness_rcpp(dist = ord_new$dist,
-                       dhat = ord_new$dhat,
-                       nobj = ord_new$nobj,
-                       ndis = ord_new$ndis,
-                       iidx = ord_new$iidx,
-                       jidx = ord_new$jidx,
-                       threads = 20)
+  # Get distances from lmds
+  lmds_distance <- euclidean_distance(as.matrix(ord_new), n_threads = threads)
+  colnames(lmds_distance) <- rownames(ord_new)
+  rownames(lmds_distance) <- rownames(ord_new)
   
-  comm <- cbind(comm, gof = gof[,1])
-  fwrite(comm, paste0(out_path, "/NMDS_scores_comm_", type, "_total.csv"))
-  rm(list = c("comm", "gof", "env", "vector_match"))
+  # Get beta distance
+  beta_total <- readRDS(beta)$Btotal
+  
+  # Make a frame
+  frame <- data.table(PLT_CN = as.integer64(rownames(ord_new)),
+                      beta = c(beta_total), 
+                      mds = c(lmds_distance),
+                      z = 1)
+  
+  # Correlation and variance explained
+  r <- cor(frame$beta, frame$mds)
+  rsquared <- r * r
+  
+  # Degrees of freedom
+  freedom = nrow(frame) - 2
+  Fvalue <- rsquared /((1 - rsquared)/freedom)
+  Pvalue <- pf(Fvalue, 1, freedom, lower.tail=FALSE)
+  
+  # Return
+  goodness_of_fit <- data.table(r = r,
+                                rsquare = rsquare,
+                                Fvalue = Fvalue,
+                                Pvalue = Pvalue)
+  
+  fwrite(goodness_of_fit, paste0(out_path, "/goodness_of_fit_", type, "_total.csv"))
+  rm(list = c("goodness_of_fit", "env", "vector_match"))
   gc()
   
   #-----------------------------------------------------------------------------
   # Data for stressplot
   
-  Inputs
-  istart <- ord_new$istart
-  ndis <- ord_new$ndis
-  iregn <- ord_new$iregn
-  ngrp <- ord_new$ngrp
-  stress <- ord_new$stress
-  dist <- ord_new$dist
-  diss <- ord_new$diss
-  dhat <- ord_new$dhat
-  rm(ord_new)
-  gc()
-  
-  # Collect values for 'linear fit'
-  ralscal <- 0
-  k <- NA
-  
-  # Monotone line
-  if (iregn != 2) {
-    ist <- c(istart, ndis + 1)
-    
-    for(j in 1:ngrp) {
-      k <- seq(ist[j], ist[j+1]-1)
-      ralscal <- ralscal + cor(dist[k], dhat[k])^2
-    }
-  }
-  
-  # Line
-  b <- seq(from = 1, to = ndis, length.out = 10000)
-  x_line <- diss[k][b]
-  y_line <- dhat[k][b]
-  
-  rm(list = c("k", "b", "dhat"))
-  gc()
-  
-  # Stress as R2
-  rstress <- 1 - stress^2
-  Rst <- format(rstress, digits = 2)
-  Ral <- format(ralscal, digits = 2)
-  
-  # Vox
-  frame <- data.table(x = diss, y = dist, z = 1)
-  rm(list = c("diss", "dist"))
-  gc()
-  vox <- voxels(frame, edge_length = c(0.001, 0.001, 0.001), threads = 16, obj.voxels = FALSE)
+  vox <- voxels(frame, edge_length = c(0.001, 0.001, 0.001), threads = threads, obj.voxels = FALSE)
   rm(list = c("frame"))
   gc()
   
@@ -194,31 +178,34 @@ root_path <- "/media/antonio/Work/MMDB"
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")
 ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL_hellinger.rds")
+beta <- paste0(root_path, "/Diversity/01_beta/beta_taxo_VOL_decosand.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_phylo_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "taxo"
 text <- "Taxonomic"
-postprocessing(ordination, fia_environment, out_path, type, text)
+postprocessing(ordination, beta, fia_environment, threads, out_path, type, text)
 
 # Phylogenetic
 ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL_hellinger_norm.rds")
+beta <- paste0(root_path, "/Diversity/01_beta/beta_phylo_VOL_hellinger_norm.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_phylo_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "phylo"
 text <- "Phylogenetic"
-postprocessing(ordination, fia_environment, out_path, type, text)
+postprocessing(ordination, beta, fia_environment, threads, out_path, type, text)
 
 # Functional
 ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL_hellinger_norm.rds")
+beta <- paste0(root_path, "/Diversity/01_beta/beta_func_VOL_hellinger_norm.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_func_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "func"
 text <- "Functional"
-postprocessing(ordination, fia_environment, out_path, type, text)
+postprocessing(ordination, beta, fia_environment, threads, out_path, type, text)
 
