@@ -159,7 +159,8 @@ plot <- ggplot(vip_summary) +
                 y = VIP, 
                 colour = sensor), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 2430), ylim = c(0, 4), expand = FALSE) +
+  geom_hline(yintercept = 1, colour = "grey", linetype = "dotted") + 
+  coord_cartesian(xlim = c(440, 2430), ylim = c(0, 3.5), expand = FALSE) +
   scale_y_continuous(breaks = c(0, 1.5, 3)) +
   scale_colour_manual(name = "Sensor", values = col) +
   scale_fill_manual(name = "Sensor", values = col) +

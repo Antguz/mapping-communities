@@ -73,9 +73,9 @@ RGB <- function(X, Y, Z, min_range = -0.50, max_range = 0.50) {
 root_path <- "/media/antonio/Work/MMDB"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_func_total.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_func_total.csv"))
 
 # Get domains
 domain <- fread(paste0(root_path, "/FIA/00_FIA/", "plot_domain.csv"))
@@ -143,11 +143,13 @@ th_trans <- dark_theme_bw(base_size = 11) +
 th_selected <- th
 th_selected <- th_trans
 
+point <- 0.03
+
 taxo <- ggplot() +
   geom_sf(data = states, fill = "grey80", colour = "grey50", linewidth = 0.1) + 
   #geom_sf(data = neon, fill = "NA", colour = "grey25", linewidth = 0.1) +
   geom_sf(data = neon_aoi, fill = "black", colour = "white", linewidth = 0.1, alpha = 1.0) +
-  geom_sf(data = taxo_sf, size = 0.1, color = taxo_col, shape = 16) +
+  geom_sf(data = taxo_sf, size = point, color = taxo_col, shape = 16) +
   geom_sf(data = states, fill = "NA", colour = "grey50", linewidth = 0.1) +
   geom_sf(data = neon_aoi, fill = "NA", colour = "white", linewidth = 0.1) +  
   coord_sf(crs = '+proj=lcc +lat_0=39 +lon_0=-96 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs',
@@ -162,7 +164,7 @@ phylo <- ggplot() +
   geom_sf(data = states, fill = "grey80", colour = "grey50", linewidth = 0.1) + 
   #geom_sf(data = neon, fill = "NA", colour = "grey25", linewidth = 0.1) +
   geom_sf(data = neon_aoi, fill = "black", colour = "white", linewidth = 0.1, alpha = 1.0) +
-  geom_sf(data = phylo_sf, size = 0.1, color = phylo_col, shape = 16) +
+  geom_sf(data = phylo_sf, size = point, color = phylo_col, shape = 16) +
   geom_sf(data = states, fill = "NA", colour = "grey50", linewidth = 0.1) +
   geom_sf(data = neon_aoi, fill = "NA", colour = "white", linewidth = 0.1) +  
   coord_sf(crs = '+proj=lcc +lat_0=39 +lon_0=-96 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs',
@@ -177,7 +179,7 @@ func <- ggplot() +
   geom_sf(data = states, fill = "grey80", colour = "grey50", linewidth = 0.1) + 
   #geom_sf(data = neon, fill = "NA", colour = "grey25", linewidth = 0.1) +
   geom_sf(data = neon_aoi, fill = "black", colour = "white", linewidth = 0.1, alpha = 1.0) +
-  geom_sf(data = func_sf, size = 0.1, color = func_col, shape = 16) +
+  geom_sf(data = func_sf, size = point, color = func_col, shape = 16) +
   geom_sf(data = states, fill = "NA", colour = "grey50", linewidth = 0.1) +
   geom_sf(data = neon_aoi, fill = "NA", colour = "white", linewidth = 0.1) +  
   coord_sf(crs = '+proj=lcc +lat_0=39 +lon_0=-96 +lat_1=33 +lat_2=45 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +type=crs',
@@ -192,11 +194,10 @@ func <- ggplot() +
 plot <- ggarrange(taxo, phylo, func, ncol = 3)
 
 # Black
-jpeg(paste0(root_path, "/figures/Manuscript_black/", "NMDS_spatial.jpeg"),
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "MDS_spatiala.jpeg"),
     width = 210, 
     height = 90, 
-    units = "mm", 
-    pointsize = 12,
+    units = "mm",
     bg = "white",  
     res = 600)
 
@@ -205,7 +206,7 @@ plot
 dev.off()
 
 # Transparent
-png(paste0(root_path, "/figures/Manuscript_white/", "NMDS_spatial_trans.png"),
+png(paste0(root_path, "/figures/Manuscript_white/", "MDS_spatial_trans.png"),
     width = 210, 
     height = 90, 
     units = "mm", 

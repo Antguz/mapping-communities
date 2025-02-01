@@ -18,7 +18,7 @@ library(viridis)
 #' Working directory
 
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "EMIT"
+sensor <- "DESIS"
 folder <- paste0(root_path, "/Models/01_model_beta/", sensor)
 
 #'------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ phylo_performance$dimension <- "Phylogenetic"
 func_performance <- fread(paste0(folder, "/", sensor, "_", "func", "_performance.csv"))
 func_performance$dimension <- "Functional"
 
-dataset <- "testing"
+dataset <- "training"
 
 if(dataset == "training") {
   
@@ -161,23 +161,23 @@ plot_function <- function(performance,
               aes(label = paste("R2 = ", format(round(mean(performance$R2), 2), nsmall = 2), "\n",
                                 "BIAS = ", format(round(mean(performance$BIAS), 2), nsmall = 2), "\n",
                                 "RMSE = ", format(round(mean(performance$RMSE), 2), nsmall = 2), "\n",
-                                "%RMSE = ", format(round(mean(performance$perRMSE), 2), nsmall = 2)),
-                  x = Inf, 
-                  y = -Inf, 
-                  hjust = 1.1, 
-                  vjust = -0.2),
+                                "%RMSE = ", format(round(mean(performance$perRMSE), 2), nsmall = 2), sep = ""),
+                  x = 0.60, 
+                  y = -0.60, 
+                  hjust = 1, 
+                  vjust = 0),
               colour = line_col,
               size = 2.5,
               parse = FALSE) +
     th
-    
-  p
   
   if(is.null(limits_range) == FALSE) {
     p <- p + coord_cartesian(xlim = limits_range, ylim = limits_range, expand = FALSE) +
       scale_x_continuous(breaks = breaks, labels = as.character(breaks)) +
       scale_y_continuous(breaks = breaks, labels = as.character(breaks))
   }
+  
+  #p
   
   if(axis == 1) {
     p <- p + scale_colour_carto_c(type = "sequential", 

@@ -32,7 +32,7 @@ model_build <- function(meta_training,
                         validation = "CV",
                         segments = iscv[[X]]$folds_axis1,
                         ncomp = tune_optimal[1],
-                        center = FALSE,
+                        center = TRUE,
                         method = "oscorespls",
                         maxit = 10000)
     
@@ -41,7 +41,7 @@ model_build <- function(meta_training,
                         validation = "CV",
                         segments = iscv[[X]]$folds_axis2,
                         ncomp = tune_optimal[2],
-                        center = FALSE,
+                        center = TRUE,
                         method = "oscorespls",
                         maxit = 10000)
     
@@ -50,7 +50,7 @@ model_build <- function(meta_training,
                         validation = "CV",
                         segments = iscv[[X]]$folds_axis3,
                         ncomp = tune_optimal[3],
-                        center = FALSE,
+                        center = TRUE,
                         method = "oscorespls",
                         maxit = 10000)
     

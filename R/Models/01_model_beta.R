@@ -36,7 +36,7 @@ source("R/auxiliary/pls_coefficients.R")
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "DESIS"
+sensor <- "EMIT"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -113,8 +113,8 @@ if(type == "taxo") {
 }
 
 # # Outliers
-# outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
-# data <- data[outliers$remove != TRUE, ]
+outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
+data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
@@ -148,12 +148,12 @@ if(type == "taxo") {
     p <- 0.648
     
   } else if(sensor == "EMIT") {
-    p  <- 0.643
+    p  <- 0.65
   }
   
   # Data-split based on State-County ID
-  # split <- data_split(meta, p = p)
-  split <- 1:nrow(meta)
+  split <- data_split(meta, p = p)
+  # split <- 1:nrow(meta)
   
   # Percentage of samples for training
   length(split)/nrow(meta) # % For training
@@ -219,17 +219,29 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 #' @note Do a manual checking of the optimal number of components
 
 ### DESIS 
-# Taxonomic c(22, 10, 22)
-# Phylogenetic c(23, 7, 7)
-# Functional c(22, 6, 8)
+# Taxonomic c(11, 10, 9) 0.38, 0.14 0.08
+# Phylogenetic c(12, 6, 7) 0.175 0.20 0.34
+# Functional c(16, 7, 6) 0.31 0.20 0.31
 
 ### EMIT
-# Taxonomic c(26, 11, 7)
-# Phylogenetic c(28, 4, 8)
-# Functional c(12, 7, 8)
+# Taxonomic c(27, 8, 13) 0.66 0.14 0.33
+# Phylogenetic c(9, 4, 7) 0.28 0.08 0.25
+# Functional c(27, 8, 14) 0.55 0.10 0.34
+
+
+
+### DESIS 
+# Taxonomic c(21, 10, 6) 0.33, 0.12 0.109
+# Phylogenetic c(12, 6, 10) 0.13 0.195 0.29
+# Functional c(20, 5, 5) 0.26 0.15 0.25
+
+### EMIT
+# Taxonomic c(27, 10, 21) 0.55 0.11 0.26
+# Phylogenetic c(9, 4, 7) 0.18 0.09 0.18
+# Functional c(29, 5, 20) 0.44 0.05 0.27
 
 # Manual checked
-tune_optimal <- c(22, 6, 8)
+tune_optimal <- c(27, 8, 14)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -257,37 +269,37 @@ training <- model_performance(meta_split = meta[split,],
                               tune_optimal = tune_optimal,
                               threads = 25)
 
-# testing <- model_performance(meta_split = meta[!split,],
-#                              ordination_split = ordination[!split,],
-#                              spectra_split = spectra[!split,],
-#                              models = final_models,
-#                              tune_optimal = tune_optimal,
-#                              threads = 25)
+testing <- model_performance(meta_split = meta[!split,],
+                             ordination_split = ordination[!split,],
+                             spectra_split = spectra[!split,],
+                             models = final_models,
+                             tune_optimal = tune_optimal,
+                             threads = 25)
 
 # Export performance values
 performance_training <- training$performance
 performance_training$type <- "Training"
-# performance_testing <- testing$performance
-# performance_testing$type <- "Testing"
-# performance <- rbind(performance_training, performance_testing)
-performance <- rbind(performance_training)
+performance_testing <- testing$performance
+performance_testing$type <- "Testing"
+performance <- rbind(performance_training, performance_testing)
+# performance <- rbind(performance_training)
 fwrite(performance, paste0(out_path, "/", sensor, "_", type, "_performance.csv"))
 
 # Export predicted values
 predicted_training <- training$predicted
 predicted_training$type <- "Training"
 fwrite(predicted_training, paste0(out_path, "/", sensor, "_", type, "_predicted_training.csv"))
-# predicted_testing <- testing$predicted
-# predicted_testing$type <- "Testing"
-# fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_testing.csv"))
+predicted_testing <- testing$predicted
+predicted_testing$type <- "Testing"
+fwrite(predicted_testing, paste0(out_path, "/", sensor, "_", type, "_predicted_testing.csv"))
 
 # Export three-dimensional residuals
 residuals_3D_training <- training$residuals_3D
 residuals_3D_training$type <- "Training"
 fwrite(residuals_3D_training, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_training.csv"))
-# residuals_3D_testing <- testing$residuals_3D
-# residuals_3D_testing$type <- "Testing"
-# fwrite(residuals_3D_testing, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_testing.csv"))
+residuals_3D_testing <- testing$residuals_3D
+residuals_3D_testing$type <- "Testing"
+fwrite(residuals_3D_testing, paste0(out_path, "/", sensor, "_", type, "_residuals_3D_testing.csv"))
 
 #-------------------------------------------------------------------------------
 #' @Model_coefficients

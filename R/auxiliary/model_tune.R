@@ -32,7 +32,7 @@ model_tune <- function(meta_training,
                         validation = "CV",
                         segments = iscv[[X]]$folds_axis1,
                         ncomp = ncomp_max,
-                        center = FALSE,
+                        center = TRUE,
                         method = "oscorespls",
                         maxit = 10000)
     
@@ -41,7 +41,7 @@ model_tune <- function(meta_training,
                         validation = "CV",
                         segments = iscv[[X]]$folds_axis2,
                         ncomp = ncomp_max,
-                        center = FALSE,
+                        center = TRUE,
                         method = "oscorespls",
                         maxit = 10000)
     
@@ -50,7 +50,7 @@ model_tune <- function(meta_training,
                         validation = "CV",
                         segments = iscv[[X]]$folds_axis3,
                         ncomp = ncomp_max,
-                        center = FALSE,
+                        center = TRUE,
                         method = "oscorespls",
                         maxit = 10000)
     

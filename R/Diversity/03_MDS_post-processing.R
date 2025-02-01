@@ -17,6 +17,7 @@ library(Rcpp)
 library(RcppArmadillo)
 library(rTLS)
 library(dynutils)
+library(pbmcapply)
 
 #'------------------------------------------------------------------------------
 #' Source code
@@ -111,6 +112,7 @@ postprocessing <- function(ordination,
   env_scores <- data.table(variable = rownames(env_scores), env_scores)
   fwrite(env_scores, paste0(out_path, "/MDS_env-wascores_", type, "_total.csv"))
   rm(list = c("env_scores", "comm2", "env", "comm"))
+  gc()
   
   # ----------------------------------------------------------------------------
   # Get goodness
@@ -119,15 +121,19 @@ postprocessing <- function(ordination,
   lmds_distance <- euclidean_distance(as.matrix(ord_new), n_threads = threads)
   colnames(lmds_distance) <- rownames(ord_new)
   rownames(lmds_distance) <- rownames(ord_new)
+  gc()
   
   # Get beta distance
   beta_total <- readRDS(beta)$Btotal
+  gc()
   
   # Make a frame
   frame <- data.table(PLT_CN = as.integer64(rownames(ord_new)),
                       beta = c(beta_total), 
                       mds = c(lmds_distance),
                       z = 1)
+  rm(list = c("beta_total", "lmds_distance"))
+  gc()
   
   # Correlation and variance explained
   r <- cor(frame$beta, frame$mds)
@@ -140,13 +146,42 @@ postprocessing <- function(ordination,
   
   # Return
   goodness_of_fit <- data.table(r = r,
-                                rsquare = rsquare,
+                                rsquared = rsquared,
                                 Fvalue = Fvalue,
                                 Pvalue = Pvalue)
   
   fwrite(goodness_of_fit, paste0(out_path, "/goodness_of_fit_", type, "_total.csv"))
   rm(list = c("goodness_of_fit", "env", "vector_match"))
   gc()
+  
+  #-----------------------------------------------------------------------------
+  # Slope estimation
+  sma_application <- function(X, plot_id, frame) {
+    
+    # Subset
+    plot <- frame[PLT_CN == plot_id[X], ]
+    
+    # Test
+    test <- sma(mds ~ beta, data = plot)
+    #test <- sma(spectral ~ Beta, data = plot)
+    elevation <- test$coef[[1]][1,1]
+    slope <- test$coef[[1]][2,1]
+    
+    # Results
+    return(data.table(PLT_CN = X,
+                      elevation = elevation,
+                      slope = slope,
+                      rsquar = test$r2[[1]]))
+    
+  }
+  
+  sma <- mclapply(X = 1:nrow(ord_new), 
+                  FUN = sma_application,
+                  plot_id = as.integer64(rownames(ord_new)),
+                  frame = frame,
+                  mc.cores = 5)
+  
+  sma <- do.call(rbind.data.frame, sma)
   
   #-----------------------------------------------------------------------------
   # Data for stressplot
@@ -158,13 +193,10 @@ postprocessing <- function(ordination,
   # List to export
   to_export <- list(max = max(vox$N),
                     vox = vox,
-                    line = data.table(x_line = x_line,
-                                      y_line = y_line),
-                    rstress = rstress,
-                    Rst = Rst,
-                    Ral = Ral)
+                    linear = sma,
+                    goodness_of_fit = goodness_of_fit)
   
-  saveRDS(to_export, paste0(out_path, "/data_stressplot_", type, ".rds"))
+  saveRDS(to_export, paste0(out_path, "/data_goodness_of_fit_", type, ".rds"))
   
 }
 
@@ -174,6 +206,7 @@ postprocessing <- function(ordination,
 root_path <- "/media/antonio/Work/MMDB"
 #root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
 # root_path <- "E:/backup/MMDB"
+threads <- 25
 
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")

@@ -24,12 +24,12 @@ library(RcppArmadillo)
 root_path <- "/media/antonio/Work/MMDB"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_func_total.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_func_total.csv"))
 
 # Axis range
-observed_range <- c(-0.5, 0.5)
+observed_range <- c(-0.6, 0.6)
 
 # Get domains
 domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
@@ -235,7 +235,7 @@ ordination_3d <- function(ordination,
 #-------------------------------------------------------------------------------
 # RGB
 
-png(paste0(root_path, "/figures/Manuscript_white/", "NMDS_RGB.png"),
+png(paste0(root_path, "/figures/Manuscript_white/", "MDS_RGB.png"),
     width = 210, 
     height = 90, 
     units = "mm", 
@@ -256,7 +256,7 @@ dev.off()
 par(mar = c(1,1,1,1))
 par(oma = c(0,0,0,0))
 
-png(paste0(root_path, "/figures/", "NMDS_angiosperms.png"),
+png(paste0(root_path, "/figures/Manuscript_black/", "MDS_angiosperms.png"),
     width = 210, 
     height = 80, 
     units = "mm", 

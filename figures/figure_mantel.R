@@ -56,7 +56,7 @@ line <- "white"
 text <- "white"
 
 th <- th_black
-line <- "grey75"
+line <- "grey25"
 text <- "black"
 
 #'------------------------------------------------------------------------------
@@ -136,28 +136,30 @@ mantel_plot <- function(mantel_results,
                     slope = mean(slope)),
                 colour = line) +
     scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
-    scale_y_continuous(limits = c(0, 0.15), breaks = c(0, 0.05, 0.1, 0.15), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, 0.16), breaks = c(0, 0.08, 0.16), expand = c(0, 0)) +
     scale_fill_viridis_c(name = "Count",
-                         option = palette,
+                         option = palette, #palette
                          trans = "log10",
-                         limits = c(1, 1000000),
-                         breaks = c(1, 1000, 1000000),
-                         begin = 0.1,
-                         labels = trans_format("log10", math_format(10^.x))) +
+                         limits = c(1, 10000),
+                         breaks = c(1, 100, 10000),
+                         begin = 0.0,
+                         end = 1.0,
+                         labels = trans_format("log10", math_format(10^.x)),
+                         oob = scales::squish) +
     xlab(exp) +
     ylab(y_lab) + 
     guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
-    geom_text(aes(label = paste0("Intercept = ", round(mean(sma$elevation), 2), " ± ", round(sd(sma$elevation), 2), "\n",
-                                 " Slope = ", round(mean(sma$slope), 2), " ± ", round(sd(sma$slope), 2), "\n",
-                                 "Mantel test = ", round(mantel_results$mantel, 2), " (p = ", round(mantel_results$mantel_significance, 3), ")"),
-                  x = -Inf, 
-                  y = Inf, 
-                  hjust = -0.1, 
-                  vjust = 1.50),
+    geom_text(aes(label = paste("Intercept = ", round(mean(sma$elevation), 2), " ± ", round(sd(sma$elevation), 2), "\n",
+                                "Slope = ", round(mean(sma$slope), 2), " ± ", round(sd(sma$slope), 2), "\n",
+                                "Mantel test = ", round(mantel_results$mantel, 2), " (p = ", round(mantel_results$mantel_significance, 3), ")", sep = ""),
+                  x = 0.03, #0.03
+                  y = 0.125, #0.26
+                  hjust = 0, 
+                  vjust = 0),
               colour = text,
               size = 2.5) +
     th
-  #p
+  # p
    
   return(p)
   
@@ -167,8 +169,10 @@ mantel_plot <- function(mantel_results,
 #' @figures
 
 # pal <- "cividis"
+pal <- "turbo"
 pal <- "inferno"
-val <- c(2818764, 96846, 28862, 1944694, 87958, 19058)
+val <- c(829324, 13430, 11526, 769092, 11116, 10469)
+val <- c(2663174, 48882, 25456, 1638026, 27080, 13526)
 
 # DESIS ------------------------------------------------
 sensor <- "DESIS"
@@ -187,6 +191,7 @@ diversity <- "total"
 DESIS_phylo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_phylo_total_fig <- mantel_plot(mantel_results = DESIS_phylo_total,
                                     exp = expression(paste("P", beta[total])),
+                                    y_lab = " ",
                                     palette = pal) #96846
 # rm(DESIS_phylo_total)
 gc()
@@ -196,6 +201,7 @@ diversity <- "total"
 DESIS_func_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 DESIS_func_total_fig <- mantel_plot(mantel_results = DESIS_func_total,
                                      exp = expression(paste("F", beta[total])),
+                                    y_lab = " ",
                                      palette = pal) #28862
 # rm(DESIS_func_total)
 gc()
@@ -217,6 +223,7 @@ diversity <- "total"
 EMIT_phylo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_phylo_total_fig <- mantel_plot(mantel_results = EMIT_phylo_total,
                                      exp = expression(paste("P", beta[total])),
+                                    y_lab = " ",
                                      palette = pal) #87958
 # rm(EMIT_phylo_total)
 gc()
@@ -226,6 +233,7 @@ diversity <- "total"
 EMIT_func_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
 EMIT_func_total_fig <- mantel_plot(mantel_results = EMIT_func_total,
                                     exp = expression(paste("F", beta[total])),
+                                   y_lab = " ",
                                     palette = pal) #19058
 # rm(EMIT_func_total)
 gc()

@@ -176,7 +176,7 @@ png(paste0(root_path, "/figures/Manuscript_white/phylogenies_trans.png"),
 p
 dev.off()
 
-png(paste0(root_path, "/figures/phylogenies.png"), 
+png(paste0(root_path, "/figures/Manuscript_black/phylogenies.png"), 
     width = 300, 
     height = 200, 
     units = "mm", 
