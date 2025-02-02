@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_occurence_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT"
 
 #### Phylogenetic training ####
 dataset <- "training"

@@ -13,7 +13,7 @@ library(outliers)
 
 root_path <- "/media/antonio/Work/MMDB"
 sensor <- "DESIS"
-folder <- paste0(root_path, "/Models/01_model_beta/test/", sensor)
+folder <- paste0(root_path, "/Models/01_model_beta/", sensor)
 
 taxo <- fread(paste0(folder, "/", sensor, "_", "taxo", "_predicted_training.csv"))
 taxo$type <- "Taxonomic"
@@ -105,4 +105,4 @@ threshold <- qchisq(0.99, df = ncol(all))
 plot_to_keep[mahal_dist >= threshold, remove := TRUE]
 nrow(plot_to_keep[remove == TRUE])
 
-fwrite(plot_to_keep, paste0(root_path, "/Models/01_model_beta/test/", sensor, "_outliers.csv"))
+fwrite(plot_to_keep, paste0(root_path, "/Models/01_model_beta/", sensor, "_outliers.csv"))

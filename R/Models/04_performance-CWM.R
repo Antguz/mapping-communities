@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT"
 
 # Training
 dataset <- "training"

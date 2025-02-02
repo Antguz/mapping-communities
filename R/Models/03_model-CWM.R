@@ -42,8 +42,8 @@ out_path <- "/media/antonio/Work/MMDB/Models/03_model_CWM"
 # Meta information
 fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
-# NMDS ordination values
-ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_total.csv"))
+# MDS ordination values
+ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_total.csv"))
 
 # FIA data for aggregation
 inventory <- readRDS(paste0(root_path, "/Diversity/01_beta/master_matched_comm_", type, "_VOL.rds"))
@@ -53,7 +53,15 @@ sp_meta <- sp_meta[match, ]
 aggregation <- CWM_batch(sp_meta[,c("Taxon2", "HTq", "SLq", "WD", "shade", "drought", "waterlogging", "LMA", "N")], 
                          decostand(inventory, "total"))
 
+# Get enviromental data
+# fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+# ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+# ordination <- na.exclude(ordination)
+
 # Test for match
+all.equal(aggregation$PLT_CN, ordination$PLT_CN)
+match <- match.integer64(ordination$PLT_CN, aggregation$PLT_CN)
+aggregation <- aggregation[match, ]
 all.equal(aggregation$PLT_CN, ordination$PLT_CN)
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match,]

@@ -28,30 +28,14 @@ model_fortyp <- function(forest_type,
     
     if(group_name == "NA" | nrow(ftype[occurance == "presence",]) < 50) {
       
-      return(data.table(forty = group_name,
-                        iteration = NA,
-                        dataset = NA,
-                        psamples = NA,
-                        Accuracy = NA,
-                        Kappa = NA,
-                        ROC = NA, 
-                        Sens = NA, 
-                        Spec = NA, 
-                        AUC = NA, 
-                        Precision = NA,
-                        Recall = NA,
-                        'F' = NA,
-                        '(Intercept)' = NA,
-                        Axis1 = NA,
-                        Axis2 = NA,
-                        Axis3 = NA))
+      return(data.table())
       
     } else {
       
       #---------------------------------------------------------------------------
       # Reshape data
-      frame <- cbind(ftype[, .SD, .SDcols = 3], ordination[, .SD, .SDcols = c(2:4)])
-      colnames(frame) <- c("occurrence", "Axis1", "Axis2", "Axis3") 
+      frame <- cbind(ftype[, .SD, .SDcols = 3], ordination[, .SD, .SDcols = c(2:ncol(ordination))])
+      colnames(frame) <- c("occurrence", colnames(ordination[, .SD, .SDcols = c(2:ncol(ordination))])) 
       frame$occurrence <- as.factor(frame$occurrence)
       frame$occurrence <- factor(frame$occurrence, levels = c("presence", "absence"))
       
@@ -76,7 +60,7 @@ model_fortyp <- function(forest_type,
         #---------------------------------------------------------------------------
         # Perform model
         
-        model <- glm(occurrence ~ Axis1 + Axis2 + Axis3, 
+        model <- glm(occurrence ~ ., 
                      data = down_train, 
                      family = binomial(link = "logit"))
         
@@ -125,9 +109,17 @@ model_fortyp <- function(forest_type,
         training <- as.data.table(training)
         testing <- as.data.table(testing)
         
+        # Coefficients
         collect <- rbind(c(training_performance, model$coefficients),
                          c(testing_performance, model$coefficients))
         collect <- as.data.table(collect)
+        
+        # varImp
+        var <- rbind(as.matrix(t(varImp(model)), nrow = 1), as.matrix(t(varImp(model)), nrow = 1))
+        colnames(var) <- paste0("imp_", colnames(var))
+        collect <- cbind(collect, var)
+        
+        # Merge
         collect <- cbind(forty = c(group_name, group_name), 
                          iteration = c(ii, ii),
                          dataset = c("training", "testing"),
@@ -158,7 +150,7 @@ model_fortyp <- function(forest_type,
                          mc.cleanup = TRUE, 
                          mc.allow.recursive = TRUE, 
                          affinity.list = NULL)
-  
+
   complete <- do.call(rbind, complete)
   complete <- complete[!is.na(dataset),]
   

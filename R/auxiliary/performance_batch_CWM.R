@@ -18,13 +18,13 @@ performance_batch <- function(predicted, coefficients) {
   
   # Reshape coefficients
   traits <- unique(coefficients$plant)
-  coef_array <- array(dim = c(100, 3, length(traits)))
+  coef_array <- array(dim = c(100, ncol(coefficients)-2, length(traits)))
   intercept_mat <- matrix(nrow = 100, ncol = length(traits))
   
   for(i in 1:length(traits)) {
     
     sub <- coefficients[plant == traits[i]]
-    coef_array[,,i] <- as.matrix(sub[, 3:5])
+    coef_array[,,i] <- as.matrix(sub[, .SD, .SDcols = c(3:ncol(sub))])
     intercept_mat[,i] <- sub$`(Intercept)`
     
   }

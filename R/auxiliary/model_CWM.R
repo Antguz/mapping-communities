@@ -8,9 +8,6 @@ model_CWM <- function(fia_meta,
   # Get number of plant groups
   groups <- ncol(aggregation)
   
-  # Create weigth
-  ordination$weigths <- (ordination$gof - min(ordination$gof)) / (quantile(ordination$gof, 0.95) - min(ordination$gof))
-  
   # Get model application in batch
   apply_occurrence <- function(X,
                                fia_meta,
@@ -30,8 +27,11 @@ model_CWM <- function(fia_meta,
     
     #---------------------------------------------------------------------------
     # Reshape data
-    frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, .SD, .SDcols = c(2:4, 6)])
-    colnames(frame) <- c("trait", "Axis1", "Axis2", "Axis3", "weigths") 
+    # frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, .SD, .SDcols = c(2:4, 6)])
+    # colnames(frame) <- c("trait", "Axis1", "Axis2", "Axis3") 
+    
+    frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, .SD, .SDcols = c(2:ncol(ordination))])
+    colnames(frame) <- c("trait", colnames(ordination[, .SD, .SDcols = c(2:ncol(ordination))]))
     
     #---------------------------------------------------------------------------
     # Multiple iterations
@@ -45,17 +45,15 @@ model_CWM <- function(fia_meta,
       #-------------------------------------------------------------------------
       # Down sampling
       sub_split <- cwm_subsplit(trait = data_training$trait, 
-                                weigths = data_training$weigths, 
                                 split = 0.85)
       down_train <- data_training[sub_split,]
       
       #---------------------------------------------------------------------------
       # Perform model
       
-      model <- glm(trait ~ Axis1 + Axis2 + Axis3, 
+      model <- glm(trait ~ ., 
                    data = down_train, 
-                   family = gaussian,
-                   weights = weigths)
+                   family = gaussian)
       
       #---------------------------------------------------------------------------
       # Performance on training
@@ -75,9 +73,17 @@ model_CWM <- function(fia_meta,
       
       #---------------------------------------------------------------------------
       # Collect data
+      # Coefficients
       collect <- rbind(training_performance, testing_performance)
       collect <- cbind(collect, matrix(model$coefficients, nrow = 1))
-      colnames(collect)[7:10] <- names(model$coefficients)
+      colnames(collect)[c(7:ncol(collect))] <- names(model$coefficients)
+      
+      # varImp
+      var <- rbind(as.matrix(t(varImp(model)), nrow = 1), as.matrix(t(varImp(model)), nrow = 1))
+      colnames(var) <- paste0("imp_", colnames(var))
+      collect <- cbind(collect, var)
+      
+      # Collect
       collect <- cbind(plant = c(group_name, group_name), 
                        iteration = c(ii, ii),
                        dataset = c("training", "testing"),
@@ -115,11 +121,10 @@ model_CWM <- function(fia_meta,
   
 }
 
-cwm_subsplit <- function(trait, weigths, split = 0.85) {
+cwm_subsplit <- function(trait, split = 0.85) {
   
   test <- data.table(sample = 1:length(trait),
-                     trait = trait, 
-                     weigths = weigths)
+                     trait = trait)
   test$cut <- cut(test$trait, breaks = 10)
   test$train <- 0
   cuts_unite <- unique(test$cut)
@@ -128,7 +133,7 @@ cwm_subsplit <- function(trait, weigths, split = 0.85) {
   for(k in 1:length(cuts_unite)) {
     
     sub <- subset(test, cut == cuts_unite[k])
-    sample_test <- sample(1:nrow(sub), ceiling(nrow(sub)*split), prob = sub$weigths)
+    sample_test <- sample(1:nrow(sub), ceiling(nrow(sub)*split))
     sub[sample_test, train := 1]
     all <- rbind(all, sub)
   

@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_fortyp_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 
 #### Taxonomic training #### ---------------------------------------------------
 dataset <- "training"

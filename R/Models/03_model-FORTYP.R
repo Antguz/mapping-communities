@@ -41,7 +41,12 @@ out_path <- "/media/antonio/Work/MMDB/Models/03_models_fortyp"
 fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_total.csv"))
+ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_total.csv"))
+
+# Get enviromental data
+# fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+# ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+# ordination <- na.exclude(ordination)
 
 # Test for match
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
@@ -62,6 +67,7 @@ colnames(forest_type)[3] <- "FORTYP"
 FORTYP_match <- match.integer64(fia_meta$PLT_CN, forest_type$PLT_CN)
 forest_type <- forest_type[FORTYP_match, ]
 all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
+all.equal(ordination$PLT_CN, forest_type$PLT_CN)
 
 # Clean forest type
 to_remove <- c(181, 183, 223, 380, 382, 383, 803, 807, 925, 926, 
@@ -105,7 +111,7 @@ data_split <- readRDS(paste0(out_path, "/split_fortyp.rds"))
 
 # Create model
 model <- model_fortyp(forest_type = forest_type,
-                      ordination = ordination[, 1:4],
+                      ordination = ordination,
                       data_split = data_split,
                       iterations = 100,
                       threads = 30)

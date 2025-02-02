@@ -25,8 +25,8 @@ model_lineages <- function(ordination,
     
     #---------------------------------------------------------------------------
     # Reshape data
-    frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, 2:4])
-    colnames(frame) <- c("occurrence", "Axis1", "Axis2", "Axis3") 
+    frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, .SD, .SDcols = c(2:ncol(ordination))])
+    colnames(frame) <- c("occurrence", colnames(ordination[, .SD, .SDcols = c(2:ncol(ordination))])) 
     frame$occurrence <- as.character(frame$occurrence)
     frame[occurrence == "0", occurrence := "absence"]
     frame[occurrence == "1", occurrence := "presence"]
@@ -55,7 +55,7 @@ model_lineages <- function(ordination,
       # Perform model
       
       # Model
-      model <- glm(occurrence ~ Axis1 + Axis2 + Axis3, 
+      model <- glm(occurrence ~ ., 
                    data = down_train, 
                    family = binomial(link = "logit"))
       
@@ -104,9 +104,17 @@ model_lineages <- function(ordination,
       training <- as.data.table(training)
       testing <- as.data.table(testing)
       
+      # Coefficients
       collect <- rbind(c(training_performance, model$coefficients),
                        c(testing_performance, model$coefficients))
       collect <- as.data.table(collect)
+      
+      # varImp
+      var <- rbind(as.matrix(t(varImp(model)), nrow = 1), as.matrix(t(varImp(model)), nrow = 1))
+      colnames(var) <- paste0("imp_", colnames(var))
+      collect <- cbind(collect, var)
+      
+      # Merge
       collect <- cbind(plant = c(group_name, group_name), 
                        iteration = c(ii, ii),
                        dataset = c("training", "testing"),
