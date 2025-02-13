@@ -53,10 +53,10 @@ sp_meta <- sp_meta[match, ]
 aggregation <- CWM_batch(sp_meta[,c("Taxon2", "HTq", "SLq", "WD", "shade", "drought", "waterlogging", "LMA", "N")], 
                          decostand(inventory, "total"))
 
-# Get enviromental data
-# fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
-# ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
-# ordination <- na.exclude(ordination)
+# Get environmental data
+fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+ordination <- na.exclude(ordination)
 
 # Test for match
 all.equal(aggregation$PLT_CN, ordination$PLT_CN)
@@ -73,9 +73,7 @@ all.equal(aggregation$PLT_CN, fia_meta$PLT_CN)
 
 # Applies just with one time using taxo data as reference
 if(type == "func") {
-  
-  set.seed(1107)
-  
+
   # Data-split based on State-County ID
   data_split <- data_split_CWM(aggregation, 
                                split = .60)

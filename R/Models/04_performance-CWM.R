@@ -45,7 +45,7 @@ type <- "func"
 coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/", 
                              type, "_model-CWM.csv"))
 coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
+coefficients <- coefficients[, .SD, .SDcols = c(1, 11:22)]
 
 # Get predicted axes
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",

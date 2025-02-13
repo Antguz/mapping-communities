@@ -50,11 +50,14 @@ model_fortyp <- function(forest_type,
         
         #---------------------------------------------------------------------------
         # Down sampling
-        split <- split_fortyp(data_training$occurrence, split = 0.85)
+        split <- split_fortyp(data_training$occurrence, split = 0.85, seed = ii)
         
         #---------------------------------------------------------------------------
         # Class balance
-        down_train <- ROSE(occurrence ~ ., data = data_training[split,])$data
+        # down_train <- ROSE(occurrence ~ ., data = data_training[split,])$data
+        # down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
+        down_train <- upSample(data_training[split, -1], data_training[split, ]$occurrence)
+        colnames(down_train)[ncol(down_train)] <- "occurrence"
         down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
         
         #---------------------------------------------------------------------------
@@ -160,7 +163,8 @@ model_fortyp <- function(forest_type,
 
 
 split_fortyp <- function(occurrence,
-                         split = 0.85) {
+                         split = 0.85,
+                         seed) {
   
   vec <- integer()
   
@@ -168,11 +172,13 @@ split_fortyp <- function(occurrence,
   
   # Presence
   presence <- split_frame[occurrence == "presence",]
+  set.seed(seed)
   train_presence <- sample(1:nrow(presence), floor(nrow(presence)*split))
   vec <- c(vec, presence$sample[train_presence])
   
   # Absence
   absence <- split_frame[occurrence == "absence",]
+  set.seed(seed)
   train_absence <- sample(1:nrow(absence), floor(nrow(absence)*split))
   vec <- c(vec, absence$sample[train_absence])
   

@@ -16,11 +16,13 @@ data_split_fortyp <- function(forest_type,
     
     # Presence
     presence <- spl[name == 1,]
+    set.seed(i)
     train_presence <- sample(1:nrow(presence), floor(nrow(presence)*split))
     presence[train_presence, split := 1] #Training
     
     # Absence
     absence <- spl[name == 0,]
+    set.seed(i)
     train_absence <- sample(1:nrow(absence), floor(nrow(absence)*split))
     absence[train_absence, split := 1] #Training
     

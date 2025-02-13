@@ -45,7 +45,8 @@ model_CWM <- function(fia_meta,
       #-------------------------------------------------------------------------
       # Down sampling
       sub_split <- cwm_subsplit(trait = data_training$trait, 
-                                split = 0.85)
+                                split = 0.85,
+                                seed = ii)
       down_train <- data_training[sub_split,]
       
       #---------------------------------------------------------------------------
@@ -121,7 +122,9 @@ model_CWM <- function(fia_meta,
   
 }
 
-cwm_subsplit <- function(trait, split = 0.85) {
+cwm_subsplit <- function(trait, 
+                         split = 0.85,
+                         seed) {
   
   test <- data.table(sample = 1:length(trait),
                      trait = trait)
@@ -133,6 +136,7 @@ cwm_subsplit <- function(trait, split = 0.85) {
   for(k in 1:length(cuts_unite)) {
     
     sub <- subset(test, cut == cuts_unite[k])
+    set.seed(seed)
     sample_test <- sample(1:nrow(sub), ceiling(nrow(sub)*split))
     sub[sample_test, train := 1]
     all <- rbind(all, sub)

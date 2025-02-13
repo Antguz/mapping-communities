@@ -104,7 +104,7 @@ model_performance <- function(meta_split,
                                                 dim(predicted[[1]])[2],
                                                 length(predicted)))
   
-  application_residuals <- function(observed, predicted) {
+  application_residuals <- function(observed, predicted, PLT_CN = meta_split$PLT_CN) {
     
     collector <- data.table()
     
@@ -124,8 +124,8 @@ model_performance <- function(meta_split,
       residuals_means <- rowMeans(residuals)
       residuals_sd <- apply(residuals, 1, sd)
       
-      results <- data.table(Axes = paste0("Axis", i),
-                            sample = 1:length(predictions_means),
+      results <- data.table(PLT_CN = PLT_CN,
+                            Axes = paste0("Axis", i),
                             observed = axis,
                             predicted = predictions_means,
                             predicted_sd = predictions_sd,
@@ -145,7 +145,7 @@ model_performance <- function(meta_split,
   #-----------------------------------------------------------------------------
   # Get 3D residuals
   # Apply prediction function
-  residuals_3D <- function(observed, predicted) {
+  residuals_3D <- function(observed, predicted, PLT_CN = meta_split$PLT_CN) {
     
     collector <- data.table()
     
@@ -156,7 +156,7 @@ model_performance <- function(meta_split,
     residuals_means <- rowMeans(collector)
     residuals_sd <- apply(collector, 1, sd)
     
-    results <- data.table(sample = 1:dim(predicted)[1],
+    results <- data.table(PLT_CN = PLT_CN,
                           residuals_3D = residuals_means,
                           residuals_3D_sd = residuals_sd)
     

@@ -16,7 +16,7 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-library(ROSE)
+# library(ROSE)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -46,9 +46,9 @@ fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_total.csv"))
 
 # Get enviromental data
-# fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
-# ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
-# ordination <- na.exclude(ordination)
+fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+ordination <- na.exclude(ordination)
 
 # FIA data for aggregation
 inventory <- readRDS(paste0(root_path, "/Diversity/01_beta/master_matched_comm_", type, "_VOL.rds"))
@@ -68,7 +68,7 @@ all.equal(aggregation$PLT_CN, fia_meta$PLT_CN)
 
 # Select the most abundant groups
 aggregation <- aggregation[, names(aggregation)[-1] := lapply(.SD, function(x) as.integer(x!=0)), 
-                                 .SDcols = 2:ncol(aggregation)]
+                           .SDcols = 2:ncol(aggregation)]
 presence <- colSums(aggregation[,-1])
 rpresence <- round(presence/nrow(aggregation)*100, 4)
 rpresence <- rpresence > 10.0
@@ -81,8 +81,6 @@ aggregation <- aggregation[ , .SD, .SDcols = c(1:ncol(aggregation))[rpresence]]
 
 # Applies just with one time using taxo data as reference
 if(type == "phylo") {
-  
-  set.seed(1107)
   
   # Data-split based on State-County ID
   data_split <- data_split_lineages(aggregation, 

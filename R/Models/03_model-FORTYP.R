@@ -16,7 +16,7 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-library(ROSE)
+# library(ROSE)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -44,9 +44,9 @@ fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_total.csv"))
 
 # Get enviromental data
-# fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
-# ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
-# ordination <- na.exclude(ordination)
+fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, all.y = FALSE)
+ordination <- na.exclude(ordination)
 
 # Test for match
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
@@ -91,8 +91,6 @@ all.equal(ordination$PLT_CN, forest_type$PLT_CN)
 
 # Applies just with one time using taxo data as reference
 if(type == "taxo") {
-  
-  set.seed(1107)
   
   # Data-split based on State-County ID
   data_split <- data_split_fortyp(forest_type,

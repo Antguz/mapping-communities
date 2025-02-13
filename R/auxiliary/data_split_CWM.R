@@ -21,6 +21,7 @@ data_split_CWM <- function(aggregation,
     for(ii in 1:length(cuts_unite)) {
       
       sub <- subset(trait, cut == cuts_unite[ii])
+      set.seed(ii)
       sample_trait <- sample(1:nrow(sub), ceiling(nrow(sub)*split))
       sub[sample_trait, train := 1]
       all <- rbind(all, sub)
