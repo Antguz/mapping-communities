@@ -5,16 +5,22 @@
 #' @param predicted Axes predictions from spaceborne spectroscopy
 #' @param coefficients Coefficients (and intercept) value from the CWM models
 
-performance_batch <- function(predicted, coefficients) {
+performance_batch <- function(predicted, coefficients, environment) {
   
   # Reshape predicted
   # Select columns
-  obs <- predicted[, c("Axes", "sample", "observed")]
-  pred <- predicted[, c("Axes", "sample", "predicted")]
+  obs <- predicted[, c("Axes", "PLT_CN", "observed")]
+  pred <- predicted[, c("Axes", "PLT_CN", "predicted")]
   
   # Dcast columns
-  obs <- dcast(obs, sample ~ Axes)
-  pred <- dcast(pred, sample ~ Axes)
+  obs <- dcast(obs, PLT_CN ~ Axes)
+  pred <- dcast(pred, PLT_CN ~ Axes)
+  
+  # Merge with environment 
+  obs <- merge(obs, environment, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  obs <- na.exclude(obs)
+  pred <- merge(pred, environment, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  pred <- na.exclude(pred)
   
   # Reshape coefficients
   traits <- unique(coefficients$plant)

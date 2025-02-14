@@ -36,40 +36,38 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_occurence_performance"
 #-------------------------------------------------------------------------------
 
 sensor <- "EMIT"
-
-#### Phylogenetic training ####
-dataset <- "training"
 type <- "phylo"
 
 # Get glm coefficients
 coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
                              type, "_model-occurrence.csv"))
 coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 14:17)]
+coefficients <- coefficients[, .SD, .SDcols = c(1, 14:25)]
+
+# Get environmental variables
+environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+
+#### Phylogenetic training ####
+dataset <- "training"
 
 # Get predicted axes
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict probabilities based on coefficients
-phylo_perf <- performance_batch(predicted, coefficients)
+phylo_perf <- performance_batch(predicted, coefficients, environment)
 saveRDS(phylo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 
 #### Phylogenetic testing ####
 dataset <- "testing"
-type <- "phylo"
-coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
-                             type, "_model-occurrence.csv"))
-coefficients <- subset(coefficients, dataset == "testing")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 14:17)]
 
 # Predict probabilities based on coefficients
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict probabilities based on coefficients
-phylo_perf <- performance_batch(predicted, coefficients)
+phylo_perf <- performance_batch(predicted, coefficients, environment)
 saveRDS(phylo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 

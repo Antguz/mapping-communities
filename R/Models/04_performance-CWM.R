@@ -36,9 +36,6 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
 #-------------------------------------------------------------------------------
 
 sensor <- "EMIT"
-
-# Training
-dataset <- "training"
 type <- "func"
 
 # Get glm coefficients
@@ -47,27 +44,30 @@ coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/",
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 11:22)]
 
+# Get environmental variables
+environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+
+# Training
+dataset <- "training"
+
 # Get predicted axes
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict CWM based on coefficients
-func_perf <- performance_batch(predicted, coefficients)
+func_perf <- performance_batch(predicted, coefficients, environment)
 saveRDS(func_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 
 # Testing
 dataset <- "testing"
-type <- "func"
-coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/", 
-                             type, "_model-CWM.csv"))
-coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 11:14)]
 
+# Get predicted axes
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
-func_perf <- performance_batch(predicted, coefficients)
+# Predict CWM based on coefficients
+func_perf <- performance_batch(predicted, coefficients, environment)
 saveRDS(func_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 

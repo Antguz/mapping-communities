@@ -5,26 +5,32 @@
 #' @param predicted Axes predictions from spaceborne spectroscopy
 #' @param coefficients Coefficients (and intercept) value from the CWM models
 
-performance_batch <- function(predicted, coefficients) {
+performance_batch <- function(predicted, coefficients, environment) {
   
   # Reshape predicted
   # Select columns
-  obs <- predicted[, c("Axes", "sample", "observed")]
-  pred <- predicted[, c("Axes", "sample", "predicted")]
+  obs <- predicted[, c("Axes", "PLT_CN", "observed")]
+  pred <- predicted[, c("Axes", "PLT_CN", "predicted")]
   
   # Dcast columns
-  obs <- dcast(obs, sample ~ Axes)
-  pred <- dcast(pred, sample ~ Axes)
+  obs <- dcast(obs, PLT_CN ~ Axes)
+  pred <- dcast(pred, PLT_CN ~ Axes)
+  
+  # Merge with environment 
+  obs <- merge(obs, environment, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  obs <- na.exclude(obs)
+  pred <- merge(pred, environment, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
+  pred <- na.exclude(pred)
   
   # Reshape coefficients
   models <- unique(coefficients$forty)
-  coef_array <- array(dim = c(100, 3, length(models)))
+  coef_array <- array(dim = c(100, ncol(coefficients)-2, length(models)))
   intercept_mat <- matrix(nrow = 100, ncol = length(models))
   
   for(i in 1:length(models)) {
     
     sub <- coefficients[forty == models[i]]
-    coef_array[,,i] <- as.matrix(sub[, 3:5])
+    coef_array[,,i] <- as.matrix(sub[, .SD, .SDcols = c(3:ncol(sub))])
     intercept_mat[,i] <- sub$`(Intercept)`
     
   }

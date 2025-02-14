@@ -228,18 +228,6 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 # Phylogenetic c(9, 4, 7) 0.28 0.08 0.25
 # Functional c(27, 8, 14) 0.55 0.10 0.34
 
-
-
-### DESIS 
-# Taxonomic c(21, 10, 6) 0.33, 0.12 0.109
-# Phylogenetic c(12, 6, 10) 0.13 0.195 0.29
-# Functional c(20, 5, 5) 0.26 0.15 0.25
-
-### EMIT
-# Taxonomic c(27, 10, 21) 0.55 0.11 0.26
-# Phylogenetic c(9, 4, 7) 0.18 0.09 0.18
-# Functional c(29, 5, 20) 0.44 0.05 0.27
-
 # Manual checked
 tune_optimal <- c(27, 8, 14)
 

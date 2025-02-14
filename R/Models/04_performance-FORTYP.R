@@ -35,40 +35,37 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_fortyp_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
-
-#### Taxonomic training #### ---------------------------------------------------
-dataset <- "training"
+sensor <- "EMIT"
 type <- "taxo"
 
 # Get glm coefficients
 coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/", type, "_model-FORTYP.csv"))
 coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 14:17)]
+coefficients <- coefficients[, .SD, .SDcols = c(1, 14:25)]
+
+# Get environmental variables
+environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
+
+#### Taxonomic training #### 
+dataset <- "training"
 
 # Predict probabilities based on coefficients
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict and export
-taxo_perf <- performance_batch(predicted, coefficients)
+taxo_perf <- performance_batch(predicted, coefficients, environment)
 saveRDS(taxo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 
 #### Taxonomic testing ####
 dataset <- "testing"
-type <- "taxo"
-
-# Get glm coefficients
-coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/", type, "_model-FORTYP.csv"))
-coefficients <- subset(coefficients, dataset == "testing")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 14:17)]
 
 # Predict probabilities based on coefficients
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
-taxo_perf <- performance_batch(predicted, coefficients)
+taxo_perf <- performance_batch(predicted, coefficients, environment)
 saveRDS(taxo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 
