@@ -17,25 +17,18 @@ library(ggdark)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/DESIS_mapping"
+root_path <- "/media/antonio/Work/MMDB"
+root_path <- "E:/MMDB"
 
 # Categorical 
-data <- fread(paste0(root_path, "/07_model_occurrence/phylo-log_model-occurrence.csv"))
+data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_model-occurrence.csv"))
 data[plant == "AM", plant := "Arbuscular mycorrhizal"]
 data[plant == "ECM", plant := "Ectomycorrhizal"]
-data[plant == "gymnosperm", plant := "Gymnosperm"]
-data[plant == "angiosperm", plant := "Angiosperm"]
-data <- data[plant != "deciduous",]
-data <- data[plant != "evergreen",]
-data <- data[plant != "needle",]
-data <- data[plant != "simple",]
-data <- data[plant != "compound",]
-data <- data[plant != "broadleaf",]
+data$TSS <- data$Sens + data$Spec - 1
 
 data <- data[order(plant),]
 data$plants <- as.factor(data$plant)
-data$plants <- factor(data$plant, levels = rev(c("Angiosperm", "Gymnosperm",
-                                                 "Altingiaceae", "Betulaceae", "Cupressaceae", 
+data$plants <- factor(data$plant, levels = rev(c("Altingiaceae", "Betulaceae", "Cupressaceae", 
                                                  "Fagaceae", "Juglandaceae", "Magnoliaceae", 
                                                  "Nyssaceae", "Oleaceae", "Pinaceae", "Rosaceae",
                                                  "Salicaceae", "Sapindaceae", "Ulmaceae", 
@@ -93,7 +86,7 @@ text <- "black"
 # Melt dataset
 summary_performance <- melt(data, 
                             id.vars = c("dataset", "plants"),
-                            measure.vars = c("Accuracy", "Sens", "Spec", "ROC"),
+                            measure.vars = c("TSS", "Sens", "Spec", "ROC"),
                             variable.name = "metric",
                             value.name = "performance")
 
@@ -106,8 +99,8 @@ summary_performance$dataset <- factor(summary_performance$dataset,
 
 summary_performance$metric <- as.factor(summary_performance$metric)
 summary_performance$metric <- factor(summary_performance$metric, 
-                                     levels = c("Accuracy", "Sens", "Spec", "ROC"),
-                                     labels = c("Accuracy", "Sensitivity", "Specificity", "AUC"))
+                                     levels = c("TSS", "Sens", "Spec", "ROC"),
+                                     labels = c("TSS", "Sensitivity", "Specificity", "ROC"))
 
 # Summary regardless of trait
 summary_all <- summary_performance[, .(mean = mean(performance)),
@@ -118,6 +111,12 @@ summary_performance <- summary_performance[, .(mean = mean(performance)),
                                                #lower = t.test(performance)$conf.int[1],
                                                #upper = t.test(performance)$conf.int[2]),
                                            by = c("dataset", "metric", "plants")]
+
+my_labeller <- as_labeller(c(TSS = "TSS", 
+                             Sensitivity = "Sensitivity", 
+                             Specificity = "Specificity", 
+                             ROC = "AUC[ROC]"),
+                           default = label_parsed)
 
 p <- ggplot(summary_performance) +
   geom_point(aes(x = mean, 
@@ -132,15 +131,19 @@ p <- ggplot(summary_performance) +
              aes(xintercept = mean, 
                  colour = dataset,
                  linetype = dataset)) +
-  coord_cartesian(xlim = c(0.25, 1.0)) + 
-  scale_x_continuous(breaks = c(0.25, 0.50, 0.75, 1.0)) +
   scale_shape_manual("Dataset", values = c(24, 25)) +
   scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99")) +
   scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dashed")) +
-  facet_grid(. ~ metric, scales = "free") +
-  xlab("Values") + ylab("Plant groups") +
+  xlab("Values") + ylab("Plant lineages") +
+  facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
+  facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(0, 1.0), breaks = c(0.0, 0.5, 1.0)))) +
   th
+
+p
 
 jpeg(paste0(root_path, "/figures/FIA-models_lineages.jpg"), 
     width = 210, 

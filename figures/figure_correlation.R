@@ -25,9 +25,9 @@ root_path <- "/media/antonio/Work/MMDB"
 #-------------------------------------------------------------------------------
 
 # Read data
-taxo <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", "taxo", "_total.csv"))
-phylo <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", "phylo", "_total.csv"))
-func <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_", "func", "_total.csv"))
+taxo <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", "taxo", "_total.csv"))
+phylo <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", "phylo", "_total.csv"))
+func <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", "func", "_total.csv"))
 
 # Test order
 all.equal(taxo$PLT_CN, phylo$PLT_CN)

@@ -17,6 +17,7 @@ library(ggh4x)
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
+root_path <- "E:/MMDB"
 
 # Read files 
 data <- fread(paste0(root_path, "/Models/04_CWM_performance/performance_summary_CWM.csv"))
@@ -27,20 +28,24 @@ data[plant == "LMA",]$RMSE <- data[plant == "LMA",]$RMSE/10
 data[plant == "LMA",]$BIAS <- data[plant == "LMA",]$BIAS/10
 
 data <- data[order(plant),]
-data[plant == "HTq", plant := "Maximun tree height"]
+data[plant == "HTq", plant := "Tree height (max)"]
 data[plant == "SLq", plant := "Slenderness"]
 data[plant == "WD", plant := "Wood density"]
 data[plant == "shade", plant := "Shade tolerance index"]
 data[plant == "drought", plant := "Drought tolerance index"]
 data[plant == "waterlogging", plant := "Waterlogging tolerance index"]
-data[plant == "leaf_area", plant := "Leaf area"]
-data[plant == "LMA", plant := "Leaf mass area"]
+data[plant == "LMA", plant := "Leaf Mass Area"]
 data[plant == "N", plant := "Nitrogen"]
 
 data$plant <- as.factor(data$plant)
-data$plant <- factor(data$plant, levels = rev(c("Maximun tree height",  "Slenderness",
-                                                  "Shade tolerance index", "Drought tolerance index", "Waterlogging tolerance index",
-                                                  "Leaf area", "Leaf mass area", "Nitrogen", "Wood density")))
+data$plant <- factor(data$plant, levels = rev(c("Tree height (max)", 
+                                                "Slenderness", 
+                                                "Shade tolerance index", 
+                                                "Drought tolerance index",
+                                                "Waterlogging tolerance index",
+                                                "Leaf Mass Area",
+                                                "Nitrogen",
+                                                "Wood density")))
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -107,8 +112,22 @@ summary_performance$metric <- factor(summary_performance$metric,
 summary_all <- summary_performance[, .(mean = mean(performance)),
                                    by = c("sensor", "dataset", "metric")]
 
+# CI
+get_lower <- function(x, confidence = 0.95) {
+  n <- length(x)  # Sample size
+  mean_x <- mean(x)  # Sample mean
+  std_error <- sd(x) / sqrt(n)  # Standard error
+  t_value <- qt((1 - confidence) / 2, df = n - 1, lower.tail = TRUE)  # Critical t-value
+  
+  lower_ci <- mean_x + t_value * std_error  # Lower confidence bound
+  return(lower_ci)
+}
+
 # Summary of results
-summary_performance <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
+summary_performance <- summary_performance[, .(mean = mean(performance), 
+                                               sd = sd(performance),
+                                               lower = get_lower(performance, confidence = 0.05),
+                                               upper = get_lower(performance, confidence = 0.95)),
                                            by = c("sensor", "dataset", "metric", "plant")]
 
 
@@ -120,30 +139,30 @@ p <- ggplot(summary_performance) +
                      xmax = mean + sd,
                      y = plant,
                      colour = interaction(sensor, dataset)),
+                 position = position_dodge(width = 0.4),
                  alpha = 0.75) +
   geom_point(aes(x = mean, 
                  y = plant,
                  colour = interaction(sensor, dataset),
                  fill = interaction(sensor, dataset),
                  shape = interaction(sensor, dataset)),
-             size = 1.5,
-             #colour = "grey",
-             position = position_jitterdodge(dodge.width=0.4, jitter.width=0),
+             size = 2,
+             position = position_dodge(width = 0.4),
              alpha = 0.75) +
   geom_vline(data = summary_all,
              aes(xintercept = mean, 
                  colour = interaction(sensor, dataset),
                  linetype = interaction(sensor, dataset))) +
   scale_shape_manual("Dataset", values = c(24, 21, 24, 21)) +
-  scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99", "#e66101", "#5e3c99")) +
-  scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99", "transparent", "transparent")) +
+  scale_colour_manual("Dataset", values = c("#8c510a", "#01665e", "#8c510a", "#01665e")) +
+  scale_fill_manual("Dataset", values = c("#8c510a", "#01665e", "transparent", "transparent")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dotted", "dashed", "dashed")) +
   xlab("Values") + ylab("Community-weigted mean") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.07, 0.07), breaks = c(-0.05, 0.0, 0.05)),
                                scale_x_continuous(limits = c(0, 2), breaks = c(0, 1.0, 2)),
-                               scale_x_continuous(limits = c(15, 25), breaks = c(15, 20, 25)))) +
+                               scale_x_continuous(limits = c(10, 25), breaks = c(10, 17, 25)))) +
   th
 
 p 

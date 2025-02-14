@@ -10,18 +10,21 @@ library(bit64)
 library(data.table)
 library(ggplot2)
 library(ggdark)
+library(ggh4x)
 
 #'------------------------------------------------------------------------------
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
+root_path <- "E:/MMDB"
 
 # Categorical 
-data <- fread(paste0(root_path, "/Models/04_fortyp_performance/performance_summary_fortyp.csv"))
-data <- data[order(plant),]
-data$plant <- as.factor(data$plant)
-data$plant <- factor(data$plant, levels = rev(as.character(unique(data$plant))))
+data <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_model-FORTYP.csv"))
+data <- data[order(forty),]
+data$forty <- as.factor(data$forty)
+data$forty <- factor(data$forty, levels = rev(as.character(unique(data$forty))))
+data$TSS <- data$Sens + data$Spec - 1
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -68,10 +71,11 @@ text <- "black"
 #-------------------------------------------------------------------------------
 #' @Plot 
 
+
 # Melt dataset
 summary_performance <- melt(data, 
-                            id.vars = c("sensor", "dataset", "plant"),
-                            measure.vars = c("Accuracy", "Sens", "Spec", "ROC"),
+                            id.vars = c("dataset", "forty"),
+                            measure.vars = c("TSS", "Sens", "Spec", "ROC"),
                             variable.name = "metric",
                             value.name = "performance")
 
@@ -80,12 +84,10 @@ summary_performance$dataset <- factor(summary_performance$dataset,
                                       levels = c("training", "testing"),
                                       labels = c("Training", "Testing"))
 
-#summary_performance <- summary_performance[metric == "R2" | metric == "perRMSE", ]
-
 summary_performance$metric <- as.factor(summary_performance$metric)
 summary_performance$metric <- factor(summary_performance$metric, 
-                                     levels = c("Accuracy", "Sens", "Spec", "ROC"),
-                                     labels = c("Accuracy", "Sensitivity", "Specificity", "AUC"))
+                                     levels = c("TSS", "Sens", "Spec", "ROC"),
+                                     labels = c("TSS", "Sensitivity", "Specificity", "ROC"))
 
 # Summary regardless of trait
 summary_all <- summary_performance[, .(mean = mean(performance)),
@@ -93,11 +95,19 @@ summary_all <- summary_performance[, .(mean = mean(performance)),
 
 # Summary of results
 summary_performance <- summary_performance[, .(mean = mean(performance)),
-                                           by = c("dataset", "plants", "metric")]
+                                           #lower = t.test(performance)$conf.int[1],
+                                           #upper = t.test(performance)$conf.int[2]),
+                                           by = c("dataset", "metric", "forty")]
+
+my_labeller <- as_labeller(c(TSS = "TSS", 
+                             Sensitivity = "Sensitivity", 
+                             Specificity = "Specificity", 
+                             ROC = "AUC[ROC]"),
+                           default = label_parsed)
 
 p <- ggplot(summary_performance) +
   geom_point(aes(x = mean, 
-                 y = plants,
+                 y = forty,
                  #colour = dataset,
                  fill = dataset,
                  shape = dataset),
@@ -108,15 +118,19 @@ p <- ggplot(summary_performance) +
              aes(xintercept = mean, 
                  colour = dataset,
                  linetype = dataset)) +
-  coord_cartesian(xlim = c(0.4, 1.0)) +
-  scale_x_continuous(breaks = c(0.4, 0.7, 1.0)) +
   scale_shape_manual("Dataset", values = c(24, 25)) +
   scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99")) +
   scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dashed")) +
-  facet_grid(. ~ metric, scales = "free") +
   xlab("Values") + ylab("Forest type") +
+  facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
+  facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(0, 1.0), breaks = c(0.0, 0.5, 1.0)))) +
   th
+
+p
 
 jpeg(paste0(root_path, "/figures/FIA-models_fortype.jpeg"), 
      width = 210, 
@@ -126,7 +140,9 @@ jpeg(paste0(root_path, "/figures/FIA-models_fortype.jpeg"),
      bg = "white",
      #bg = "transparent", 
      pointsize = 14)
+
 p
+
 dev.off()
 
 
@@ -137,6 +153,8 @@ png(paste0(root_path, "/figures/FIA-models-fortype.png"),
     res = 600, 
     bg = "transparent", 
     pointsize = 14)
+
 p
+
 dev.off()
 
