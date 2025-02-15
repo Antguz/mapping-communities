@@ -3,7 +3,7 @@
 #'------------------------------------------------------------------------------
 
 #' @description It models the occurrence probability of forest types based on 
-#' NMDS ordination.
+#' MDS ordination.
 
 #'------------------------------------------------------------------------------
 #' @Libraries
@@ -16,7 +16,7 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-# library(ROSE)
+library(ROSE)
 
 #'------------------------------------------------------------------------------
 #' @Source_code

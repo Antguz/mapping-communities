@@ -17,7 +17,6 @@ library(ggh4x)
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-root_path <- "E:/MMDB"
 
 # Read files 
 data <- fread(paste0(root_path, "/Models/04_CWM_performance/performance_summary_CWM.csv"))
@@ -34,7 +33,7 @@ data[plant == "WD", plant := "Wood density"]
 data[plant == "shade", plant := "Shade tolerance index"]
 data[plant == "drought", plant := "Drought tolerance index"]
 data[plant == "waterlogging", plant := "Waterlogging tolerance index"]
-data[plant == "LMA", plant := "Leaf Mass Area"]
+data[plant == "LMA", plant := "Leaf Mass Area*"]
 data[plant == "N", plant := "Nitrogen"]
 
 data$plant <- as.factor(data$plant)
@@ -43,7 +42,7 @@ data$plant <- factor(data$plant, levels = rev(c("Tree height (max)",
                                                 "Shade tolerance index", 
                                                 "Drought tolerance index",
                                                 "Waterlogging tolerance index",
-                                                "Leaf Mass Area",
+                                                "Leaf Mass Area*",
                                                 "Nitrogen",
                                                 "Wood density")))
 
@@ -56,7 +55,7 @@ th_black <- theme_bw() +
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill= "transparent"),
         rect = element_rect(fill = "transparent"),
-        plot.margin = unit(c(0.5, 2.0, 0.5, 0.5), "pt"),
+        plot.margin = unit(c(0.5, 2.0, 0.5, 0.5), "mm"),
         legend.position= c("top"), 
         strip.background = element_rect(color="black", 
                                         fill="black", 
@@ -77,7 +76,7 @@ th_trans <- dark_theme_bw(base_size = 14) +
         plot.background = element_rect(colour = "transparent",
                                        fill = "transparent",
                                        linewidth=0),
-        plot.margin = unit(c(0.5, 2.0, 0.5, 0.5), "pt"),
+        plot.margin = unit(c(0.5, 2.0, 0.5, 0.5), "mm"),
         strip.background = element_rect(color="white", 
                                         fill="white", 
                                         linewidth=1.5, 
@@ -85,6 +84,9 @@ th_trans <- dark_theme_bw(base_size = 14) +
         strip.text = element_text(color = "black"))
 
 th <- th_trans
+line <- "white"
+text <- "white"
+
 th <- th_black
 line <- "black"
 text <- "black"
@@ -113,30 +115,45 @@ summary_all <- summary_performance[, .(mean = mean(performance)),
                                    by = c("sensor", "dataset", "metric")]
 
 # CI
-get_lower <- function(x, confidence = 0.95) {
-  n <- length(x)  # Sample size
-  mean_x <- mean(x)  # Sample mean
-  std_error <- sd(x) / sqrt(n)  # Standard error
-  t_value <- qt((1 - confidence) / 2, df = n - 1, lower.tail = TRUE)  # Critical t-value
+get_ci <- function(x, type, confidence = 0.95) {
+  n <- length(x)
+  mean_x <- mean(x)
+  std_error <- sd(x) / sqrt(n)
+  z_value <- qnorm((1 - 0.95) / 2)  # Z-score for normal distribution
   
-  lower_ci <- mean_x + t_value * std_error  # Lower confidence bound
-  return(lower_ci)
+  if(type == "lower") {
+    ci <- mean_x - z_value * std_error
+  } else if(type == "upper") {
+    ci <- mean_x + z_value * std_error
+  }
+  
+  return(ci)
 }
 
 # Summary of results
 summary_performance <- summary_performance[, .(mean = mean(performance), 
                                                sd = sd(performance),
-                                               lower = get_lower(performance, confidence = 0.05),
-                                               upper = get_lower(performance, confidence = 0.95)),
+                                               lower = get_ci(performance, "lower"),
+                                               upper = get_ci(performance, "upper")),
                                            by = c("sensor", "dataset", "metric", "plant")]
 
-
+# Plot labels
 my_labeller <- as_labeller(c(R2= "italic(R)^2", BIAS ="BIAS", RMSE = "RMSE", perRMSE = "\"%\"*RMSE"),
                            default = label_parsed)
 
+# Create rects
+rects <- data.frame(
+  ymin = seq(0.5, length(unique(summary_performance$plant)), by = 2),
+  ymax = seq(1.5, length(unique(summary_performance$plant)) + 1, by = 2),
+  xmin = -Inf,
+  xmax = Inf
+)
+
 p <- ggplot(summary_performance) +
-  geom_linerange(aes(xmin = mean - sd,
-                     xmax = mean + sd,
+  geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+            fill = "gray", alpha = 0.2, inherit.aes = FALSE) +  
+  geom_linerange(aes(xmin = lower,
+                     xmax = upper,
                      y = plant,
                      colour = interaction(sensor, dataset)),
                  position = position_dodge(width = 0.4),
@@ -146,7 +163,7 @@ p <- ggplot(summary_performance) +
                  colour = interaction(sensor, dataset),
                  fill = interaction(sensor, dataset),
                  shape = interaction(sensor, dataset)),
-             size = 2,
+             size = 1.5,
              position = position_dodge(width = 0.4),
              alpha = 0.75) +
   geom_vline(data = summary_all,
@@ -157,12 +174,12 @@ p <- ggplot(summary_performance) +
   scale_colour_manual("Dataset", values = c("#8c510a", "#01665e", "#8c510a", "#01665e")) +
   scale_fill_manual("Dataset", values = c("#8c510a", "#01665e", "transparent", "transparent")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dotted", "dashed", "dashed")) +
-  xlab("Values") + ylab("Community-weigted mean") +
+  xlab("Values") + ylab("Community-weighted mean plant traits") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
-                               scale_x_continuous(limits = c(-0.07, 0.07), breaks = c(-0.05, 0.0, 0.05)),
-                               scale_x_continuous(limits = c(0, 2), breaks = c(0, 1.0, 2)),
-                               scale_x_continuous(limits = c(10, 25), breaks = c(10, 17, 25)))) +
+                               scale_x_continuous(limits = c(-0.04, 0.04), breaks = c(-0.03, 0, 0.03)),
+                               scale_x_continuous(limits = c(0, 2.5), breaks = c(0, 1, 2)),
+                               scale_x_continuous(limits = c(10, 20), breaks = c(10, 15, 20)))) +
   th
 
 p 

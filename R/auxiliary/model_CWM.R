@@ -27,9 +27,6 @@ model_CWM <- function(fia_meta,
     
     #---------------------------------------------------------------------------
     # Reshape data
-    # frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, .SD, .SDcols = c(2:4, 6)])
-    # colnames(frame) <- c("trait", "Axis1", "Axis2", "Axis3") 
-    
     frame <- cbind(aggregation[, .SD, .SDcols = c(X)], ordination[, .SD, .SDcols = c(2:ncol(ordination))])
     colnames(frame) <- c("trait", colnames(ordination[, .SD, .SDcols = c(2:ncol(ordination))]))
     
@@ -52,15 +49,24 @@ model_CWM <- function(fia_meta,
       #---------------------------------------------------------------------------
       # Perform model
       
-      model <- glm(trait ~ ., 
-                   data = down_train, 
-                   family = gaussian)
+      # Model features
+      ctrl <- trainControl(method = "cv", 
+                           number = 10,
+                           savePredictions = TRUE,
+                           seeds = 1:11)
+      
+      # Model
+      glmFit <- train(trait ~ .,
+                      data = down_train,
+                      method = "glm",
+                      trControl = ctrl)
       
       #---------------------------------------------------------------------------
       # Performance on training
       
       training <- data.frame(obs = data_training$trait,
-                             pred = predict(model, newdata = data_training))
+                             pred = predict(glmFit, 
+                                            newdata = data_training))
       
       training_performance <- parameters(training$obs, training$pred)
       
@@ -68,7 +74,7 @@ model_CWM <- function(fia_meta,
       # Performance on testing
       
       testing <- data.frame(obs = data_testing$trait,
-                            pred = predict(model, newdata = data_testing))
+                            pred = predict(glmFit, newdata = data_testing))
       
       testing_performance <- parameters(testing$obs, testing$pred)
       
@@ -76,11 +82,11 @@ model_CWM <- function(fia_meta,
       # Collect data
       # Coefficients
       collect <- rbind(training_performance, testing_performance)
-      collect <- cbind(collect, matrix(model$coefficients, nrow = 1))
-      colnames(collect)[c(7:ncol(collect))] <- names(model$coefficients)
+      collect <- cbind(collect, matrix(glmFit$finalModel$coefficients, nrow = 1))
+      colnames(collect)[7:ncol(collect)] <- names(glmFit$finalModel$coefficients)
       
       # varImp
-      var <- rbind(as.matrix(t(varImp(model)), nrow = 1), as.matrix(t(varImp(model)), nrow = 1))
+      var <- rbind(as.matrix(t(varImp(glmFit$finalModel)), nrow = 1), as.matrix(t(varImp(glmFit$finalModel)), nrow = 1))
       colnames(var) <- paste0("imp_", colnames(var))
       collect <- cbind(collect, var)
       

@@ -35,14 +35,14 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_occurence_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 type <- "phylo"
 
 # Get glm coefficients
 coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
                              type, "_model-occurrence.csv"))
 coefficients <- subset(coefficients, dataset == "training")
-coefficients <- coefficients[, .SD, .SDcols = c(1, 14:25)]
+coefficients <- coefficients[, .SD, .SDcols = c(1, 15:26)]
 
 # Get environmental variables
 environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))

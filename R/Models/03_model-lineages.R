@@ -16,7 +16,7 @@ library(pbmcapply)
 library(caret)
 library(Rcpp)
 library(vegan)
-# library(ROSE)
+library(ROSE)
 
 #'------------------------------------------------------------------------------
 #' @Source_code

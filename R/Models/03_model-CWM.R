@@ -2,7 +2,7 @@
 #' @title Model the community weighted mean of plant traits
 #'------------------------------------------------------------------------------
 
-#' @description It models the CWM of plant traits based on NMDS ordination 
+#' @description It models the CWM of plant traits based on MDS ordination 
 #' and relative abundance.
 
 #'------------------------------------------------------------------------------
