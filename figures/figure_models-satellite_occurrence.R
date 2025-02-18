@@ -24,8 +24,8 @@ data <- data[order(plant),]
 data$perRMSE <- data$perRMSE*100
 
 # Define levels
-data[plant == "AM", plant := "Arbuscular mycorrhizal"]
-data[plant == "ECM", plant := "Ectomycorrhizal"]
+data[plant == "AM", plant := "AM"]
+data[plant == "ECM", plant := "ECM"]
 data[plant == "gymnosperm", plant := "Gymnosperm"]
 data[plant == "angiosperm", plant := "Angiosperm"]
 data <- data[plant != "deciduous",]
@@ -142,7 +142,7 @@ summary_performance$plant <- factor(summary_performance$plant, levels = rev(c("A
                                                                                "Fraxinus", "Liquidambar", "Liriodendron", 
                                                                                "Nyssa", "Picea", "Pinus", "Populus",
                                                                                "Prunus", "Quercus", "Ulmus",
-                                                                               "Arbuscular mycorrhizal", "Ectomycorrhizal")))
+                                                                               "AM", "ECM")))
 # Create rects
 rects <- data.frame(
   ymin = seq(0.5, length(unique(summary_performance$plant)), by = 2),

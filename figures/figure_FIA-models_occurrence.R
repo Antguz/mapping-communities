@@ -21,8 +21,6 @@ root_path <- "/media/antonio/Work/MMDB"
 
 # Categorical 
 data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_model-occurrence.csv"))
-data[plant == "AM", plant := "Arbuscular mycorrhizal"]
-data[plant == "ECM", plant := "Ectomycorrhizal"]
 data$TSS <- data$Sens + data$Spec - 1
 
 data <- data[order(plant),]
@@ -35,7 +33,7 @@ data$plants <- factor(data$plant, levels = rev(c("Altingiaceae", "Betulaceae", "
                                                  "Fraxinus", "Liquidambar", "Liriodendron", 
                                                  "Nyssa", "Picea", "Pinus", "Populus",
                                                  "Prunus", "Quercus", "Ulmus",
-                                                 "Arbuscular mycorrhizal", "Ectomycorrhizal")))
+                                                 "AM", "ECM")))
 
 #-------------------------------------------------------------------------------
 # Plot details
