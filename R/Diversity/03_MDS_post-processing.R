@@ -1,10 +1,10 @@
 #'------------------------------------------------------------------------------
-#' @title A script for post processing the NMDS ordinations
+#' @title A script for post processing the MDS ordinations
 #'------------------------------------------------------------------------------
 
 #' @description It rotates ordinations according to environmental gradients to 
-#' then extract information associated with the projection of communities and 
-#' species. It also extract the goodness of the communities in the ordinations 
+#' then extract information associated with the projection of species, traits, and
+#' environments. It also extract the goodness of fit the communities in the ordinations 
 #' and the data for the stressplot.
 
 #'------------------------------------------------------------------------------
@@ -15,28 +15,30 @@ library(vegan)
 library(bit64)
 library(Rcpp)
 library(RcppArmadillo)
-library(rTLS)
+library(smatr)
 library(dynutils)
 library(pbmcapply)
 
 #'------------------------------------------------------------------------------
 #' Source code
 
-# sourceCpp("src/goodness_rcpp.cpp")
 sourceCpp("src/euclidean_distance.cpp")
 source("R/auxiliary/MDS_rotate.R")
 source("R/auxiliary/aggregate_plants.R")
+source("R/auxiliary/voxels.R")
 
 #'------------------------------------------------------------------------------
 #' Function
 
 postprocessing <- function(ordination, 
-                           beta,
+                           beta, 
                            fia_environment, 
-                           threads = 25, 
+                           sp_meta, 
+                           species, 
+                           fia_traits, 
+                           threads, 
                            out_path, 
-                           type, 
-                           text) {
+                           type) {
   
   # ----------------------------------------------------------------------------
   # Read ordination
@@ -84,6 +86,19 @@ postprocessing <- function(ordination,
   rm(list = c("sp_scores", "sp1"))
   
   # ----------------------------------------------------------------------------
+  # Get lineages scores
+
+  # Aggregate species
+  aggregation <- aggregate_batch(fread(sp_meta)[,c("Taxon2", "Family", "Genus", "mycorrhizal_association")], 
+                                 decostand(sp, "total"))
+  
+  # Get scores
+  sp_scores <- wascores(x = comm[, 2:4], aggregation, expand = TRUE)
+  sp_scores <- data.table(variable = rownames(sp_scores), sp_scores)
+  fwrite(sp_scores, paste0(out_path, "/MDS_lineages-wascores_", type, "_total.csv"))
+  rm(list = c("sp_scores", "aggregation"))
+  
+  # ----------------------------------------------------------------------------
   # Get traits scores
   
   # Read traits
@@ -125,6 +140,8 @@ postprocessing <- function(ordination,
   
   # Get beta distance
   beta_total <- readRDS(beta)$Btotal
+  match_values <- match.integer64(as.integer64(rownames(ord_new)), as.integer64(colnames(beta_total)))
+  beta_total <- beta_total[match_values, match_values]
   gc()
   
   # Make a frame
@@ -163,7 +180,6 @@ postprocessing <- function(ordination,
     
     # Test
     test <- sma(mds ~ beta, data = plot)
-    #test <- sma(spectral ~ Beta, data = plot)
     elevation <- test$coef[[1]][1,1]
     slope <- test$coef[[1]][2,1]
     
@@ -175,9 +191,9 @@ postprocessing <- function(ordination,
     
   }
   
-  sma <- mclapply(X = 1:nrow(ord_new), 
+  sma <- mclapply(X = 1:length(unique.integer64(frame$PLT_CN)), 
                   FUN = sma_application,
-                  plot_id = as.integer64(rownames(ord_new)),
+                  plot_id = unique.integer64(frame$PLT_CN),
                   frame = frame,
                   mc.cores = 5)
   
@@ -186,7 +202,7 @@ postprocessing <- function(ordination,
   #-----------------------------------------------------------------------------
   # Data for stressplot
   
-  vox <- voxels(frame, edge_length = c(0.001, 0.001, 0.001), threads = threads, obj.voxels = FALSE)
+  vox <- voxels(frame[,-1], edge_length = c(0.001, 0.001, 0.001), threads = threads, obj.voxels = FALSE)
   rm(list = c("frame"))
   gc()
   
@@ -203,42 +219,41 @@ postprocessing <- function(ordination,
 #'------------------------------------------------------------------------------
 #' @example
 
-root_path <- "/media/antonio/Work/MMDB"
-#root_path <- "/panfs/jay/groups/17/cavender/guzman/DESIS_mapping"
-# root_path <- "E:/backup/MMDB"
-threads <- 25
+# root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
+threads <- 99
 
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")
 ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_taxo_VOL_hellinger.rds")
 beta <- paste0(root_path, "/Diversity/01_beta/beta_taxo_VOL_decosand.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
+sp_meta <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_phylo_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "taxo"
-text <- "Taxonomic"
-postprocessing(ordination, beta, fia_environment, threads, out_path, type, text)
+postprocessing(ordination, beta, fia_environment, sp_meta, species, fia_traits, threads, out_path, type)
 
 # Phylogenetic
 ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_phylo_VOL_hellinger_norm.rds")
 beta <- paste0(root_path, "/Diversity/01_beta/beta_phylo_VOL_hellinger_norm.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
+sp_meta <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_phylo_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "phylo"
-text <- "Phylogenetic"
-postprocessing(ordination, beta, fia_environment, threads, out_path, type, text)
+postprocessing(ordination, beta, fia_environment, sp_meta, species, fia_traits, threads, out_path, type)
 
 # Functional
 ordination <- paste0(root_path, "/Diversity/02_LMDS/lmds_func_VOL_hellinger_norm.rds")
 beta <- paste0(root_path, "/Diversity/01_beta/beta_func_VOL_hellinger_norm.rds")
 fia_environment <- paste0(root_path, "/FIA/03_FIA-env/fia-env.csv")
+sp_meta <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 species <- paste0(root_path, "/Diversity/01_beta/master_matched_comm_func_VOL.rds")
 fia_traits <- paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv")
 out_path <- paste0(root_path, "/Diversity/02_LMDS")
 type <- "func"
-text <- "Functional"
-postprocessing(ordination, beta, fia_environment, threads, out_path, type, text)
+postprocessing(ordination, beta, fia_environment, sp_meta, species, fia_traits, threads, out_path, type)
 
