@@ -145,7 +145,7 @@ postprocessing <- function(ordination,
 
 root_path <- "/media/antonio/Work/MMDB"
 #root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
-threads <- 99
+threads <- 25
 
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")
