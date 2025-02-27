@@ -20,6 +20,7 @@ library(pbmcapply)
 #'------------------------------------------------------------------------------
 #' Source code
 
+setwd("/n/netscratch/jcavender_lab/Everyone/guzman/MMDB")
 source("R/auxiliary/voxels.R")
 
 #'------------------------------------------------------------------------------
@@ -40,9 +41,9 @@ goodness_of_fit <- function(ordination_distances,
   gc()
   
   # Make a frame
-  frame <- data.table(PLT_CN = as.integer64(rownames(lmds_distance[1:100, 1:100])),
-                      beta = c(beta_total[1:100, 1:100]), 
-                      mds = c(lmds_distance[1:100, 1:100]),
+  frame <- data.table(PLT_CN = as.integer64(rownames(lmds_distance)),
+                      beta = c(beta_total), 
+                      mds = c(lmds_distance),
                       z = 1)
   rm(list = c("beta_total", "lmds_distance"))
   gc()
@@ -90,7 +91,7 @@ goodness_of_fit <- function(ordination_distances,
                   FUN = sma_application,
                   plot_id = unique(frame$PLT_CN),
                   frame = frame,
-                  mc.cores = 5)
+                  mc.cores = threads)
   
   sma <- do.call(rbind.data.frame, sma)
   
@@ -114,9 +115,9 @@ goodness_of_fit <- function(ordination_distances,
 #'------------------------------------------------------------------------------
 #' @example
 
-root_path <- "/media/antonio/Work/MMDB"
-#root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
-threads <- 99
+#root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
+threads <- 25
 
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")

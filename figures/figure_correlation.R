@@ -19,15 +19,16 @@ library(ggstatsplot)
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
+root_path <- "E:/MMDB"
 
 #'------------------------------------------------------------------------------
 #' @Read, reshaped, and test correlation
 #-------------------------------------------------------------------------------
 
 # Read data
-taxo <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", "taxo", "_total.csv"))
-phylo <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", "phylo", "_total.csv"))
-func <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", "func", "_total.csv"))
+taxo <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_", "taxo", "_total.csv"))
+phylo <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_", "phylo", "_total.csv"))
+func <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_", "func", "_total.csv"))
 
 # Test order
 all.equal(taxo$PLT_CN, phylo$PLT_CN)
@@ -35,7 +36,7 @@ all.equal(taxo$PLT_CN, func$PLT_CN)
 all.equal(phylo$PLT_CN, func$PLT_CN)
 
 # Compute correlation
-axes <- cbind(taxo[, c(-1, -5)], phylo[, c(-1, -5)], func[, c(-1, -5)])
+axes <- cbind(taxo[, c(-1)], phylo[, c(-1)], func[, c(-1)])
 colnames(axes) <- c("T Axis 1", "T Axis 2", "T Axis 3",
                     "P Axis 1", "P Axis 2", "P Axis 3",
                     "F Axis 1", "F Axis 2", "F Axis 3")
@@ -47,16 +48,18 @@ axes <- axes[, 9:1]
 
 p <- ggstatsplot::ggcorrmat(
   data = axes,
-  type = "Pearson", # parametric for Pearson, nonparametric for Spearman's correlation
+  matrix.type = "upper",
+  type = "parametric",
+  #type = "Pearson", # parametric for Pearson, nonparametric for Spearman's correlation
   colors = c("darkred", "white", "steelblue"), # change default colors
-  cor.vars.names = c("Axis 1", "Axis 2", "Axis 3",
-                     "Axis 1", "Axis 2", "Axis 3",
-                     "Axis 1", "Axis 2", "Axis 3"),
-  output = "ci",
-  bf.prior = "ultrawide"
+  # cor.vars.names = c("Axis 1", "Axis 2", "Axis 3",
+  #                    "Axis 1", "Axis 2", "Axis 3",
+  #                    "Axis 1", "Axis 2", "Axis 3"),
+  # output = "ci",
+  # bf.prior = "ultrawide"
 )
 
-jpeg(paste0(root_path, "/figures/", "NMDS_correlation.jpeg"),
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "MDS_correlation.jpeg"),
     width = 210, 
     height = 150, 
     units = "mm", 
