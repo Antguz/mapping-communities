@@ -17,8 +17,8 @@ library(pbmcapply)
 #'------------------------------------------------------------------------------
 #' Source code
 
-#source("R/DESIS-transform.R")
-#sourceCpp("src/beta_predict_pls.cpp")
+# source("R/auxiliary/DESIS-transform.R")
+# sourceCpp("src/beta_predict_pls.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -94,8 +94,8 @@ apply_model <- function(X,
   
   # NIR mask
   NIR <- rast_spectra$`801.16`
-  NIR[NIR < 1000] <- 1
-  NIR[NIR >= 1000 & NIR <= 8000] <- 0
+  NIR[NIR < 3000] <- 1
+  NIR[NIR >= 3000 & NIR <= 8000] <- 0
   NIR[NIR > 8000] <- 1
   
   # Quality flags
@@ -114,7 +114,10 @@ apply_model <- function(X,
   mask_quality <- mask(mask_quality, NIR, maskvalues = 1)
   
   # Mask spectra
-  rast_spectra <- mask(rast_spectra, mask_quality, maskvalues = 0, inverse = TRUE)
+  rast_spectra <- mask(rast_spectra, 
+                       mask_quality, 
+                       maskvalues = 0, 
+                       inverse = TRUE)
   
   # As frame
   data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE, na.rm = TRUE))
@@ -152,9 +155,9 @@ apply_model <- function(X,
   
   # Final names
   scene_name <- strsplit(name_product, "DESIS-HSI-L2A-")[[1]][2]
-  tscene_name <- paste0("L3A/DESIS-L3A_", scene_name, "_NDMS-taxonomic-composition.tif")
-  pscene_name <- paste0("L3B/DESIS-L3B_", scene_name, "_NDMS-phylogenetic-composition.tif")
-  fscene_name <- paste0("L3C/DESIS-L3C_", scene_name, "_NDMS-functional-composition.tif")
+  tscene_name <- paste0("L3A/DESIS-L3A_", scene_name, "_MDS-taxonomic-composition.tif")
+  pscene_name <- paste0("L3B/DESIS-L3B_", scene_name, "_MDS-phylogenetic-composition.tif")
+  fscene_name <- paste0("L3C/DESIS-L3C_", scene_name, "_MDS-functional-composition.tif")
   
   ######## TAXONOMIC ########
   # As matrices

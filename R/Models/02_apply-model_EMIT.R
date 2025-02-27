@@ -59,8 +59,8 @@ apply_model <- function(X,
   
   # Mask for NIR
   NIR <- rast_spectra$`805.361755371093`
-  NIR[NIR < 0.1] <- 1
-  NIR[NIR >= 0.1 & NIR <= 0.8] <- 0
+  NIR[NIR < 0.3] <- 1
+  NIR[NIR >= 0.3 & NIR <= 0.8] <- 0
   NIR[NIR > 0.8] <- 1
   
   # Mask for NDVI
@@ -125,9 +125,9 @@ apply_model <- function(X,
   # Final names
   scene_name <- strsplit(scene[type == "RFL"]$scenes, "EMIT_L2A_RFL_")[[1]][2]
   scene_name <- strsplit(scene_name, "_reflectance")[[1]][1]
-  tscene_name <- paste0("L3A/EMIT-L3A_", scene_name, "_NDMS-taxonomic-composition.tif")
-  pscene_name <- paste0("L3B/EMIT-L3B_", scene_name, "_NDMS-phylogenetic-composition.tif")
-  fscene_name <- paste0("L3C/EMIT-L3C_", scene_name, "_NDMS-functional-composition.tif")
+  tscene_name <- paste0("L3A/EMIT-L3A_", scene_name, "_MDS-taxonomic-composition.tif")
+  pscene_name <- paste0("L3B/EMIT-L3B_", scene_name, "_MDS-phylogenetic-composition.tif")
+  fscene_name <- paste0("L3C/EMIT-L3C_", scene_name, "_MDS-functional-composition.tif")
   
   ######## TAXONOMIC ########
   # As matrices

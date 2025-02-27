@@ -36,7 +36,7 @@ arma::mat prob_coeff_prediction(arma::mat axes,
     //N models multiplication (m)
     arma::mat coef_multi = coefficients.each_row() % ipixel;
     arma::vec coef_sum = arma::sum(coef_multi, 1) + intercept;
-    arma::vec coef_prob = (1/(1+exp(coef_sum)));
+    arma::vec coef_prob = round((1/(1+exp(coef_sum)))*100000);
     
     // Storage result
     results.row(r) = trans(coef_prob);
@@ -120,8 +120,10 @@ List summary_prob(arma::mat axes,
       double pixel_error = (pixel_mean + pixel_z) - (pixel_mean - pixel_z);
       
       // Store results
-      summary_mean(p, t) = round(pixel_mean*10000);
-      summary_error(p, t) = round(pixel_error*100000000);
+      //summary_mean(p, t) = round(pixel_mean*10000);
+      //summary_error(p, t) = round(pixel_error*100000);
+      summary_mean(p, t) = round(pixel_mean/10);
+      summary_error(p, t) = round(pixel_error);
       
     } 
   }
