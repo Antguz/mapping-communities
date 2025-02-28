@@ -2,7 +2,7 @@
 #' @title Model occurrence probabilities of plant lineages based on NMDS
 #'------------------------------------------------------------------------------
 
-#' @description It models the probability of occurrence based on NMDS ordination 
+#' @description It models the probability of occurrence based on MDS ordination 
 #' and relative abundance.
 
 #'------------------------------------------------------------------------------
@@ -17,6 +17,7 @@ library(caret)
 library(Rcpp)
 library(vegan)
 library(ROSE)
+library(scales)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -53,7 +54,10 @@ ordination <- na.exclude(ordination)
 # FIA data for aggregation
 inventory <- readRDS(paste0(root_path, "/Diversity/01_beta/master_matched_comm_", type, "_VOL.rds"))
 sp_meta <- fread(paste0(root_path, "/FIA/02_FIA-traits/06_fia-traits.csv"))
-aggregation <- aggregate_batch(sp_meta[,c("Taxon2", "Family", "Genus", "mycorrhizal_association")], 
+aggregation <- aggregate_batch(sp_meta[,c("Taxon2", 
+                                          "Family", 
+                                          "Genus", 
+                                          "mycorrhizal_association")], 
                                decostand(inventory, "total"))
 match <- match.integer64(ordination$PLT_CN, aggregation$PLT_CN)
 aggregation <- aggregation[match, ]
@@ -92,6 +96,28 @@ if(type == "phylo") {
 data_split <- readRDS(paste0(out_path, "/split_lineages.rds"))
 
 #-------------------------------------------------------------------------------
+#' @Scale-ordination
+#-------------------------------------------------------------------------------
+
+# Keep a copy of PLT_CN
+PLT_CN <- ordination$PLT_CN
+
+# Scale independent variables
+ordination <- scale(ordination[,-1])
+
+# Get scaling values (new_data - mean_values) / sd_values
+mean_values <- attr(ordination, "scaled:center")  # Get the means
+sd_values <- attr(ordination, "scaled:scale")  # Get the standard deviations
+
+# Merge scaling values and export
+scaling_values <- rbind(mean_values, sd_values)
+fwrite(scaling_values, paste0(out_path, "/", type, "_scaling-occurrence.csv"))
+
+# Reconstruct independent variables
+ordination <- cbind(data.table(PLT_CN = PLT_CN), 
+                    as.data.table(ordination))
+
+#-------------------------------------------------------------------------------
 #' @Model
 #-------------------------------------------------------------------------------
 
@@ -105,3 +131,6 @@ model <- model_lineages(ordination = ordination,
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_model-occurrence.csv"))
 
+#-------------------------------------------------------------------------------
+#' @END
+#-------------------------------------------------------------------------------

@@ -24,6 +24,9 @@ data <- data[order(plant),]
 data$plant <- as.factor(data$plant)
 data$plant <- factor(data$plant, levels = rev(as.character(unique(data$plant))))
 data$perRMSE <- data$perRMSE*100
+data$BIAS <- data$BIAS/100000
+data$RMSE <- data$RMSE/100000
+data$intercept <- data$intercept/100000
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -164,7 +167,7 @@ p
 
 jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_FORTYP-models.jpeg"), 
      width = 210, 
-     height = 250, 
+     height = 240, 
      units = "mm", 
      res = 600, 
      bg = "white",

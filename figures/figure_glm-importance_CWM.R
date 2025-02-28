@@ -26,6 +26,11 @@ data <- data[, .SD, .SDcols = c(1:3, 23:33)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
 colnames(data)[4:6] <- c("Axis 1", "Axis 2", "Axis 3")
 
+# Estimate relative importance
+total <- rowSums(data[,.SD, .SDcols = 4:ncol(data)])
+data[, 4:ncol(data)] <- data[,.SD, .SDcols = 4:ncol(data)]/total
+
+# Change names
 data[plant == "HTq", name := "Tree height (max)"]
 data[plant == "SLq", name := "Slenderness"]
 data[plant == "WD", name := "Wood density"]
@@ -135,7 +140,7 @@ names <- c(rev(c("Tree height (max)",
                  "Shade tolerance index", 
                  "Drought tolerance index",
                  "Waterlogging tolerance index",
-                 "Leaf Mass Area*",
+                 "Leaf Mass Area",
                  "Nitrogen",
                  "Wood density")), "Average")
 summary_importance <- rbind(summary_importance, summary_all)
@@ -161,13 +166,14 @@ p <- ggplot(summary_importance) +
              colour = "grey",
              alpha = 0.75) +
   scale_size_continuous(" ",
-                        limits = c(0, 180),
-                        breaks = c(0, 60, 120, 180)) +
-  scale_fill_viridis(name = "Variable of Importance", 
+                        limits = c(0, 1),
+                        breaks = c(0, 0.5, 1)) +
+  scale_fill_viridis(name = "Relative of importance", 
                      option = "turbo",
-                     limits = c(0, 180),
-                     breaks = c(0, 60, 120, 180),
+                     limits = c(0, 1),
+                     breaks = c(0, 0.5, 1),
                      oob = scales::squish) +
+  guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
   xlab("Variables") + ylab("Community-weighted mean of plant traits") +
   th
 

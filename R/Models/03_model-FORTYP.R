@@ -17,6 +17,7 @@ library(caret)
 library(Rcpp)
 library(vegan)
 library(ROSE)
+library(scales)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
@@ -102,6 +103,28 @@ if(type == "taxo") {
 }
 
 data_split <- readRDS(paste0(out_path, "/split_fortyp.rds"))
+
+#-------------------------------------------------------------------------------
+#' @Scale-ordination
+#-------------------------------------------------------------------------------
+
+# Keep a copy of PLT_CN
+PLT_CN <- ordination$PLT_CN
+
+# Scale independent variables
+ordination <- scale(ordination[,-1])
+
+# Get scaling values (new_data - mean_values) / sd_values
+mean_values <- attr(ordination, "scaled:center")  # Get the means
+sd_values <- attr(ordination, "scaled:scale")  # Get the standard deviations
+
+# Merge scaling values and export
+scaling_values <- rbind(mean_values, sd_values)
+fwrite(scaling_values, paste0(out_path, "/", type, "_scaling-FORTYP.csv"))
+
+# Reconstruct independent variables
+ordination <- cbind(data.table(PLT_CN = PLT_CN), 
+                    as.data.table(ordination))
 
 #-------------------------------------------------------------------------------
 #' @Model

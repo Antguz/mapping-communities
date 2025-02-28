@@ -22,6 +22,9 @@ root_path <- "/media/antonio/Work/MMDB"
 data <- fread(paste0(root_path, "/Models/04_occurence_performance/performance_summary_lineages.csv"))
 data <- data[order(plant),]
 data$perRMSE <- data$perRMSE*100
+data$BIAS <- data$BIAS/100000
+data$RMSE <- data$RMSE/100000
+data$intercept <- data$intercept/100000
 
 # Define levels
 data[plant == "AM", plant := "AM"]
@@ -176,7 +179,7 @@ p <- ggplot(summary_performance) +
   scale_colour_manual("Dataset", values = c("#8c510a", "#01665e", "#8c510a", "#01665e")) +
   scale_fill_manual("Dataset", values = c("#8c510a", "#01665e", "transparent", "transparent")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dotted", "dashed", "dashed")) +
-  xlab("Values") + ylab("Plant group") +
+  xlab("Values") + ylab("Plant lineages") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.15, 0.15), breaks = c(-0.13, 0.0, 0.13)),
@@ -187,8 +190,8 @@ p <- ggplot(summary_performance) +
 p 
 
 jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_occurrence-models.jpeg"), 
-     width = 210, 
-     height = 240, 
+     width = 220, 
+     height = 200, 
      units = "mm", 
      res = 600, 
      bg = "white",

@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_fortyp_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 type <- "taxo"
 
 # Get glm coefficients
@@ -46,6 +46,10 @@ coefficients <- coefficients[, .SD, .SDcols = c(1, 15:26)]
 # Get environmental variables
 environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
 
+# Scaling coefficients
+scaling <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
+                        type, "_scaling-FORTYP.csv"))
+
 #### Taxonomic training #### 
 dataset <- "training"
 
@@ -54,7 +58,10 @@ predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict and export
-taxo_perf <- performance_batch(predicted, coefficients, environment)
+taxo_perf <- performance_batch(predicted, 
+                               coefficients, 
+                               environment,
+                               scaling)
 saveRDS(taxo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 
@@ -65,7 +72,10 @@ dataset <- "testing"
 predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
-taxo_perf <- performance_batch(predicted, coefficients, environment)
+taxo_perf <- performance_batch(predicted, 
+                               coefficients, 
+                               environment,
+                               scaling)
 saveRDS(taxo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 

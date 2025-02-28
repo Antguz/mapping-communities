@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT"
 type <- "func"
 
 # Get glm coefficients
@@ -47,6 +47,10 @@ coefficients <- coefficients[, .SD, .SDcols = c(1, 11:22)]
 # Get environmental variables
 environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
 
+# Scaling coefficients
+scaling <- fread(paste0(root_path, "/Models/03_model_CWM/", 
+                        type, "_scaling-CWM.csv"))
+
 # Training
 dataset <- "training"
 
@@ -55,7 +59,10 @@ predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict CWM based on coefficients
-func_perf <- performance_batch(predicted, coefficients, environment)
+func_perf <- performance_batch(predicted, 
+                               coefficients, 
+                               environment,
+                               scaling)
 saveRDS(func_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 
@@ -67,7 +74,10 @@ predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict CWM based on coefficients
-func_perf <- performance_batch(predicted, coefficients, environment)
+func_perf <- performance_batch(predicted, 
+                               coefficients, 
+                               environment,
+                               scaling)
 saveRDS(func_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_CWM.rds"))
 

@@ -3,7 +3,7 @@
 #'------------------------------------------------------------------------------
 
 #' @description It evaluate the performance of models based on the probability 
-#' predicted from NDMS axes using spaceborne spectroscopy.
+#' predicted from MDS axes using spaceborne spectroscopy.
 
 #'------------------------------------------------------------------------------
 #' @Libraries
@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_occurence_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT"
 type <- "phylo"
 
 # Get glm coefficients
@@ -47,6 +47,10 @@ coefficients <- coefficients[, .SD, .SDcols = c(1, 15:26)]
 # Get environmental variables
 environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
 
+# Scaling coefficients
+scaling <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
+                        type, "_scaling-occurrence.csv"))
+
 #### Phylogenetic training ####
 dataset <- "training"
 
@@ -55,7 +59,10 @@ predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict probabilities based on coefficients
-phylo_perf <- performance_batch(predicted, coefficients, environment)
+phylo_perf <- performance_batch(predicted, 
+                                coefficients, 
+                                environment,
+                                scaling)
 saveRDS(phylo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 
@@ -67,7 +74,10 @@ predicted <- fread(paste0(root_path, "/Models/01_model_beta/", sensor, "/",
                           sensor, "_", type, "_predicted_", dataset, ".csv"))
 
 # Predict probabilities based on coefficients
-phylo_perf <- performance_batch(predicted, coefficients, environment)
+phylo_perf <- performance_batch(predicted, 
+                                coefficients, 
+                                environment,
+                                scaling)
 saveRDS(phylo_perf, 
         paste0(out_path, "/", sensor, "_", type, "_", dataset, "_probabilities.rds"))
 

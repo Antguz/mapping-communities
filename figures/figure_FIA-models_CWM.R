@@ -177,7 +177,7 @@ p <- ggplot(summary_performance) +
   scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99")) +
   scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dashed")) +
-  xlab("Values") + ylab("Community-weighted mean plant traits") +
+  xlab("Values") + ylab("Community-weighted mean of plant traits") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.05, 0.05), breaks = c(-0.04, 0, 0.04)),
@@ -197,7 +197,6 @@ jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_CWM.jpg"),
      pointsize = 14)
 p
 dev.off()
-
 
 png(paste0(root_path, "/figures/Manuscript_white/FIA-models_CWM.png"), 
     width = 210, 

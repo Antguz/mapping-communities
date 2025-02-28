@@ -177,7 +177,7 @@ p <- ggplot(summary_performance) +
 p
 
 jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_lineages.jpg"), 
-    width = 210, 
+    width = 220, 
     height = 200, 
     units = "mm", 
     res = 600, 

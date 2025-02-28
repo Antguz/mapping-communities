@@ -26,6 +26,10 @@ data <- data[, .SD, .SDcols = c(1:3, 27:37)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
 colnames(data)[4:6] <- c("Axis 1", "Axis 2", "Axis 3")
 
+# Estimate relative importance
+total <- rowSums(data[,.SD, .SDcols = 4:ncol(data)])
+data[, 4:ncol(data)] <- data[,.SD, .SDcols = 4:ncol(data)]/total
+
 #-------------------------------------------------------------------------------
 # Plot details
 
@@ -145,13 +149,14 @@ p <- ggplot(summary_importance) +
              colour = "grey",
              alpha = 0.75) +
   scale_size_continuous(" ",
-                    limits = c(0, 61),
-                    breaks = c(0, 20, 40, 60)) +
-  scale_fill_viridis(name = "Variable of Importance", 
+                    limits = c(0, 1),
+                    breaks = c(0, 0.5, 1)) +
+  scale_fill_viridis(name = "Relative importance", 
                      option = "turbo",
-                     limits = c(0, 61),
-                     breaks = c(0, 20, 40, 60),
+                     limits = c(0, 1),
+                     breaks = c(0, 0.5, 1),
                      oob = scales::squish) +
+  guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
   xlab("Variables") + ylab("Forest type") +
   th
 

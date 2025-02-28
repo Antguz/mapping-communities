@@ -3,9 +3,9 @@
 #-------------------------------------------------------------------------------
 
 #' @param predicted Axes predictions from spaceborne spectroscopy
-#' @param coefficients Coefficients (and intercept) value from the CWM models
+#' @param coefficients Coefficients (and intercept) value from the forest type models
 
-performance_batch <- function(predicted, coefficients, environment) {
+performance_batch <- function(predicted, coefficients, environment, scaling) {
   
   # Reshape predicted
   # Select columns
@@ -21,6 +21,10 @@ performance_batch <- function(predicted, coefficients, environment) {
   obs <- na.exclude(obs)
   pred <- merge(pred, environment, by = "PLT_CN", all.x = TRUE, all.y = FALSE)
   pred <- na.exclude(pred)
+  
+  # Scale values
+  obs[, 2:ncol(obs)] <- (obs[, 2:ncol(obs)] - as.list(as.numeric(scaling[1]))) / as.list(as.numeric(scaling[2]))
+  pred[, 2:ncol(pred)] <- (pred[, 2:ncol(pred)] - as.list(as.numeric(scaling[1]))) / as.list(as.numeric(scaling[2]))
   
   # Reshape coefficients
   models <- unique(coefficients$forty)

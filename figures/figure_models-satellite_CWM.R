@@ -174,7 +174,7 @@ p <- ggplot(summary_performance) +
   scale_colour_manual("Dataset", values = c("#8c510a", "#01665e", "#8c510a", "#01665e")) +
   scale_fill_manual("Dataset", values = c("#8c510a", "#01665e", "transparent", "transparent")) +
   scale_linetype_manual("Dataset", values = c("dotted", "dotted", "dashed", "dashed")) +
-  xlab("Values") + ylab("Community-weighted mean plant traits") +
+  xlab("Values") + ylab("Community-weighted mean of plant traits") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.04, 0.04), breaks = c(-0.03, 0, 0.03)),
@@ -194,7 +194,6 @@ jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_CWM-models.jpg"),
      pointsize = 14)
 p
 dev.off()
-
 
 png(paste0(root_path, "/figures/Manuscript_white/satellite_CWM-models.png"), 
     width = 210, 
