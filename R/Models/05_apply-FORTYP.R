@@ -34,9 +34,10 @@ sourceCpp("src/probability_rcpp.cpp")
 apply_model_occurence <- function(X,
                                   sensor,
                                   taxonomic_composition, 
+                                  coefficients, 
                                   climatic,
                                   topographic,
-                                  coefficients, 
+                                  scaling,
                                   output_path) {
   
   # ----------------------------------------------------------------------------
@@ -89,6 +90,24 @@ apply_model_occurence <- function(X,
   rm(list = c('vector', 'points', 'climatic_extract', 'topographic_extract'))
   
   # ----------------------------------------------------------------------------
+  # Check for potential NA
+  
+  # Replace potential NaN with NA
+  ordination[, (names(ordination)) := lapply(.SD, function(x) replace(x, is.nan(x), NA))]
+  
+  # Check for potential NA
+  NA_row <- apply(ordination, 1, anyNA)
+  
+  # Replace NA for zeros
+  ordination[, (names(ordination)) := lapply(.SD, function(x) fifelse(is.na(x), 0, x))]
+  
+  # ----------------------------------------------------------------------------
+  # Scaling of values
+  
+  # Scale values
+  ordination <- (ordination - as.list(as.numeric(scaling[1]))) / as.list(as.numeric(scaling[2]))
+  
+  # ----------------------------------------------------------------------------
   # Reshape coefficients
   models <- unique(coefficients$forty)
   coef_array <- array(dim = c(100, 11, length(models)))
@@ -108,6 +127,16 @@ apply_model_occurence <- function(X,
                                       coef_array,
                                       intercept_mat)
   rm(list = c('ordination'))
+  
+  #---------------------------------------------------------
+  # Replace NA
+  
+  if(length(NA_row[NA_row == TRUE]) != 0) {
+    
+    plant_probabilities[[1]][NA_row == TRUE,] <- NA
+    plant_probabilities[[2]][NA_row == TRUE,] <- NA
+    
+  }
   
   #--------------------------------------------------------
   #Get a scene frame
@@ -181,9 +210,6 @@ coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/",
 coefficients <- coefficients[dataset == "training", 
                              .SD,
                              .SDcols = c(1, 15:26)]
-                             
-# select <- c("Sugar maple / beech / yellow birch", "Red spruce / balsam fir", "Red spruce", "Red maple / upland", "Paper birch", "Northern red oak", "Eastern white pine / eastern hemlock", "Eastern hemlock", "Black spruce", "Balsam fir")
-# # coefficients <- coefficients[forty %in% select, ]
 
 # Read climatic and topographic data
 MAT <- rast(paste0(root_path, "/env/wc2.1_30s_bio/wc2.1_30s_bio_1.tif"))
@@ -198,13 +224,16 @@ rm(list = c("MAT", "TS", "TAR", "MAP", "PS"))
 # Read DEM information
 DEM <- rast(paste0(root_path, "/env/gt30h1kna/na_dem.bil"))
 DEM[DEM == -9999] <- NA
+DEM[DEM >= 10000] <- NA
 names(DEM) <- "DEM"
 
 # Read HYDRO1k information
 slope <- rast(paste0(root_path, "/env/gt30h1kna/na_slope.bil"))
 slope[slope == -9999] <- NA
+slope[slope >= 10000] <- NA
 CTI <- rast(paste0(root_path, "/env/gt30h1kna/na_cti.bil"))
 CTI[CTI == -9999] <- NA
+CTI[CTI >= 10000] <- NA
 HYDRO1k <- c(slope, CTI)
 names(HYDRO1k) <- c("SL", "CTI")
 crs(HYDRO1k) <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
@@ -212,6 +241,10 @@ crs(HYDRO1k) <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=63
 # Merge
 topographic <- c(DEM, HYDRO1k)
 rm(list = c("DEM", "CTI", "HYDRO1k"))
+
+# Scaling coefficients
+scaling <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
+                        type, "_scaling-FORTYP.csv"))
 
 # Define inputs and outputs folder
 folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/L3A")
@@ -231,6 +264,7 @@ run <- pbmclapply(X = 1:length(taxonomic_composition),
                   climatic = climatic,
                   topographic = topographic,
                   coefficients = coefficients, 
+                  scaling = scaling,
                   output_path = output_path,
                   mc.preschedule = TRUE, 
                   mc.set.seed = FALSE,

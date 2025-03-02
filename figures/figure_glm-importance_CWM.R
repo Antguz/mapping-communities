@@ -165,7 +165,9 @@ p <- ggplot(summary_importance, aes(x = mean,
   scale_fill_viridis(name = "Relative of importance", 
                      option = "mako",
                      direction = -1,
-                     discrete = TRUE) +
+                     discrete = TRUE,
+                     breaks = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
+                                "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")) +
   theme(legend.position="top", legend.box = "horizontal") +
   guides(fill = guide_legend(nrow = 2)) +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +

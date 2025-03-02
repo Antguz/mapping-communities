@@ -33,9 +33,10 @@ sourceCpp("src/probability_rcpp.cpp")
 apply_model_occurence <- function(X,
                                   sensor,
                                   phylogenetic_composition, 
+                                  coefficients, 
                                   climatic,
                                   topographic,
-                                  coefficients, 
+                                  scaling,
                                   output_path) {
   
   # ----------------------------------------------------------------------------
@@ -88,6 +89,24 @@ apply_model_occurence <- function(X,
   rm(list = c('vector', 'points', 'climatic_extract', 'topographic_extract'))
   
   # ----------------------------------------------------------------------------
+  # Check for potential NA
+  
+  # Replace potential NaN with NA
+  ordination[, (names(ordination)) := lapply(.SD, function(x) replace(x, is.nan(x), NA))]
+  
+  # Check for potential NA
+  NA_row <- apply(ordination, 1, anyNA)
+  
+  # Replace NA for zeros
+  ordination[, (names(ordination)) := lapply(.SD, function(x) fifelse(is.na(x), 0, x))]
+  
+  # ----------------------------------------------------------------------------
+  # Scaling of values
+  
+  # Scale values
+  ordination <- (ordination - as.list(as.numeric(scaling[1]))) / as.list(as.numeric(scaling[2]))
+  
+  # ----------------------------------------------------------------------------
   # Reshape coefficients
   models <- unique(coefficients$plant)
   coef_array <- array(dim = c(100, 11, length(models)))
@@ -107,6 +126,16 @@ apply_model_occurence <- function(X,
                                       coef_array,
                                       intercept_mat)
   rm(list = c('ordination'))
+  
+  #---------------------------------------------------------
+  # Replace NA
+  
+  if(length(NA_row[NA_row == TRUE]) != 0) {
+    
+    plant_probabilities[[1]][NA_row == TRUE,] <- NA
+    plant_probabilities[[2]][NA_row == TRUE,] <- NA
+    
+  }
   
   #--------------------------------------------------------
   #Get a scene frame
@@ -208,6 +237,10 @@ crs(HYDRO1k) <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=63
 topographic <- c(DEM, HYDRO1k)
 rm(list = c("DEM", "CTI", "HYDRO1k"))
 
+# Scaling coefficients
+scaling <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
+                        type, "_scaling-occurrence.csv"))
+
 # Define inputs and outputs folder
 folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/L3B")
 output_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L4/Occurrence")
@@ -226,6 +259,7 @@ run <- pbmclapply(X = 1:length(phylogenetic_composition),
                   coefficients = coefficients, 
                   climatic = climatic,
                   topographic = topographic,
+                  scaling = scaling,
                   output_path = output_path,
                   mc.preschedule = TRUE, 
                   mc.set.seed = FALSE,
