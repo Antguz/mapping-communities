@@ -25,6 +25,7 @@ data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_model-occurre
 data <- data[, .SD, .SDcols = c(1:3, 27:37)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
 colnames(data)[4:6] <- c("Axis 1", "Axis 2", "Axis 3")
+colnames(data)[10] <- "AP"
 
 # Estimate relative importance
 total <- rowSums(data[,.SD, .SDcols = 4:ncol(data)])
@@ -39,7 +40,7 @@ th_black <- theme_bw() +
         legend.background = element_rect(fill= "transparent"),
         panel.background = element_rect(fill= "transparent"),
         rect = element_rect(fill = "transparent"),
-        plot.margin = unit(c(0.5, 2, 0.5, 0.5), "mm"),
+        plot.margin = unit(c(0.5, 4, 0.5, 0.5), "mm"),
         legend.position= c("top"), 
         strip.background = element_rect(color="black", 
                                         fill="black", 
@@ -60,7 +61,7 @@ th_trans <- dark_theme_bw(base_size = 14) +
         plot.background = element_rect(colour = "transparent",
                                        fill = "transparent",
                                        linewidth=0),
-        plot.margin = unit(c(0.5, 2, 0.5, 0.5), "mm"),
+        plot.margin = unit(c(0.5, 4, 0.5, 0.5), "mm"),
         strip.background = element_rect(color="white", 
                                         fill="white", 
                                         linewidth=1.5, 
@@ -82,7 +83,7 @@ text <- "black"
 summary_importance <- melt(data, 
                            id.vars = c("dataset", "plant"),
                            measure.vars = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                            "TS", "TAR", "MAP", "PS", "DEM", "SL","CTI"),
+                                            "TS", "TAR", "AP", "PS", "DEM", "SL","CTI"),
                            variable.name = "metric",
                            value.name = "importance")
 
@@ -90,8 +91,8 @@ summary_importance <- summary_importance[dataset == "training"]
 
 summary_importance$metric <- as.factor(summary_importance$metric)
 summary_importance$metric <- factor(summary_importance$metric, 
-                                    levels = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                               "TS", "TAR", "MAP", "PS", "DEM", "SL","CTI"))
+                                    levels = rev(c("Axis 1", "Axis 2", "Axis 3", "MAT", 
+                                                   "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")))
 
 # Confidence
 get_ci <- function(x, type, confidence = 0.95) {
@@ -148,28 +149,20 @@ rects <- data.frame(
   xmax = Inf
 )
 
-p <- ggplot(summary_importance) +
-  geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-            fill = "gray", alpha = 0.2, inherit.aes = FALSE) +
-  geom_point(aes(x = metric, 
-                 y = plant,
-                 size = mean,
-                 fill = mean),
-             shape = 21,
-             colour = "grey",
-             alpha = 0.75) +
-  scale_size_continuous(" ",
-                        limits = c(0, 1),
-                        breaks = c(0, 0.5, 1)) +
-  scale_fill_viridis(name = "Relative importance", 
-                     option = "turbo",
-                     limits = c(0, 1),
-                     breaks = c(0, 0.5, 1),
-                     oob = scales::squish) +
-  guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
-  xlab("Variables") + ylab("Plant lineages") +
+p <- ggplot(summary_importance, aes(x = mean, 
+                                    y = plant,
+                                    fill = metric)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_vline(xintercept = 0.5, colour = "grey", linetype = "dotted") +
+  scale_fill_viridis(name = "Relative of importance", 
+                     option = "mako",
+                     direction = -1,
+                     discrete = TRUE) +
+  theme(legend.position="top", legend.box = "horizontal") +
+  guides(fill = guide_legend(nrow = 2)) +
+  scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  xlab("Relative of importance") + ylab("Plant lineages") +
   th
-
 p
 
 
