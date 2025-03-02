@@ -35,9 +35,9 @@ root_path <- "/media/antonio/Work/MMDB"
 #' Read NMDS axes
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func_total.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_func_total.csv"))
 
 #-------------------------------------------------------------------------------
 # Occurrence models
@@ -289,7 +289,7 @@ application <- function(X,
 }
 
 # Export in parallel
-complete <- pbmclapply(X = 1:30, #length(theta), 
+complete <- pbmclapply(X = 1:length(theta), 
                        FUN = application, 
                        taxo_comm = taxo_comm, 
                        phylo_comm = phylo_comm, 
@@ -299,7 +299,7 @@ complete <- pbmclapply(X = 1:30, #length(theta),
                        h_adjust_axis1 = h_adjust_axis1,
                        h_adjust_axis2 = h_adjust_axis2,
                        th = th,
-                       export_folder = getwd(),
+                       export_folder = "/media/antonio/Work/MMDB/figures/video/NDMS",
                        mc.preschedule = TRUE, 
                        mc.set.seed = FALSE,
                        mc.silent = FALSE, 

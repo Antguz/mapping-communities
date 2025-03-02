@@ -22,7 +22,7 @@ root_path <- "/media/antonio/Work/MMDB"
 
 # DESIS
 sensor <- "DESIS"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor, "/", sensor, "_")
 DESIS_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
 DESIS_taxo_coefficients$type <- "Taxonomic"
 DESIS_phylo_coefficients <- fread(paste0(out_path, "phylo", "_coefficients.csv"))
@@ -44,7 +44,7 @@ DESIS$Coefficient <- DESIS$Coefficient*10000
 
 # EMIT
 sensor <- "EMIT"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor, "/", sensor, "_")
 EMIT_taxo_coefficients <- fread(paste0(out_path, "taxo", "_coefficients.csv"))
 EMIT_taxo_coefficients$type <- "Taxonomic"
 EMIT_phylo_coefficients <- fread(paste0(out_path, "phylo", "_coefficients.csv"))
@@ -159,8 +159,8 @@ DESIS_plot <- ggplot(coef_summary[sensor == "DESIS",]) +
                 y = Coefficients, 
                 colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 910), ylim = c(-3, 3), expand = FALSE) +
-  scale_y_continuous(breaks = c(-2, 0, 2)) +
+  coord_cartesian(xlim = c(440, 910), ylim = c(-4, 4), expand = FALSE) +
+  scale_y_continuous(breaks = c(-3, 0, 3)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab(" ") +
@@ -181,8 +181,8 @@ EMIT_plot <- ggplot(coef_summary[sensor == "EMIT",]) +
                 y = Coefficients, 
                 colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 2428), ylim = c(-11, 11), expand = FALSE) +
-  scale_y_continuous(breaks = c(-10, 0, 10)) +
+  coord_cartesian(xlim = c(440, 2428), ylim = c(-35, 35), expand = FALSE) +
+  scale_y_continuous(breaks = c(-20, 0, 20)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab(" ") +
@@ -195,7 +195,7 @@ EMIT_plot
 
 # Export JPEG
 
-jpeg(paste0(root_path, "/figures/PLSR_coefficients.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/PLSR_coefficients.jpeg"), 
      width = 220, 
      height = 110, 
      pointsize = 12, 
@@ -212,7 +212,7 @@ dev.off()
 
 # Export PNG
 
-png(paste0(root_path, "/figures/PLSR_coefficients.png"), 
+png(paste0(root_path, "/figures/Manuscript_white/PLSR_coefficients.png"), 
      width = 220, 
      height = 110, 
      pointsize = 12, 

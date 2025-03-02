@@ -22,7 +22,7 @@ root_path <- "/media/antonio/Work/MMDB"
 
 # DESIS
 sensor <- "DESIS"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor, "/", sensor, "_")
 DESIS_taxo_vip <- fread(paste0(out_path, "taxo", "_vip.csv"))
 DESIS_taxo_vip$type <- "Taxonomic"
 DESIS_phylo_vip <- fread(paste0(out_path, "phylo", "_vip.csv"))
@@ -43,7 +43,7 @@ DESIS$wavelength <- as.numeric(as.character(DESIS$wavelength))
 
 # EMIT
 sensor <- "EMIT"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor, "/", sensor, "_")
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor, "/", sensor, "_")
 EMIT_taxo_vip <- fread(paste0(out_path, "taxo", "_vip.csv"))
 EMIT_taxo_vip$type <- "Taxonomic"
 EMIT_phylo_vip <- fread(paste0(out_path, "phylo", "_vip.csv"))
@@ -159,7 +159,8 @@ plot <- ggplot(vip_summary) +
                 y = VIP, 
                 colour = sensor), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 2430), ylim = c(0, 4), expand = FALSE) +
+  geom_hline(yintercept = 1, colour = "grey", linetype = "dotted") + 
+  coord_cartesian(xlim = c(440, 2430), ylim = c(0, 3.5), expand = FALSE) +
   scale_y_continuous(breaks = c(0, 1.5, 3)) +
   scale_colour_manual(name = "Sensor", values = col) +
   scale_fill_manual(name = "Sensor", values = col) +
@@ -173,7 +174,7 @@ plot
 
 # Export JPEG
 
-jpeg(paste0(root_path, "/figures/PLSR_vip.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/PLSR_vip.jpeg"), 
      width = 210, 
      height = 110, 
      pointsize = 12, 
@@ -188,7 +189,7 @@ dev.off()
 
 # Export PNG
 
-png(paste0(root_path, "/figures/PLSR_vip_transp.png"), 
+png(paste0(root_path, "/figures/Manuscript_white/PLSR_vip.png"), 
     width = 210, 
     height = 110, 
     pointsize = 12, 

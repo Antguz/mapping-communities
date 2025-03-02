@@ -25,9 +25,9 @@ root_path <- "/media/antonio/Work/MMDB"
 #'------------------------------------------------------------------------------
 #' Read information
 
-taxo_to_export <- readRDS(paste0(root_path, "/04_NMDS/data_stressplot_", "taxo", ".rds"))
-phylo_to_export <- readRDS(paste0(root_path, "/04_NMDS/data_stressplot_", "phylo", ".rds"))
-func_to_export <- readRDS(paste0(root_path, "/04_NMDS/data_stressplot_", "func", ".rds"))
+taxo_to_export <- readRDS(paste0(root_path, "/Diversity/02_NMDS/data_stressplot_", "taxo", ".rds"))
+phylo_to_export <- readRDS(paste0(root_path, "/Diversity/02_NMDS/data_stressplot_", "phylo", ".rds"))
+func_to_export <- readRDS(paste0(root_path, "/Diversity/02_NMDS/data_stressplot_", "func", ".rds"))
 
 #-------------------------------------------------------------------------------
 # Plot visuals
@@ -66,7 +66,7 @@ th_trans <- dark_theme_bw(base_size = 11) +
 th <- th_black
 col <- "grey20"
 text <- "black"
-line_col <- "red"
+line_col <- "black"
 
 th <- th_trans
 col <- "white"
@@ -216,13 +216,13 @@ panels <- ggarrange(p_taxo, p_phylo, p_func,
 
 
 # Export
-jpeg(paste0(root_path, "/figures/", "figure_stressplot.jpeg"), width = 210, height = 80, units = "mm", res = 600, bg = "white")
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "figure_stressplot.jpeg"), width = 210, height = 80, units = "mm", res = 600, bg = "white")
 
 panels
 
 dev.off()
 
-png(paste0(root_path, "/figures/", "figure_stressplot_transp.png"), width = 210, height = 80, units = "mm", res = 600, bg = "transparent")
+png(paste0(root_path, "/figures/Manuscript_white/", "figure_stressplot.png"), width = 210, height = 80, units = "mm", res = 600, bg = "transparent")
 
 panels
 

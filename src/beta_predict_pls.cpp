@@ -86,12 +86,12 @@ arma::mat beta_predict_pls(arma::mat spectra,
     double amplitude_Axis3 = (mean_Axis3 + z_Axis3) - (mean_Axis3 - z_Axis3);
     
     //Fill results
-    result(i, 0) = round(mean_Axis1*1000);
-    result(i, 1) = round(mean_Axis2*1000);
-    result(i, 2) = round(mean_Axis3*1000);
-    result(i, 3) = round(amplitude_Axis1*1000);
-    result(i, 4) = round(amplitude_Axis2*1000);
-    result(i, 5) = round(amplitude_Axis3*1000);
+    result(i, 0) = round(mean_Axis1*10000);
+    result(i, 1) = round(mean_Axis2*10000);
+    result(i, 2) = round(mean_Axis3*10000);
+    result(i, 3) = round(amplitude_Axis1*1000000);
+    result(i, 4) = round(amplitude_Axis2*1000000);
+    result(i, 5) = round(amplitude_Axis3*1000000);
     result(i, 6) = result(i, 3) + result(i, 4) + result(i, 5);
 
   }

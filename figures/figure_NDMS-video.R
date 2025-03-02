@@ -16,20 +16,19 @@ library(ggpubr)
 #'------------------------------------------------------------------------------
 #' Read information
 
-# Folder
 root_path <- "/media/antonio/Work/MMDB"
 
-
-taxo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/04_NMDS/NMDS_scores_comm_func.csv"))
+# Communities
+taxo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_func_total.csv"))
 
 #'------------------------------------------------------------------------------
 #' @Plot-functions
 #-------------------------------------------------------------------------------
 
 # RGB color
-RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
+RGB <- function(X, Y, Z, min_range = -0.50, max_range = 0.50) {
   
   if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
     
@@ -74,20 +73,20 @@ RGB <- function(X, Y, Z, min_range = -0.55, max_range = 0.55) {
 taxo_comm$color <- RGB(taxo_comm$Axis1, 
                        taxo_comm$Axis2, 
                        taxo_comm$Axis3, 
-                       min_range = -0.55, 
-                       max_range = 0.55)
+                       min_range = -0.50, 
+                       max_range = 0.50)
 
 phylo_comm$color <- RGB(phylo_comm$Axis1, 
                         phylo_comm$Axis2, 
                         phylo_comm$Axis3, 
-                        min_range = -0.55, 
-                        max_range = 0.55)
+                        min_range = -0.50, 
+                        max_range = 0.50)
 
 func_comm$color <- RGB(func_comm$Axis1, 
                        func_comm$Axis2, 
                        func_comm$Axis3, 
-                       min_range = -0.55, 
-                       max_range = 0.55)
+                       min_range = -0.50, 
+                       max_range = 0.50)
 
 #'------------------------------------------------------------------------------
 #' @Plot-communities

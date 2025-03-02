@@ -1,47 +1,48 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include <Rcpp.h>
-#include <cmath>
-
-
+#define ARMA_64BIT_WORD 1
+#include <RcppArmadillo.h>
+#include <progress.hpp>
+#include <progress_bar.hpp>
+// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
+// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::depends(RcppProgress)]]
+using namespace arma;
 
-using namespace Rcpp;
-
-// Function to calculate Euclidean distance between two points
-inline double euclidean_distance(const NumericVector& p1, const NumericVector& p2) {
-  double sum = 0.0;
-  int n = p1.size();
-  for (int i = 0; i < n; ++i) {
-    double diff = p1[i] - p2[i];
-    sum += diff * diff;
-  }
-  return sqrt(sum);
-}
-
-// Function to calculate Euclidean distance matrix using OpenMP for parallelization
 // [[Rcpp::export]]
-NumericMatrix euclidean_distance_matrix(const NumericMatrix& mat, int threads = 1) {
-  int n = mat.nrow();
-  NumericMatrix dist_mat(n, n);
+arma::mat euclidean_distance(const arma::mat X, 
+                             int n_threads,
+                             bool progress = true) {
+  
+  arma::uword n = X.n_rows;
+  arma::mat dist_matrix(n, n, arma::fill::zeros);
+  
+  //create progress
+  Progress p(n*n, progress);
   
   // Parallel for speed
 #ifdef _OPENMP
-  if ( threads > 0 ) {
-    omp_set_num_threads( threads );
-  }
+  if ( n_threads > 0 ) {
+    omp_set_num_threads( n_threads );
+  }  
 #endif
   
-  // Parallelizing the computation of the distance matrix
-#pragma omp parallel for
-  for (int i = 0; i < n; ++i) {
-    for (int j = i; j < n; ++j) {
-      double dist = euclidean_distance(mat.row(i), mat.row(j));
-      dist_mat(i, j) = dist;
-      dist_mat(j, i) = dist; // Symmetric matrix
-    }
+  //Loop for distance
+#pragma omp parallel for collapse(2) 
+  for (arma::uword i = 0; i < n; i++) {
+    for (arma::uword j = 0; j < n; j++) {
+      
+      if (! Progress::check_abort() ) {
+        p.increment(); // update progress
+      } 
+      
+      double dist = arma::norm(X.row(i) - X.row(j), 2);
+      dist_matrix(i, j) = round(dist*10000);
+      
+    }  
   }
-
-  return dist_mat;
-}
+  
+  return dist_matrix;
+}  
