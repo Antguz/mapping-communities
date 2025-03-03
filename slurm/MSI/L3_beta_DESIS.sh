@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p msismall
-#SBATCH --job-name=beta-predictions
+#SBATCH --job-name=beta-DESIS
 #SBATCH --nodes=1
 #SBATCH --ntasks=128
 #SBATCH --mem=499g

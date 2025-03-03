@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p msismall
-#SBATCH --job-name=beta-predictions
+#SBATCH --job-name=FORTYP
 #SBATCH --nodes=1
 #SBATCH --ntasks=128
 #SBATCH --mem=499g
@@ -14,4 +14,5 @@ module load geos/3.11.2-gcc-8.2.0-km5gytt
 module load proj/7.2.1-gcc-8.2.0-6kfkugi
 module load R/4.2.2-gcc-8.2.0-vp7tyde
 Rscript --vanilla /home/cavender/guzman/DESIS_mapping/11_apply-FORTYP.R
+
 
