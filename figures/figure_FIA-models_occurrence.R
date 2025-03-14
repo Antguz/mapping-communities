@@ -18,6 +18,7 @@ library(ggdark)
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
+root_path <- "E:/MMDB"
 
 # Categorical 
 data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_model-occurrence.csv"))
@@ -101,7 +102,7 @@ summary_performance$metric <- factor(summary_performance$metric,
                                      labels = c("TSS", "Sensitivity", "Specificity", "ROC"))
 
 # Summary regardless of trait
-summary_all <- summary_performance[, .(mean = mean(performance)),
+summary_all <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
                                    by = c("dataset", "metric")]
 
 # Confidence

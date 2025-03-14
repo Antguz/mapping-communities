@@ -163,13 +163,13 @@ p <- ggplot(summary_importance, aes(x = mean,
   theme(legend.position="top", legend.box = "horizontal") +
   guides(fill = guide_legend(nrow = 2)) +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
-  xlab("Relative of importance") + ylab("Plant lineages") +
+  xlab("Relative importance") + ylab("Plant lineages") +
   th
 p
 
 
 jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_occurrence.jpg"), 
-     width = 220, 
+     width = 200, 
      height = 200, 
      units = "mm", 
      res = 600, 
