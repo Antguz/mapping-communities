@@ -17,7 +17,7 @@ library(pbmcapply)
 #'------------------------------------------------------------------------------
 #' Source code
 
-sourceCpp("src/probability_rcpp.cpp")
+# sourceCpp("src/probability_rcpp.cpp")
 
 #'------------------------------------------------------------------------------
 #' Arguments
@@ -195,13 +195,99 @@ apply_model_occurence <- function(X,
 ################################################################################
 #' @Local predictions from taxonomic-composition.tif files
 ################################################################################
+ 
+# # Define root path, sensor, and coefficients
+# root_path <- "/media/antonio/Work/MMDB"
+# sensor <- "EMIT"
+# type <- "taxo"
+# 
+# # Read coefficients
+# coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
+#                              type, "_model-FORTYP.csv"))
+# 
+# coefficients <- coefficients[dataset == "training", 
+#                              .SD,
+#                              .SDcols = c(1, 15:26)]
+# 
+# # Read climatic and topographic data
+# MAT <- rast(paste0(root_path, "/env/wc2.1_30s_bio/wc2.1_30s_bio_1.tif"))
+# TS <- rast(paste0(root_path, "/env/wc2.1_30s_bio/wc2.1_30s_bio_4.tif"))
+# TAR <- rast(paste0(root_path, "/env/wc2.1_30s_bio/wc2.1_30s_bio_7.tif"))
+# MAP <- rast(paste0(root_path, "/env/wc2.1_30s_bio/wc2.1_30s_bio_12.tif"))
+# PS <- rast(paste0(root_path, "/env/wc2.1_30s_bio/wc2.1_30s_bio_15.tif"))
+# climatic <- c(MAT, TS, TAR, MAP, PS)
+# names(climatic) <- c("MAT", "TS", "TAR", "MAP", "PS")
+# rm(list = c("MAT", "TS", "TAR", "MAP", "PS"))
+# 
+# # Read DEM information
+# DEM <- rast(paste0(root_path, "/env/gt30h1kna/na_dem.bil"))
+# DEM[DEM == -9999] <- NA
+# DEM[DEM >= 10000] <- NA
+# names(DEM) <- "DEM"
+# 
+# # Read HYDRO1k information
+# slope <- rast(paste0(root_path, "/env/gt30h1kna/na_slope.bil"))
+# slope[slope == -9999] <- NA
+# slope[slope >= 10000] <- NA
+# CTI <- rast(paste0(root_path, "/env/gt30h1kna/na_cti.bil"))
+# CTI[CTI == -9999] <- NA
+# CTI[CTI >= 10000] <- NA
+# HYDRO1k <- c(slope, CTI)
+# names(HYDRO1k) <- c("SL", "CTI")
+# crs(HYDRO1k) <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+# 
+# # Merge
+# topographic <- c(DEM, HYDRO1k)
+# rm(list = c("DEM", "CTI", "HYDRO1k"))
+# 
+# # Scaling coefficients
+# scaling <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
+#                         type, "_scaling-FORTYP.csv"))
+# 
+# # Define inputs and outputs folder
+# folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/L3A")
+# output_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L4/FORTYP")
+# 
+# # Select files to process
+# taxonomic_composition <- list.files(path = folder_path, 
+#                                     pattern = "taxonomic-composition.tif", 
+#                                     full.names = TRUE,
+#                                     recursive = TRUE)
+# 
+# # Parallel processing
+# run <- pbmclapply(X = 1:length(taxonomic_composition), 
+#                   FUN = apply_model_occurence, 
+#                   sensor = sensor,
+#                   taxonomic_composition = taxonomic_composition, 
+#                   climatic = climatic,
+#                   topographic = topographic,
+#                   coefficients = coefficients, 
+#                   scaling = scaling,
+#                   output_path = output_path,
+#                   mc.preschedule = TRUE, 
+#                   mc.set.seed = FALSE,
+#                   mc.silent = FALSE, 
+#                   mc.cores = 4,
+#                   mc.cleanup = TRUE, 
+#                   mc.allow.recursive = TRUE, 
+#                   affinity.list = NULL)
+# 
+# # Export report
+# complete <- do.call(rbind, run)
+# fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYR_", Sys.time(), ".txt"))
 
-sourceCpp("src/probability_rcpp.cpp")
+
+################################################################################
+#' @MSI predictions
+################################################################################
 
 # Define root path, sensor, and coefficients
-root_path <- "/media/antonio/Work/MMDB"
-sensor <- "EMIT"
+setwd("/panfs/jay/groups/17/cavender/guzman/MMDB")
+root_path <- "/panfs/jay/groups/17/cavender/guzman"
 type <- "taxo"
+
+# Source code
+sourceCpp("src/probability_rcpp.cpp")
 
 # Read coefficients
 coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
@@ -246,9 +332,14 @@ rm(list = c("DEM", "CTI", "HYDRO1k"))
 scaling <- fread(paste0(root_path, "/Models/03_models_fortyp/", 
                         type, "_scaling-FORTYP.csv"))
 
+#-------------------------------------------------------------------------------
+#' @EMIT
+
+sensor <- "EMIT"
+
 # Define inputs and outputs folder
-folder_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L3/L3A")
-output_path <- paste0(root_path, "/00_imagery/Predicted/", sensor, "/L4/FORTYP")
+folder_path <- paste0(root_path, "/Imagery/Predicted/", sensor, "/L3/L3A")
+output_path <- paste0(root_path, "/Imagery/Predicted/", sensor, "/L4/FORTYP")
 
 # Select files to process
 taxonomic_composition <- list.files(path = folder_path, 
@@ -269,7 +360,44 @@ run <- pbmclapply(X = 1:length(taxonomic_composition),
                   mc.preschedule = TRUE, 
                   mc.set.seed = FALSE,
                   mc.silent = FALSE, 
-                  mc.cores = 1,
+                  mc.cores = 10,
+                  mc.cleanup = TRUE, 
+                  mc.allow.recursive = TRUE, 
+                  affinity.list = NULL)
+
+# Export report
+complete <- do.call(rbind, run)
+fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYR_", Sys.time(), ".txt"))
+
+#-------------------------------------------------------------------------------
+#' @DESIS
+
+sensor <- "DESIS"
+
+# Define inputs and outputs folder
+folder_path <- paste0(root_path, "/Imagery/Predicted/", sensor, "/L3/L3A")
+output_path <- paste0(root_path, "/Imagery/Predicted/", sensor, "/L4/FORTYP")
+
+# Select files to process
+taxonomic_composition <- list.files(path = folder_path, 
+                                    pattern = "taxonomic-composition.tif", 
+                                    full.names = TRUE,
+                                    recursive = TRUE)
+
+# Parallel processing
+run <- pbmclapply(X = 1:length(taxonomic_composition), 
+                  FUN = apply_model_occurence, 
+                  sensor = sensor,
+                  taxonomic_composition = taxonomic_composition, 
+                  climatic = climatic,
+                  topographic = topographic,
+                  coefficients = coefficients, 
+                  scaling = scaling,
+                  output_path = output_path,
+                  mc.preschedule = TRUE, 
+                  mc.set.seed = FALSE,
+                  mc.silent = FALSE, 
+                  mc.cores = 10,
                   mc.cleanup = TRUE, 
                   mc.allow.recursive = TRUE, 
                   affinity.list = NULL)

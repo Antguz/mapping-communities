@@ -15,4 +15,3 @@ module load proj/7.2.1-gcc-8.2.0-6kfkugi
 module load R/4.2.2-gcc-8.2.0-vp7tyde
 Rscript --vanilla /panfs/jay/groups/17/cavender/guzman/MMDB/R/Models/07_apply-model_EMIT.R
 
-

@@ -97,6 +97,7 @@ apply_model <- function(X,
   
   # NIR mask
   NIR <- rast_spectra$`801.16`
+  with_info <- sum(!is.na(as.numeric(NIR[]))) 
   NIR[NIR < 3000] <- 1
   NIR[NIR >= 3000 & NIR <= 8000] <- 0
   NIR[NIR > 8000] <- 1
@@ -110,7 +111,7 @@ apply_model <- function(X,
   mask_quality <- mask(mask_quality, rast_quality_flags$Shadow, maskvalues = 1)
   #mask_quality <- mask(mask_quality, rast_quality_flags$Land, maskvalues = 0)
   mask_quality <- mask(mask_quality, rast_quality_flags$Snow, maskvalues = 1)
-  #mask_quality <- mask(mask_quality, rast_quality_flags$`Haze (land)`, maskvalues = 1)
+  mask_quality <- mask(mask_quality, rast_quality_flags$`Haze (land)`, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$`Cloud (land)`, maskvalues = 1)
   mask_quality <- mask(mask_quality, rast_quality_flags$Water, maskvalues = 1)
   mask_quality <- mask(mask_quality, NDVI, maskvalues = 1)
@@ -125,6 +126,7 @@ apply_model <- function(X,
   # As frame
   data_spectra <- as.data.table(as.data.frame(rast_spectra, cells = TRUE, na.rm = TRUE))
   colnames(data_spectra)[2:ncol(data_spectra)] <- as.character(DESIS_bands)
+  info_masked <- nrow(data_spectra)
   
   # To predict
   predicted_scene <- subset(rast_spectra, 1:7)
@@ -270,7 +272,8 @@ apply_model <- function(X,
   
   # Return
   gc()
-  return(paste0(name_product, ": success"))
+  return(paste0("File: ", X, "; Scene: ", name_product, " (success); ",
+                "Data available: ", round(info_masked/with_info, 2)))
   
 }
 
@@ -287,8 +290,9 @@ apply_model <- function(X,
 # # Apply in a batch of scenes
 # root_path <- "/media/antonio/Work/MMDB"
 # scenes <- list.files(path = paste0(root_path, "/00_imagery/DESIS"),
+#                      pattern = ".zip",
 #                      full.names = TRUE,
-#                      recursive = FALSE)
+#                      recursive = TRUE)
 # type <- "taxo"
 # coefficients_taxonomic <- fread(paste0(root_path, "/Models/01_model_beta/DESIS/DESIS_", type, "_coefficients.csv"))
 # type <- "phylo"
@@ -309,7 +313,7 @@ apply_model <- function(X,
 #                   output_path = output_path,
 #                   temp= temp,
 #                   threads = 1,
-#                   mc.preschedule = TRUE,
+#                   mc.preschedule = FALSE,
 #                   mc.set.seed = FALSE,
 #                   mc.silent = FALSE,
 #                   mc.cores = 1,
@@ -334,7 +338,8 @@ source("R/auxiliary/DESIS-transform.R")
 sourceCpp("src/beta_predict_pls.cpp")
 
 # Scenes path
-scenes <- list.files(path = paste0(root_path, "/Imagery/DESIS"),
+scenes <- list.files(path = paste0(root_path, "/imagery/DESIS"),
+                     pattern = ".zip",
                      full.names = TRUE,
                      recursive = TRUE)
 
@@ -344,7 +349,7 @@ coefficients_phylogenetic <- fread("data/coefficients/DESIS_phylo_coefficients.c
 coefficients_functional <- fread("data/coefficients/DESIS_func_coefficients.csv")
 
 # Out paths
-temp <- paste0(root_path, "/Imagery/temp")
+temp <- paste0(root_path, "/Imagery/Predicted/DESIS/temp")
 output_path <- paste0(root_path, "/Predicted/DESIS/L3")
 
 # Parallel processing
@@ -357,7 +362,7 @@ run <- pbmclapply(X = 1:length(scenes),
                   output_path = output_path,
                   temp= temp,
                   threads = 1,
-                  mc.preschedule = TRUE, 
+                  mc.preschedule = FALSE, 
                   mc.set.seed = FALSE,
                   mc.silent = FALSE, 
                   mc.cores = 20,
