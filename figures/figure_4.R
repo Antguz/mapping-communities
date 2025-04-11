@@ -55,7 +55,7 @@ data[plant == "WD", plant := "Wood density"]
 data[plant == "shade", plant := "Shade tolerance index"]
 data[plant == "drought", plant := "Drought tolerance index"]
 data[plant == "waterlogging", plant := "Waterlogging tolerance index"]
-data[plant == "LMA", plant := "Leaf Mass Area*"]
+data[plant == "LMA", plant := "Leaf mass area"]
 data[plant == "N", plant := "Nitrogen"]
 cwm <- data
 cwm$dimension <- "CWM of plant traits"
@@ -131,22 +131,22 @@ summary_performance$metric <- as.factor(summary_performance$metric)
 summary_performance$metric <- factor(summary_performance$metric, 
                                      levels = c("R2", "BIAS", "RMSE", "perRMSE"))
 
-summary_performance <- summary_performance[plant == "Black spruce" |
-                                             plant == "Red maple / upland"|
+summary_performance <- summary_performance[plant == "Virginia pine / southern red oak" |
+                                             plant == "White oak / red oak / hickory"|
                                              plant == "Sugar maple / beech / yellow birch"|
-                                             plant == "Pinus" |
-                                             plant == "Acer" |
                                              plant == "Fagus" |
-                                             plant == "Nitrogen" | 
-                                             plant == "Leaf Mass Area*" |
+                                             plant == "Quercus" |
+                                             plant == "Pinus" |
+                                             plant == "Leaf mass area" | 
+                                             plant == "Nitrogen" |
                                              plant == "Wood density", ]
 
-summary_performance$plant <- factor(summary_performance$plant, levels = rev(c("Black spruce",
-                                                                        "Red maple / upland",
+summary_performance$plant <- factor(summary_performance$plant, levels = rev(c("Virginia pine / southern red oak",
+                                                                        "White oak / red oak / hickory",
                                                                         "Sugar maple / beech / yellow birch",
-                                                                        "Pinus", "Acer", "Fagus",
-                                                                        "Nitrogen", 
-                                                                        "Leaf Mass Area*",
+                                                                        "Fagus", "Quercus", "Pinus",
+                                                                        "Leaf mass area", 
+                                                                        "Nitrogen",
                                                                         "Wood density")))
 
 # CI
@@ -218,7 +218,7 @@ p <- ggplot(summary_performance) +
 
 p 
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/forest-attributes.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/forest-attributes2.jpeg"), 
      width = 210, 
      height = 120, 
      units = "mm", 

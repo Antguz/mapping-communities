@@ -115,7 +115,7 @@ summary_performance$metric <- factor(summary_performance$metric,
                                      levels = c("R2", "BIAS", "RMSE", "perRMSE"))
 
 # Summary regardless of trait
-summary_all <- summary_performance[, .(mean = mean(performance)),
+summary_all <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
                                    by = c("dataset", "metric")]
 
 # Confidence

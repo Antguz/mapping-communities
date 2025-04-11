@@ -169,14 +169,14 @@ p <- ggplot(summary_importance, aes(x = mean,
                      breaks = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
                                 "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")) +
   theme(legend.position="top", legend.box = "horizontal") +
-  guides(fill = guide_legend(nrow = 2)) +
+  guides(fill = guide_legend(nrow = 1)) +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
   xlab("Relative of importance") + ylab("Community-weighted mean of plant traits") +
   th
 p
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_CWM.jpg"), 
-     width = 210, 
+jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_CWM_test.jpg"), 
+     width = 270, 
      height = 150, 
      units = "mm", 
      res = 600, 
@@ -196,3 +196,4 @@ png(paste0(root_path, "/figures/Manuscript_white/glm-models_CWM.png"),
     pointsize = 14)
 p
 dev.off()
+
