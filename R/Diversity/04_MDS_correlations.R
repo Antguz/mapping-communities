@@ -216,6 +216,7 @@ axes_correlations <- function(ordination,
 #' @example
 
 root_path <- "/media/antonio/Work/MMDB"
+root_path <- "G:/Projects/MMDB"
 
 # Taxonomic
 # ordination <- paste0(root_path, "/Diversity/NMDS/NMDS_taxo_total.rds")
