@@ -55,36 +55,42 @@ fia_meta <- fia_meta[fia_meta_match,]
 all.equal(ordination$PLT_CN, fia_meta$PLT_CN)
 
 # FIA forest type
-forest_type <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_COND.csv"))
-forest_type <- forest_type[, c("PLT_CN", "FORTYPCD")]
+COND <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_COND.csv"))
+COND <- COND[COND_STATUS_CD == 1]
+setorder(COND, PLT_CN, -CONDPROP_UNADJ)
+COND <- COND[, .SD[1], by = PLT_CN]
+COND <- COND[, .(PLT_CN, FORTYPCD)]
+COND <- na.exclude(COND)
+
+# Read forest types
 FORTYPCD <- fread(paste0(root_path, "/FIA/00_FIA/ENTIRE_REF_FOREST_TYPE.csv"))
 FORTYPCD <- FORTYPCD[, c("VALUE", "MEANING")]
-forest_type <- merge(forest_type, FORTYPCD, 
-                     by.x = "FORTYPCD", by.y = "VALUE",
-                     all.x = TRUE, all.y = TRUE)
-colnames(forest_type)[3] <- "FORTYP"
 
-# Match plot order
-FORTYP_match <- match.integer64(fia_meta$PLT_CN, forest_type$PLT_CN)
-forest_type <- forest_type[FORTYP_match, ]
-all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
-all.equal(ordination$PLT_CN, forest_type$PLT_CN)
-
-# Clean forest type
+# Merge and clean
+FORTYPCD <- merge(COND, FORTYPCD, 
+                  by.x = "FORTYPCD", by.y = "VALUE",
+                  all.x = FALSE, all.y = FALSE)
+colnames(FORTYPCD)[3] <- "FORTYP"
 to_remove <- c(181, 183, 223, 380, 382, 383, 803, 807, 925, 926, 
                932, 950, 951, 952, 953, 954, 955, 981, 999)
-forest_type <- forest_type[forest_type$FORTYPCD %in% to_remove, FORTYP := NA]
-forest_type <- forest_type[, c("PLT_CN", "FORTYP")]
+to_remove <- FORTYPCD$FORTYPCD %in% to_remove
+FORTYPCD <- FORTYPCD[to_remove == FALSE,]
+FORTYPCD <- FORTYPCD[, .(PLT_CN, FORTYP)]
+
+# Match plot order
+FORTYP_match <- match.integer64(fia_meta$PLT_CN, FORTYPCD$PLT_CN)
+FORTYPCD <- FORTYPCD[FORTYP_match, ]
+FORTYPCD <- na.exclude(FORTYPCD)
 
 # Match meta, NMDS, and forest type
-fia_meta_match <- match.integer64(forest_type$PLT_CN, fia_meta$PLT_CN)
+fia_meta_match <- match.integer64(FORTYPCD$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match, ]
-ordination_match <- match.integer64(forest_type$PLT_CN, ordination$PLT_CN)
+ordination_match <- match.integer64(FORTYPCD$PLT_CN, ordination$PLT_CN)
 ordination <- ordination[ordination_match, ]
 
-all.equal(fia_meta$PLT_CN, forest_type$PLT_CN)
+all.equal(fia_meta$PLT_CN, FORTYPCD$PLT_CN)
 all.equal(fia_meta$PLT_CN, ordination$PLT_CN)
-all.equal(ordination$PLT_CN, forest_type$PLT_CN)
+all.equal(ordination$PLT_CN, FORTYPCD$PLT_CN)
 
 #-------------------------------------------------------------------------------
 #' @Data-split
@@ -94,7 +100,7 @@ all.equal(ordination$PLT_CN, forest_type$PLT_CN)
 if(type == "taxo") {
   
   # Data-split based on State-County ID
-  data_split <- data_split_fortyp(forest_type,
+  data_split <- data_split_fortyp(FORTYPCD,
                                   split = 0.60)
   
   # Export split and cross-validation
@@ -131,7 +137,7 @@ ordination <- cbind(data.table(PLT_CN = PLT_CN),
 #-------------------------------------------------------------------------------
 
 # Create model
-model <- model_fortyp(forest_type = forest_type,
+model <- model_fortyp(forest_type = FORTYPCD,
                       ordination = ordination,
                       data_split = data_split,
                       iterations = 100,

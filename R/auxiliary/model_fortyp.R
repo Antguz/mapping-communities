@@ -26,7 +26,7 @@ model_fortyp <- function(forest_type,
     ftype$occurance <- "absence"
     ftype[FORTYP == group_name, occurance := "presence"]
     
-    if(group_name == "NA" | nrow(ftype[occurance == "presence",]) < 50) {
+    if(group_name == "NA" | nrow(ftype[occurance == "presence",]) < 100) {
       
       return(data.table())
       

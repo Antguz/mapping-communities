@@ -26,6 +26,7 @@ data <- data[, .SD, .SDcols = c(1:3, 27:37)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
 colnames(data)[4:6] <- c("Axis 1", "Axis 2", "Axis 3")
 colnames(data)[10] <- "AP"
+colnames(data)[12] <- "ELE"
 
 # Estimate relative importance
 total <- rowSums(data[,.SD, .SDcols = 4:ncol(data)])
@@ -83,7 +84,7 @@ text <- "black"
 summary_importance <- melt(data, 
                            id.vars = c("dataset", "forty"),
                            measure.vars = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                            "TS", "TAR", "AP", "PS", "DEM", "SL","CTI"),
+                                            "TS", "TAR", "AP", "PS", "ELE", "SL","CTI"),
                            variable.name = "metric",
                            value.name = "importance")
 
@@ -92,7 +93,7 @@ summary_importance <- summary_importance[dataset == "training"]
 summary_importance$metric <- as.factor(summary_importance$metric)
 summary_importance$metric <- factor(summary_importance$metric, 
                                     levels = rev(c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                                   "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")))
+                                                   "TS", "TAR", "AP", "PS", "ELE", "SL","CTI")))
 
 # Confidence
 get_ci <- function(x, type, confidence = 0.95) {
@@ -149,7 +150,7 @@ p <- ggplot(summary_importance, aes(x = mean,
                      direction = -1,
                      discrete = TRUE,
                      breaks = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")) +
+                                "TS", "TAR", "AP", "PS", "ELE", "SL","CTI")) +
   theme(legend.position="top", legend.box = "horizontal") +
   guides(fill = guide_legend(nrow = 2)) +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +

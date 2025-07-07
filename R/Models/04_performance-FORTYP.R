@@ -35,7 +35,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/04_fortyp_performance"
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "DESIS"
+sensor <- "EMIT" #or DESIS
 type <- "taxo"
 
 # Get glm coefficients
