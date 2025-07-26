@@ -45,7 +45,6 @@ sensor <- "EMIT"
 type <- "func"
 diversity <- "total"
 meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
-# ordination <- fread(paste0(root_path, "/Diversity/02_NMDS/NMDS_scores_comm_", type, "_", diversity,".csv"))
 ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_", diversity,".csv"))
 ncol_ordination <- ncol(ordination) - 1
 match_meta <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_match_usefull.csv"))
@@ -82,21 +81,17 @@ if(sensor == "DESIS") {
   
 } else if(sensor == "EMIT") {
   
-  # Bands from 447.74 to 1265.17, from 1488.07 to 1710.97, from 2015.60 to 2424.25
+  # Bands from 448.50 to 1236, from 1521 to 1686, and from 2053 to 2421
   spectra <- spectra[, .SD, .SDcols = c(2, 
-                                        41:139, # from 448.50 to 1266
-                                        182:209, #from 1506 to 1708
-                                        264:305)] #from 2015.60 to 2424.25
+                                        42:147, # from 448 to 1236
+                                        185:207, #from 1521 to 1686
+                                        256:305)] #from 2053 to 2421
 }
 
 # Merge ordination with spectra 
 data <- merge(ordination,
               spectra,
               by = "PLT_CN", all.x = TRUE, all.y = FALSE)
-
-# New frames
-# data <- na.exclude(data)
-# data <- data[order(PLT_CN)]
 
 # Save order for other simulations
 if(type == "taxo") {
@@ -153,7 +148,6 @@ if(type == "taxo") {
   
   # Data-split based on State-County ID
   split <- data_split(meta, p = p)
-  # split <- 1:nrow(meta)
   
   # Percentage of samples for training
   length(split)/nrow(meta) # % For training
@@ -209,27 +203,27 @@ models <- model_tune(meta_training = meta[split,],
 
 # Export for inspection
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
-axis <- "Axis3"
+
+#' @note Do a manual checking of the optimal number of components
+axis <- "Axis1"
 optimal_figure(models, rAxes = axis, rMetric = "RMSEP", rEstimate = "train")
 optimal_figure(models, rAxes = axis, rMetric = "RMSEP", rEstimate = "CV")
 optimal_figure(models, rAxes = axis, rMetric = "R2", rEstimate = "train")
 optimal_figure(models, rAxes = axis, rMetric = "R2", rEstimate = "CV")
 optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 
-#' @note Do a manual checking of the optimal number of components
-
 ### DESIS 
-# Taxonomic c(11, 10, 9) 0.38, 0.14 0.08
-# Phylogenetic c(12, 6, 7) 0.175 0.20 0.34
-# Functional c(16, 7, 6) 0.31 0.20 0.31
+# Taxonomic c(11, 10, 9)
+# Phylogenetic c(12, 6, 7)
+# Functional c(16, 7, 6)
 
 ### EMIT
-# Taxonomic c(27, 8, 13) 0.66 0.14 0.33
-# Phylogenetic c(9, 4, 7) 0.28 0.08 0.25
-# Functional c(27, 8, 14) 0.55 0.10 0.34
+# Taxonomic c(10, 8, 9)
+# Phylogenetic c(8, 3, 6)
+# Functional c(8, 8, 8)
 
 # Manual checked
-tune_optimal <- c(27, 8, 14)
+tune_optimal <- c(8, 8, 8)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction

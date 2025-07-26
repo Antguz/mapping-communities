@@ -179,14 +179,13 @@ parameters <- function(obs, pred) {
   linear <- lm(obs ~ pred, na.action = na.exclude)
   linear_summary <- summary(linear)
   
-  R2 <- linear_summary$r.squared
+  R2 <- sum((obs - pred)^2, na.rm = TRUE) / sum((obs - mean(obs, na.rm = TRUE))^2)
   intercept <- linear_summary$coefficients[1,1]
   slope <- linear_summary$coefficients[2,1]
   BIAS <- mean(obs-pred, na.rm = TRUE)
   RMSE <- sqrt(sum(((obs-pred)^2))/length(obs))
   perRMSE <- sqrt(sum(((obs-pred)^2))/length(obs))/(quantile(obs, 0.99) - quantile(obs, 0.01))
   names(perRMSE) <- NULL
-  
   
   return(round(data.table(R2 = R2,
                           BIAS = BIAS,
