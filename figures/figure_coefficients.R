@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Codes to visualize the coefficients from the models
+#' @title Codes to visualize the coefficients from the models (Fig S15)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -159,8 +159,8 @@ DESIS_plot <- ggplot(coef_summary[sensor == "DESIS",]) +
                 y = Coefficients, 
                 colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 910), ylim = c(-4, 4), expand = FALSE) +
-  scale_y_continuous(breaks = c(-3, 0, 3)) +
+  coord_cartesian(xlim = c(440, 910), ylim = c(-2.7, 2.7), expand = FALSE) +
+  scale_y_continuous(breaks = c(-2, 0, 2)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab(" ") +
@@ -181,8 +181,8 @@ EMIT_plot <- ggplot(coef_summary[sensor == "EMIT",]) +
                 y = Coefficients, 
                 colour = Axes), 
             linewidth = 0.5) +
-  coord_cartesian(xlim = c(440, 2428), ylim = c(-35, 35), expand = FALSE) +
-  scale_y_continuous(breaks = c(-20, 0, 20)) +
+  coord_cartesian(xlim = c(440, 2428), ylim = c(-20, 20), expand = FALSE) +
+  scale_y_continuous(breaks = c(-15, 0, 15)) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name = "", values = col) +
   xlab(" ") +

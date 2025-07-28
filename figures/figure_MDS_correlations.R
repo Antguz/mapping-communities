@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Correlation among ordinations
+#' @title Correlation among ordinations (Fig. S7, S8, S9)
 #'------------------------------------------------------------------------------
 
 #' @description It correlates and plots NMDS axes among multiple levels of 
@@ -20,7 +20,6 @@ library(cowplot)
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB/Diversity/04_MDS-corr"
-root_path <- "G:/Projects/MMDB/Diversity/04_MDS-corr"
 
 #'------------------------------------------------------------------------------
 #' @Function
@@ -99,7 +98,7 @@ taxo <- melt(taxo,
 
 taxo$Axes <- paste0("Axes ", taxo$Axes)
 
-taxo[plant == "HTq", name := "Tree height (max)"]
+taxo[plant == "HTq", name := "Tree height"]
 taxo[plant == "SLq", name := "Slenderness"]
 taxo[plant == "WD", name := "Wood density"]
 taxo[plant == "shade", name := "Shade tolerance index"]
@@ -110,7 +109,7 @@ taxo[plant == "N", name := "Nitrogen"]
 
 taxo$name <- as.factor(taxo$name)
 taxo$name <- factor(taxo$name, 
-                    levels = rev(c("Tree height (max)", 
+                    levels = rev(c("Tree height", 
                                    "Slenderness", 
                                    "Shade tolerance index", 
                                    "Drought tolerance index",
@@ -133,7 +132,7 @@ phylo <- melt(phylo,
 
 phylo$Axes <- paste0("Axes ", phylo$Axes)
 
-phylo[plant == "HTq", name := "Tree height (max)"]
+phylo[plant == "HTq", name := "Tree height"]
 phylo[plant == "SLq", name := "Slenderness"]
 phylo[plant == "WD", name := "Wood density"]
 phylo[plant == "shade", name := "Shade tolerance index"]
@@ -144,7 +143,7 @@ phylo[plant == "N", name := "Nitrogen"]
 
 phylo$name <- as.factor(phylo$name)
 phylo$name <- factor(phylo$name, 
-                    levels = rev(c("Tree height (max)", 
+                    levels = rev(c("Tree height", 
                                    "Slenderness", 
                                    "Shade tolerance index", 
                                    "Drought tolerance index",
@@ -167,7 +166,7 @@ func <- melt(func,
 
 func$Axes <- paste0("Axes ", func$Axes)
 
-func[plant == "HTq", name := "Tree height (max)"]
+func[plant == "HTq", name := "Tree height"]
 func[plant == "SLq", name := "Slenderness"]
 func[plant == "WD", name := "Wood density"]
 func[plant == "shade", name := "Shade tolerance index"]
@@ -178,7 +177,7 @@ func[plant == "N", name := "Nitrogen"]
 
 func$name <- as.factor(func$name)
 func$name <- factor(func$name, 
-                    levels = rev(c("Tree height (max)", 
+                    levels = rev(c("Tree height", 
                                    "Slenderness", 
                                    "Shade tolerance index", 
                                    "Drought tolerance index",
@@ -283,9 +282,6 @@ func_plot <- plot_correlation(func, title = "Functional", y_lab = " ")
 trait_plot <- ggarrange(taxo_plot, phylo_plot, func_plot,
                         ncol = 3,
                         common.legend = TRUE)
-
-
-
 
 # Plant lineages ---------------------------------------------------------------
 

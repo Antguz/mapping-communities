@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Visualize performance of trait models of CWM
+#' @title Visualize performance of trait models of CWM (Fig S24)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -22,27 +22,26 @@ root_path <- "/media/antonio/Work/MMDB"
 data <- fread(paste0(root_path, "/Models/04_CWM_performance/performance_summary_CWM.csv"))
 
 # Rename parameters
-data$perRMSE <- data$perRMSE*100
 data[plant == "LMA",]$RMSE <- data[plant == "LMA",]$RMSE/10
 data[plant == "LMA",]$BIAS <- data[plant == "LMA",]$BIAS/10
 
 data <- data[order(plant),]
-data[plant == "HTq", plant := "Tree height (max)"]
+data[plant == "HTq", plant := "Tree height"]
 data[plant == "SLq", plant := "Slenderness"]
 data[plant == "WD", plant := "Wood density"]
 data[plant == "shade", plant := "Shade tolerance index"]
 data[plant == "drought", plant := "Drought tolerance index"]
 data[plant == "waterlogging", plant := "Waterlogging tolerance index"]
-data[plant == "LMA", plant := "Leaf Mass Area*"]
+data[plant == "LMA", plant := "Leaf mass per area*"]
 data[plant == "N", plant := "Nitrogen"]
 
 data$plant <- as.factor(data$plant)
-data$plant <- factor(data$plant, levels = rev(c("Tree height (max)", 
+data$plant <- factor(data$plant, levels = rev(c("Tree height", 
                                                 "Slenderness", 
                                                 "Shade tolerance index", 
                                                 "Drought tolerance index",
                                                 "Waterlogging tolerance index",
-                                                "Leaf Mass Area*",
+                                                "Leaf mass per area*",
                                                 "Nitrogen",
                                                 "Wood density")))
 
@@ -179,7 +178,7 @@ p <- ggplot(summary_performance) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.04, 0.04), breaks = c(-0.03, 0, 0.03)),
                                scale_x_continuous(limits = c(0, 2.5), breaks = c(0, 1, 2)),
-                               scale_x_continuous(limits = c(10, 20), breaks = c(10, 15, 20)))) +
+                               scale_x_continuous(limits = c(5, 25), breaks = c(5, 15, 25)))) +
   th
 
 p 

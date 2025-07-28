@@ -23,7 +23,6 @@ data <- fread(paste0(root_path, "/Models/04_fortyp_performance/performance_summa
 data <- data[order(plant),]
 data$plant <- as.factor(data$plant)
 data$plant <- factor(data$plant, levels = rev(as.character(unique(data$plant))))
-data$perRMSE <- data$perRMSE*100
 data$BIAS <- data$BIAS/100000
 data$RMSE <- data$RMSE/100000
 data$intercept <- data$intercept/100000

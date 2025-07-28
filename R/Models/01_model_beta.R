@@ -205,7 +205,7 @@ models <- model_tune(meta_training = meta[split,],
 fwrite(models, paste0(out_path, "/", sensor, "_", type, "_optimal.csv"))
 
 #' @note Do a manual checking of the optimal number of components
-axis <- "Axis1"
+axis <- "Axis3"
 optimal_figure(models, rAxes = axis, rMetric = "RMSEP", rEstimate = "train")
 optimal_figure(models, rAxes = axis, rMetric = "RMSEP", rEstimate = "CV")
 optimal_figure(models, rAxes = axis, rMetric = "R2", rEstimate = "train")
@@ -214,16 +214,16 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 
 ### DESIS 
 # Taxonomic c(11, 10, 9)
-# Phylogenetic c(12, 6, 7)
-# Functional c(16, 7, 6)
+# Phylogenetic c(10, 6, 5)
+# Functional c(12, 3, 6)
 
 ### EMIT
-# Taxonomic c(10, 8, 9)
-# Phylogenetic c(8, 3, 6)
-# Functional c(8, 8, 8)
+# Taxonomic c(20, 9, 13)
+# Phylogenetic c(8, 3, 7)
+# Functional c(13, 6, 8)
 
 # Manual checked
-tune_optimal <- c(8, 8, 8)
+tune_optimal <- c(13, 6, 8)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction
@@ -237,8 +237,6 @@ final_models <- model_build(meta_training = meta[split,],
                             tune_optimal = tune_optimal,
                             ntimes = iterations,
                             threads = 1)
-
-#saveRDS(final_models, paste0(out_path, "/", sensor, "_final_models.rds")) # Do it if you really need it
 
 #-------------------------------------------------------------------------------
 #' @Model_performance
@@ -264,7 +262,6 @@ performance_training$type <- "Training"
 performance_testing <- testing$performance
 performance_testing$type <- "Testing"
 performance <- rbind(performance_training, performance_testing)
-# performance <- rbind(performance_training)
 fwrite(performance, paste0(out_path, "/", sensor, "_", type, "_performance.csv"))
 
 # Export predicted values

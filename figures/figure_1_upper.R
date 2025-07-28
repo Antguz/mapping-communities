@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Three-dimensional figure for NMDS
+#' @title Three-dimensional figure for MDS (Fig 1)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ func_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_func_to
 observed_range <- c(-0.6, 0.6)
 
 # Get domains
-domain <- fread(paste0(root_path, "/00_FIA/", "plot_domain.csv"))
+domain <- fread(paste0(root_path, "/FIA/00_FIA/", "plot_domain.csv"))
 mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
 domain <- domain[mat, ]
 all.equal(domain$PLT_CN, taxo_comm$PLT_CN)

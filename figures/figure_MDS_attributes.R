@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Three-dimensional figure for MDS post processing
+#' @title Three-dimensional figure for MDS post processing (Fig S6)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -19,7 +19,6 @@ source("figures/RGB.R")
 #'------------------------------------------------------------------------------
 #' @Plot-functions
 #-------------------------------------------------------------------------------
-
 
 application <- function(ordination,
                         title = " ",
@@ -223,7 +222,6 @@ application <- function(ordination,
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-root_path <- "E:/MMDB"
 
 #'------------------------------------------------------------------------------
 #' @Plots
@@ -235,7 +233,7 @@ observed_range <- c(-1.06, 1.06)
 taxo_traits <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_traits-wascores_", "taxo", "_total.csv"))
 phylo_traits <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_traits-wascores_", "phylo", "_total.csv"))
 func_traits <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_traits-wascores_", "func", "_total.csv"))
-names <- c("H", "S", "WD", "STI", "DTI", "WTI", "LMA", "N")
+names <- c("H", "SL", "WD", "STI", "DTI", "WTI", "LMA", "N")
 taxo_traits$variable <- names
 phylo_traits$variable <- names
 func_traits$variable <- names
@@ -244,6 +242,10 @@ func_traits$variable <- names
 taxo_env <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_env-wascores_", "taxo", "_total.csv"))
 phylo_env <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_env-wascores_", "phylo", "_total.csv"))
 func_env <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_env-wascores_", "func", "_total.csv"))
+names <- c("MAT", "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTL")
+taxo_env$variable <- names
+phylo_env$variable <- names
+func_env$variable <- names
 
 # Lineages
 taxo_line <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_lineages-wascores_", "taxo", "_total.csv"))

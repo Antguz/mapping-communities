@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Codes to visualize the VIP from the models
+#' @title Codes to visualize the VIP from the models (Fig 4)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -160,8 +160,8 @@ plot <- ggplot(vip_summary) +
                 colour = sensor), 
             linewidth = 0.5) +
   geom_hline(yintercept = 1, colour = "grey", linetype = "dotted") + 
-  coord_cartesian(xlim = c(440, 2430), ylim = c(0, 3.5), expand = FALSE) +
-  scale_y_continuous(breaks = c(0, 1.5, 3)) +
+  coord_cartesian(xlim = c(440, 2430), ylim = c(0, 4.5), expand = FALSE) +
+  scale_y_continuous(breaks = c(0, 2, 4)) +
   scale_colour_manual(name = "Sensor", values = col) +
   scale_fill_manual(name = "Sensor", values = col) +
   xlab("Wavelength (nm)") +

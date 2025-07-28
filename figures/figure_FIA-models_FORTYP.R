@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Visualize performance of occurrence models of forest types
+#' @title Visualize performance of occurrence models of forest types (Fig S16)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -72,7 +72,6 @@ text <- "black"
 
 #-------------------------------------------------------------------------------
 #' @Plot 
-
 
 # Melt dataset
 summary_performance <- melt(data, 

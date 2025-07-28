@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Codes to visualize the NDMS_predicted_mean values
+#' @title Codes to visualize the NDMS_predicted_mean values (Fig S11 - S14)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ library(viridis)
 #' Working directory
 
 root_path <- "/media/antonio/Work/MMDB"
-sensor <- "DESIS"
+sensor <- "EMIT"
 folder <- paste0(root_path, "/Models/01_model_beta/", sensor)
 
 #'------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ phylo_performance$dimension <- "Phylogenetic"
 func_performance <- fread(paste0(folder, "/", sensor, "_", "func", "_performance.csv"))
 func_performance$dimension <- "Functional"
 
-dataset <- "training"
+dataset <- "testing"
 
 if(dataset == "training") {
   

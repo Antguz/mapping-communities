@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Codes to visualize optimal number of components of the models
+#' @title Codes to visualize optimal number of components of the models (Fig S14)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -22,7 +22,7 @@ root_path <- "/media/antonio/Work/MMDB"
 
 # DESIS
 sensor <- "DESIS"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor)
 DESIS_taxo <- fread(paste0(out_path, "/", sensor, "_", "taxo_optimal.csv"))
 DESIS_taxo$dimension <- "Taxonomic"
 DESIS_phylo <- fread(paste0(out_path, "/", sensor, "_", "phylo_optimal.csv"))
@@ -34,7 +34,7 @@ DESIS$sensor <- "DESIS"
 
 # EMIT
 sensor <- "EMIT"
-out_path <- paste0(root_path, "/06_model_beta/SW_beta_PLS/", sensor)
+out_path <- paste0(root_path, "/Models/01_model_beta/", sensor)
 EMIT_taxo <- fread(paste0(out_path, "/", sensor, "_", "taxo_optimal.csv"))
 EMIT_taxo$dimension <- "Taxonomic"
 EMIT_phylo <- fread(paste0(out_path, "/", sensor, "_", "phylo_optimal.csv"))
@@ -46,9 +46,12 @@ EMIT$sensor <- "EMIT"
 
 # Merge sensors
 optimal <- rbind(EMIT, DESIS)
+optimal[Axes == "Axis1", Axes := "Axis 1"]
+optimal[Axes == "Axis2", Axes := "Axis 2"]
+optimal[Axes == "Axis3", Axes := "Axis 3"]
 
 # Melt data in columns and clean
-optimal <- melt(optimal, id.vars = c("sensor", "dimension", "Axes", "type", "estimate", "iteration"),
+optimal <- melt(optimal, id.vars = c("sensor", "dimension", "Axes", "Metric", "Estimate", "Iteration", "onasigma", "randomization", "abs_min"),
                 variable.name = "comp", value.name = "value")
 optimal <- optimal[comp != "(Intercept)",]
 optimal$comp <- as.character(optimal$comp)
@@ -57,7 +60,7 @@ optimal$comp <- as.numeric(optimal$comp)
 
 # Get summary
 summary_optimal <- optimal[, .(mean = mean(value), sd = sd(value)),
-                           by = c( "sensor", "dimension", "Axes", "type", "estimate", "comp")]
+                           by = c( "sensor", "dimension", "Axes", "Metric", "Estimate", "comp")]
 
 summary_optimal$dimension <- as.factor(summary_optimal$dimension)
 summary_optimal$dimension <- factor(summary_optimal$dimension, levels = c("Taxonomic",
@@ -67,13 +70,13 @@ summary_optimal$dimension <- factor(summary_optimal$dimension, levels = c("Taxon
 # Enter the optimal number of comp
 opt <- data.table(sensor = c(rep("DESIS", 9), rep("EMIT", 9)),
                   dimension = c(rep("Taxonomic", 3), rep("Phylogenetic", 3), rep("Functional", 3)),
-                  Axes = rep(c("Axis1", "Axis2", "Axis3"), 6),
-                  opt = c(17, 12, 10,
-                          17, 7, 12,
-                          16, 21, 10,
-                          15, 11, 14,
-                          15, 9, 10,
-                          15, 9, 12))
+                  Axes = rep(c("Axis 1", "Axis 2", "Axis 3"), 6),
+                  opt = c(11, 10, 9,
+                          10, 6, 5,
+                          12, 3, 6,
+                          20, 9, 13,
+                          8, 3, 7,
+                          13, 6, 8))
 
 opt$dimension <- as.factor(opt$dimension)
 opt$dimension <- factor(opt$dimension, levels = c("Taxonomic",
@@ -118,30 +121,30 @@ th_trans <- dark_theme_bw(base_size = 14) +
         strip.text = element_text(color = "black"))
 
 th <- th_trans
-th <- th_black
-line <- "black"
-text <- "black"
 line <- "white"
 text <- "white"
 
+th <- th_black
+line <- "black"
+text <- "black"
 
 col <- c("#fc8d62", "#66c2a5", "#8da0cb")
 
 #-------------------------------------------------------------------------------
 #' @Plot 
 
-frame <- summary_optimal[type == "RMSEP" & estimate == "train"]
+frame <- summary_optimal[Metric == "RMSEP" & Estimate == "CV"]
 
 plot_optimal <- ggplot(frame) +
   geom_ribbon(aes(x = comp, ymin = mean - sd, ymax = mean + sd, fill = Axes), alpha = 0.25) +
   geom_line(aes(x = comp, y = mean, colour = Axes), linewidth = 0.5) +
-  scale_x_continuous(expand = c(0, 0), limits = c(1, 30)) +
+  scale_x_continuous(expand = c(0, 0), limits = c(1, 25)) +
   #scale_y_continuous(expand = c(0, 0), limits = c(0.11, 0.23), n.breaks = 4) +
   #geom_vline(xintercept = EMIT, colour = col, linetype = "dotted", linewidth = 1.0) +
   scale_colour_manual(name = "", values = col) +
   scale_fill_manual(name= "", values = col) +
   xlab("Number of components") +
-  ylab("RMSEP") +
+  ylab("Root Mean Squared Error of Prediction") +
   facet_grid(sensor ~ dimension) +
   geom_vline(data = opt,
              aes(xintercept = opt,
@@ -153,7 +156,7 @@ plot_optimal <- ggplot(frame) +
 plot_optimal
 
 
-jpeg(paste0(root_path, "/figures/optimal-components.jpg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/optimal-components.jpg"), 
      width = 210, 
      height = 150, 
      units = "mm", 

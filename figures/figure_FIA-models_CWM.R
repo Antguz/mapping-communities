@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Visualize performance of community-weighted mean plant traits
+#' @title Visualize performance of community-weighted mean plant traits (Fig S18)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -25,30 +25,29 @@ data <- fread(paste0(root_path, "/Models/03_model_CWM/func_model-CWM.csv"))
 
 # Change of names
 data <- data[order(plant),]
-data[plant == "HTq", name := "Tree height (max)"]
+data[plant == "HTq", name := "Tree height"]
 data[plant == "SLq", name := "Slenderness"]
 data[plant == "WD", name := "Wood density"]
 data[plant == "shade", name := "Shade tolerance index"]
 data[plant == "drought", name := "Drought tolerance index"]
 data[plant == "waterlogging", name := "Waterlogging tolerance index"]
-data[plant == "LMA", name := "Leaf Mass Area*"]
+data[plant == "LMA", name := "Leaf mass per area*"]
 data[plant == "N", name := "Nitrogen"]
 
 data$name <- as.factor(data$name)
 data$name <- factor(data$name, 
-                      levels = rev(c("Tree height (max)", 
+                      levels = rev(c("Tree height", 
                                      "Slenderness", 
                                      "Shade tolerance index", 
                                      "Drought tolerance index",
                                      "Waterlogging tolerance index",
-                                     "Leaf Mass Area*",
+                                     "Leaf mass per area*",
                                      "Nitrogen",
                                      "Wood density")))
 
 # Scale LMA
 data[plant == "LMA", "RMSE"] <- data[plant == "LMA", "RMSE"]/10
 data[plant == "LMA", "BIAS"] <- data[plant == "LMA", "BIAS"]/10
-data$perRMSE <- data$perRMSE*100
 
 #-------------------------------------------------------------------------------
 # Plot details

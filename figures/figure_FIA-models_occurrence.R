@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Visualize performance of occurrence models of lineages
+#' @title Visualize performance of occurrence models of lineages (Fig S17)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -18,10 +18,11 @@ library(ggdark)
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-root_path <- "E:/MMDB"
 
 # Categorical 
 data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_model-occurrence.csv"))
+data <- data[plant != "ECM",]
+data <- data[plant != "AM",]
 data$TSS <- data$Sens + data$Spec - 1
 
 data <- data[order(plant),]
@@ -33,8 +34,7 @@ data$plants <- factor(data$plant, levels = rev(c("Altingiaceae", "Betulaceae", "
                                                  "Abies", "Acer", "Betula", "Carya", "Fagus", 
                                                  "Fraxinus", "Liquidambar", "Liriodendron", 
                                                  "Nyssa", "Picea", "Pinus", "Populus",
-                                                 "Prunus", "Quercus", "Ulmus",
-                                                 "AM", "ECM")))
+                                                 "Prunus", "Quercus", "Ulmus")))
 
 #-------------------------------------------------------------------------------
 # Plot details

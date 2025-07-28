@@ -1,8 +1,8 @@
 #'------------------------------------------------------------------------------
-#' @title Correlation among ordinations
+#' @title Correlation among ordinations (Fig S5)
 #'------------------------------------------------------------------------------
 
-#' @description It correlates and plots NMDS axes among multiple levels of 
+#' @description It correlates and plots MDS axes among multiple dimensions of 
 #' diversity.
 
 #'------------------------------------------------------------------------------
@@ -13,13 +13,13 @@ library(data.table)
 library(bit64)
 library(ggcorrplot)
 library(ggstatsplot)
+library(RColorBrewer)
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
 root_path <- "/media/antonio/Work/MMDB"
-root_path <- "E:/MMDB"
 
 #'------------------------------------------------------------------------------
 #' @Read, reshaped, and test correlation
@@ -50,13 +50,7 @@ p <- ggstatsplot::ggcorrmat(
   data = axes,
   matrix.type = "upper",
   type = "parametric",
-  #type = "Pearson", # parametric for Pearson, nonparametric for Spearman's correlation
-  colors = c("darkred", "white", "steelblue"), # change default colors
-  # cor.vars.names = c("Axis 1", "Axis 2", "Axis 3",
-  #                    "Axis 1", "Axis 2", "Axis 3",
-  #                    "Axis 1", "Axis 2", "Axis 3"),
-  # output = "ci",
-  # bf.prior = "ultrawide"
+  colors = c("darkred", "white", "steelblue")
 )
 
 jpeg(paste0(root_path, "/figures/Manuscript_black/", "MDS_correlation.jpeg"),

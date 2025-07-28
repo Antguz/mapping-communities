@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Model occurrence probabilities of plant lineages based on NMDS
+#' @title Model occurrence probabilities of plant lineages based on MDS
 #'------------------------------------------------------------------------------
 
 #' @description It models the probability of occurrence based on MDS ordination 

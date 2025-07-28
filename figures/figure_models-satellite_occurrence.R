@@ -21,16 +21,15 @@ root_path <- "/media/antonio/Work/MMDB"
 # Categorical 
 data <- fread(paste0(root_path, "/Models/04_occurence_performance/performance_summary_lineages.csv"))
 data <- data[order(plant),]
-data$perRMSE <- data$perRMSE*100
 data$BIAS <- data$BIAS/100000
 data$RMSE <- data$RMSE/100000
 data$intercept <- data$intercept/100000
 
 # Define levels
-data[plant == "AM", plant := "AM"]
-data[plant == "ECM", plant := "ECM"]
-data[plant == "gymnosperm", plant := "Gymnosperm"]
-data[plant == "angiosperm", plant := "Angiosperm"]
+data <- data[plant != "AM"]
+data <- data[plant != "ECM"]
+data <- data[plant != "gymnosperm"]
+data <- data[plant != "angiosperm"]
 data <- data[plant != "deciduous",]
 data <- data[plant != "evergreen",]
 data <- data[plant != "needle",]

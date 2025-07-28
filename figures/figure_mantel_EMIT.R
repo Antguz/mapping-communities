@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Codes to visualize the spectral and community dissimilarity
+#' @title Codes to visualize the spectral and community dissimilarity (Fig S3)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------

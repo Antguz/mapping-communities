@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Model occurrence probabilities of forest types based on NMDS
+#' @title Model occurrence probabilities of forest types based on MDS
 #'------------------------------------------------------------------------------
 
 #' @description It models the occurrence probability of forest types based on 

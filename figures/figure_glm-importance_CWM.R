@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Visualize the importance of variables on GLM models of occurrence
+#' @title Visualize the importance of variables on GLM models of plant traits (Fig. S21)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -8,7 +8,6 @@
 
 library(bit64)
 library(data.table)
-library(rcartocolor)
 library(viridis)
 library(ggplot2)
 library(ggdark)
@@ -24,22 +23,21 @@ root_path <- "/media/antonio/Work/MMDB"
 data <- fread(paste0(root_path, "/Models/03_model_CWM/func_model-CWM.csv"))
 data <- data[, .SD, .SDcols = c(1:3, 23:33)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
-colnames(data)[4:6] <- c("Axis 1", "Axis 2", "Axis 3")
+colnames(data)[4:14] <- c("Axis 1", "Axis 2", "Axis 3", "MAT", "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTI")
 
 # Estimate relative importance
 total <- rowSums(data[,.SD, .SDcols = 4:ncol(data)])
 data[, 4:ncol(data)] <- data[,.SD, .SDcols = 4:ncol(data)]/total
 
 # Change names
-data[plant == "HTq", name := "Tree height (max)"]
+data[plant == "HTq", name := "Tree height"]
 data[plant == "SLq", name := "Slenderness"]
 data[plant == "WD", name := "Wood density"]
 data[plant == "shade", name := "Shade tolerance index"]
 data[plant == "drought", name := "Drought tolerance index"]
 data[plant == "waterlogging", name := "Waterlogging tolerance index"]
-data[plant == "LMA", name := "Leaf Mass Area"]
+data[plant == "LMA", name := "Leaf mass per area"]
 data[plant == "N", name := "Nitrogen"]
-colnames(data)[10] <- "AP"
 
 #-------------------------------------------------------------------------------
 # Plot details
@@ -92,8 +90,8 @@ text <- "black"
 # Melt dataset
 summary_importance <- melt(data, 
                            id.vars = c("dataset", "name"),
-                           measure.vars = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                            "TS", "TAR", "AP", "PS", "DEM", "SL","CTI"),
+                           measure.vars = c("Axis 1", "Axis 2", "Axis 3", "MAT",
+                                            "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTI"),
                            variable.name = "metric",
                            value.name = "importance")
 
@@ -102,7 +100,7 @@ summary_importance <- summary_importance[dataset == "training"]
 summary_importance$metric <- as.factor(summary_importance$metric)
 summary_importance$metric <- factor(summary_importance$metric, 
                                     levels = rev(c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                                   "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")))
+                                                   "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTI")))
 
 # Confidence
 get_ci <- function(x, type, confidence = 0.95) {
@@ -136,12 +134,12 @@ summary_importance <- summary_importance[, .(mean = mean(importance),
 
 # Order forest types
 summary_importance <- summary_importance[order(name)]
-names <- c(rev(c("Tree height (max)", 
+names <- c(rev(c("Tree height", 
                  "Slenderness", 
                  "Shade tolerance index", 
                  "Drought tolerance index",
                  "Waterlogging tolerance index",
-                 "Leaf Mass Area",
+                 "Leaf mass per area",
                  "Nitrogen",
                  "Wood density")), "Average")
 summary_importance <- rbind(summary_importance, summary_all)
@@ -162,20 +160,20 @@ p <- ggplot(summary_importance, aes(x = mean,
                                     fill = metric)) +
   geom_bar(stat = "identity", position = "stack") +
   geom_vline(xintercept = 0.5, colour = "grey", linetype = "dotted") +
-  scale_fill_viridis(name = "Relative of importance", 
+  scale_fill_viridis(name = "Relative importance", 
                      option = "mako",
                      direction = -1,
                      discrete = TRUE,
                      breaks = c("Axis 1", "Axis 2", "Axis 3", "MAT", 
-                                "TS", "TAR", "AP", "PS", "DEM", "SL","CTI")) +
+                                "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTI")) +
   theme(legend.position="top", legend.box = "horizontal") +
   guides(fill = guide_legend(nrow = 1)) +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
-  xlab("Relative of importance") + ylab("Community-weighted mean of plant traits") +
+  xlab("Relative importance") + ylab("Community-weighted mean of plant traits") +
   th
 p
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_CWM_test.jpg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_CWM.jpg"), 
      width = 270, 
      height = 150, 
      units = "mm", 
