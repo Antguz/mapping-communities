@@ -13,6 +13,11 @@ library(ggpubr)
 options(scipen = 100)
 
 #'------------------------------------------------------------------------------
+#' Source code
+
+source("R/auxiliary/peak.R")
+
+#'------------------------------------------------------------------------------
 #' Working directory
 
 root_path <- "/media/antonio/Work/MMDB"
@@ -99,12 +104,34 @@ vip_summary$sensor <- as.factor(vip_summary$sensor)
 vip_summary$sensor <- factor(vip_summary$sensor, levels = c("DESIS",
                                                         "EMIT"))
 
+#'------------------------------------------------------------------------------
+#' Define peaks
+
+sensor <- unique(vip_summary$sensor)
+type <-  unique(vip_summary$type)
+Axes <- unique(vip_summary$Axes)
+peaks_summary <- CJ(sensor, type, Axes)
+importance <- data.table()
+
+for(i in 1:nrow(peaks_summary)) {
+  
+  vip_sub <- na.exclude(vip_summary[sensor == peaks_summary$sensor[i] &
+                                      type == peaks_summary$type[i] &
+                                      Axes == peaks_summary$Axes[i],])
+  peak_importance <- peakdet(vip_sub$VIP, diff(range(vip_sub$VIP))/6, vip_sub$wavelength)$maxtab
+  peak_importance <- as.data.table(peak_importance)
+  peak_importance <- peak_importance[val >= quantile(vip_sub$VIP, 0.75),]
+  to_complete <- cbind(peaks_summary[i,], peak_importance)
+  importance <- rbind(importance, to_complete)
+  
+}
+
+fwrite(importance, paste0(root_path, "/figures/Manuscript_black/bands_with_importance.csv"))
+
 #-------------------------------------------------------------------------------
 # Plot details
 
-#col <- c("#b35806", "#542788")
-col <- c("#e08214", "#8073ac")
-
+col <- c("#8c510a", "#01665e")
 
 th_black <- theme_bw() + 
   theme(panel.grid.major = element_blank(), 
@@ -154,11 +181,14 @@ plot <- ggplot(vip_summary) +
                   ymin = VIP - vip_sd, 
                   ymax = VIP + vip_sd, 
                   fill = sensor), 
-              alpha = 0.25) +
+              alpha = 0.5) +
   geom_line(aes(x = wavelength, 
                 y = VIP, 
                 colour = sensor), 
             linewidth = 0.5) +
+  geom_vline(data = importance, aes(xintercept = pos,
+                                    colour = sensor),
+             linetype = "dotted") +
   geom_hline(yintercept = 1, colour = "grey", linetype = "dotted") + 
   coord_cartesian(xlim = c(440, 2430), ylim = c(0, 4.5), expand = FALSE) +
   scale_y_continuous(breaks = c(0, 2, 4)) +
@@ -200,6 +230,8 @@ png(paste0(root_path, "/figures/Manuscript_white/PLSR_vip.png"),
 plot
 
 dev.off()
+
+
 
 
 

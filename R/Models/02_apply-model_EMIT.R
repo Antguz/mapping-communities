@@ -249,80 +249,80 @@ apply_model <- function(X,
 #' @Local predictions from .hdr files
 ################################################################################
 
-# Apply in a batch of scenes
-# Path
-root_path <- "/media/antonio/Work/MMDB"
-
-# Source code
-source("R/auxiliary/EMIT-transform.R")
-sourceCpp("src/beta_predict_pls.cpp")
-
-# Scenes frame
-frame_scenes <- list.files(path = paste0(root_path, "/00_imagery/EMIT/New"),
-                           full.names = TRUE,
-                           recursive = TRUE)
-
-# Arrange path in a frame
-frame_scenes <- data.table(scenes_path = frame_scenes)
-
-# Get product information
-n <- length(strsplit(frame_scenes$scenes_path[1], "/")[[1]])
-frame_scenes[, scenes := strsplit(scenes_path, "/")[[1]][n], by = seq_along(1:nrow(frame_scenes))]
-frame_scenes[, type := strsplit(scenes, "_")[[1]][3], by = seq_along(1:nrow(frame_scenes))]
-frame_scenes[, time := strsplit(scenes, "_")[[1]][5], by = seq_along(1:nrow(frame_scenes))]
-frame_scenes[, band_mask := strsplit(scenes, "_")[[1]][8], by = seq_along(1:nrow(frame_scenes))]
-frame_scenes[, keep := unlist(gregexpr('.hdr', scenes))[1], by = seq_along(1:nrow(frame_scenes))]
-frame_scenes <- frame_scenes[keep == -1, 1:5]
-
-# Unique scenes and merge
-list_scenes <- data.table(time = unique(frame_scenes$time))
-list_scenes$ID <- 1:nrow(list_scenes)
-frame_scenes <- merge(frame_scenes,
-                      list_scenes,
-                      by = "time",
-                      all.x = TRUE,
-                      all.y = TRUE)
-frame_scenes <- na.exclude(frame_scenes)
-
-# Coefficients
-type <- "taxo"
-coefficients_taxonomic <- fread(paste0(root_path,
-                                       "/Models/01_model_beta/EMIT/EMIT_",
-                                       type,
-                                       "_coefficients.csv"))
-type <- "phylo"
-coefficients_phylogenetic <- fread(paste0(root_path,
-                                          "/Models/01_model_beta/EMIT/EMIT_",
-                                          type,
-                                          "_coefficients.csv"))
-type <- "func"
-coefficients_functional <- fread(paste0(root_path,
-                                        "/Models/01_model_beta/EMIT/EMIT_",
-                                        type,
-                                        "_coefficients.csv"))
-# Out paths
-output_path <- paste0(root_path, "/00_imagery/Predicted/EMIT/L3")
-
-# Parallel processing
-run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)),
-                  FUN = apply_model,
-                  frame_scenes = frame_scenes,
-                  coefficients_taxonomic = coefficients_taxonomic,
-                  coefficients_phylogenetic = coefficients_phylogenetic,
-                  coefficients_functional = coefficients_functional,
-                  output_path = output_path,
-                  threads = 1,
-                  mc.preschedule = FALSE,
-                  mc.set.seed = FALSE,
-                  mc.silent = FALSE,
-                  mc.cores = 1,
-                  mc.cleanup = TRUE,
-                  mc.allow.recursive = TRUE,
-                  affinity.list = NULL)
-
-# Export report
-complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
+# # Apply in a batch of scenes
+# # Path
+# root_path <- "/media/antonio/Work/MMDB"
+# 
+# # Source code
+# source("R/auxiliary/EMIT-transform.R")
+# sourceCpp("src/beta_predict_pls.cpp")
+# 
+# # Scenes frame
+# frame_scenes <- list.files(path = paste0(root_path, "/00_imagery/EMIT/New"),
+#                            full.names = TRUE,
+#                            recursive = TRUE)
+# 
+# # Arrange path in a frame
+# frame_scenes <- data.table(scenes_path = frame_scenes)
+# 
+# # Get product information
+# n <- length(strsplit(frame_scenes$scenes_path[1], "/")[[1]])
+# frame_scenes[, scenes := strsplit(scenes_path, "/")[[1]][n], by = seq_along(1:nrow(frame_scenes))]
+# frame_scenes[, type := strsplit(scenes, "_")[[1]][3], by = seq_along(1:nrow(frame_scenes))]
+# frame_scenes[, time := strsplit(scenes, "_")[[1]][5], by = seq_along(1:nrow(frame_scenes))]
+# frame_scenes[, band_mask := strsplit(scenes, "_")[[1]][8], by = seq_along(1:nrow(frame_scenes))]
+# frame_scenes[, keep := unlist(gregexpr('.hdr', scenes))[1], by = seq_along(1:nrow(frame_scenes))]
+# frame_scenes <- frame_scenes[keep == -1, 1:5]
+# 
+# # Unique scenes and merge
+# list_scenes <- data.table(time = unique(frame_scenes$time))
+# list_scenes$ID <- 1:nrow(list_scenes)
+# frame_scenes <- merge(frame_scenes,
+#                       list_scenes,
+#                       by = "time",
+#                       all.x = TRUE,
+#                       all.y = TRUE)
+# frame_scenes <- na.exclude(frame_scenes)
+# 
+# # Coefficients
+# type <- "taxo"
+# coefficients_taxonomic <- fread(paste0(root_path,
+#                                        "/Models/01_model_beta/EMIT/EMIT_",
+#                                        type,
+#                                        "_coefficients.csv"))
+# type <- "phylo"
+# coefficients_phylogenetic <- fread(paste0(root_path,
+#                                           "/Models/01_model_beta/EMIT/EMIT_",
+#                                           type,
+#                                           "_coefficients.csv"))
+# type <- "func"
+# coefficients_functional <- fread(paste0(root_path,
+#                                         "/Models/01_model_beta/EMIT/EMIT_",
+#                                         type,
+#                                         "_coefficients.csv"))
+# # Out paths
+# output_path <- paste0(root_path, "/00_imagery/Predicted/EMIT/L3")
+# 
+# # Parallel processing
+# run <- pbmclapply(X = 1:length(unique(frame_scenes$ID)),
+#                   FUN = apply_model,
+#                   frame_scenes = frame_scenes,
+#                   coefficients_taxonomic = coefficients_taxonomic,
+#                   coefficients_phylogenetic = coefficients_phylogenetic,
+#                   coefficients_functional = coefficients_functional,
+#                   output_path = output_path,
+#                   threads = 1,
+#                   mc.preschedule = FALSE,
+#                   mc.set.seed = FALSE,
+#                   mc.silent = FALSE,
+#                   mc.cores = 1,
+#                   mc.cleanup = TRUE,
+#                   mc.allow.recursive = TRUE,
+#                   affinity.list = NULL)
+# 
+# # Export report
+# complete <- do.call(rbind, run)
+# fwrite(complete, paste0(output_path, "/files ", Sys.time(), ".txt"))
 
 ################################################################################
 #' @MSI predictions from .hdr files
