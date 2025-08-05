@@ -57,6 +57,9 @@ for (i in 1:nlyr(rgb)) {
 
 rgb_3d <- as.array(rgb)
 rgb_3d <- aperm(rgb_3d, c(2, 1, 3))
+rgb_3d <- rgb_3d / max(rgb_3d)
+writePNG(rgb_3d, target = "reflectance.png")
+rgb_3d <- png::readPNG("reflectance.png")
 
 # 3. Get elevation data
 #----------------------
@@ -80,17 +83,18 @@ dtm_3d %>%
   height_shade(texture = viridis(256, alpha = 1, begin = 0, end = 1, direction = 1, option = "turbo")) %>%
   add_shadow(ray_shade(dtm_3d, zscale = 10), 0.3) %>%
   plot_3d(heightmap = dtm_3d,
-          zscale = 6,
+          zscale = 8,
           theta = 143.5, #323
           phi = 45,
           fov = 45,
-          windowsize = c(4000, 2000), #c(6400, 3000), #c(1600, 750), #
+          windowsize = c(1000, 500), #c(6400, 3000), #c(1600, 750), #
           background = "transparent",
           solidcolor = "black",
           solidlinecolor = "black",
           zoom = 1, #
           solid = TRUE)
 render_camera(zoom = 0.65)
+render_snapshot()
 render_highquality(filename = "3d_dtm.png", 
                    clear = FALSE, 
                    samples = 128,
@@ -103,112 +107,63 @@ render_highquality(filename = "3d_dtm.png",
                    parallel = TRUE)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# RGB
 
 dtm_3d %>%
-  sphere_shade(texture="desert") %>%
-  plot_3d(dtm_3d, 
-          zscale = 35, 
+  add_overlay(rgb_3d) %>%
+  plot_3d(heightmap = dtm_3d,
+          zscale = 8,
           theta = 143.5, #323
-          phi = 45, 
+          phi = 45,
           fov = 45,
-          windowsize = c(400, 200),#c(1600, 750), #6400 3000
+          windowsize = c(1000, 500), #c(6400, 3000), #c(1600, 750), #
           background = "transparent",
           solidcolor = "black",
           solidlinecolor = "black",
-          #asp = 1/cospi(36.84534/180),
           zoom = 1, #
-          solid = TRUE)
+          solid = FALSE)
 render_camera(zoom = 0.65)
-render_snapshot(filename = "3d_dtm.png", 
-                clear = FALSE, 
-                background = "transparent",
-                reset_scene_cache = TRUE,
-                software_render = TRUE)
+render_snapshot()
+render_highquality(filename = "3d_dtm.png", 
+                   clear = FALSE, 
+                   samples = 128,
+                   light = TRUE,
+                   lightdirection = 45,
+                   lightintensity = 1000,
+                   #lightaltitude = 45,
+                   width = 1000,#round(6400), 
+                   height = 500,#round(3000),
+                   parallel = TRUE)
+
+dtm_3d %>%
+  sphere_shade(texture = "desert") %>%
+  render_image_overlay(rgb_3d)  
+#add_overlay(rgb_3d, alphalayer = 0.8)
+  #add_water(detect_water(elevation_matrix), color = "desert") %>%
+  #add_shadow(ray_shade(dtm_3d), 0.1) %>%
+  #add_shadow(ambient_shade(dtm_3d), 0.1) %>%
+  
+
+dtm_3d %>%
+  sphere_shade(texture ="desert") %>%
+  #add_water(detect_water(elevation_matrix), color = "desert") %>%
+  add_shadow(ray_shade(dtm_3d), max_darken = 0.5) %>%
+  add_shadow(ambient_shade(dtm_3d), max_darken = 0.5) %>%
+  add_overlay(rgb_3d, alphalayer = 0.8) %>%
+  plot_3d(heightmap = dtm_3d,
+          zscale = 8,
+          theta = 143.5, #323
+          phi = 45,
+          fov = 45,
+          windowsize = c(1000, 500), #c(6400, 3000), #c(1600, 750), #
+          background = "transparent",
+          solidcolor = "black",
+          solidlinecolor = "black",
+          zoom = 1, #
+          solid = FALSE)
+Sys.sleep(0.2)
 render_snapshot()
 
 
+#render_snapshot()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-aoi_sf <- st_read(paste0(root_path, "/figures/Maps/limits.gpkg"))
-aoi_dtm <- get_elev_raster(
-  locations = aoi_sf, 
-  z = 7, 
-  clip = "locations")
-aoi_mat <- raster_to_matrix(aoi_dtm)
-
-aoi_mat %>%
-  height_shade(texture = viridis(256, alpha = 1, begin = 0, end = 1, direction = 1, option = "turbo")) %>%
-  add_shadow(ray_shade(aoi_mat, zscale = 65), 0.3) %>%
-  plot_3d(heightmap = aoi_mat,
-          zscale = 65,
-          theta = 143.5, #323
-          phi = 45,
-          fov = 45,
-          windowsize = c(1600, 750), #c(6400, 3000), #c(1600, 750), #
-          background = "transparent",
-          solidcolor = "black",
-          solidlinecolor = "black",
-          zoom = 1, #
-          solid = TRUE)
-render_camera(zoom = 0.65)
-render_snapshot(filename = "3d_dtm.png", 
-                clear = FALSE, 
-                background = "transparent",
-                reset_scene_cache = TRUE,
-                software_render = TRUE)
-render_snapshot(parallel = TRUE)
-
-render_highquality(filename = "3d_dtm.png", 
-                   clear = FALSE, 
-                   samples = 128,
-                   light = TRUE,
-                   lightdirection = 45,
-                   lightintensity = 1000,
-                   #lightaltitude = 45,
-                   width = 1000,#round(6400), 
-                   height = 500,#round(3000),
-                   parallel = TRUE)
-
-
-
-render_highquality(
-  filename = "3d_dtm.png", 
-  clear = FALSE, 
-  background = "transparent",
-  parallel = TRUE, 
-  samples = 300,
-  light = FALSE, 
-  interactive = FALSE,
-  environment_light = "env/phalzer_forest_01_4k.hdr",
-  intensity_env = 1.5,
-  rotate_env = 180,
-  width = round(6000), 
-  height = round(6000)
-)
