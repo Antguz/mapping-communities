@@ -44,8 +44,14 @@ dtm_resampled <- resample(dtm,
 dtm <- mask(crop(dtm_resampled, aoi), aoi)
 dtm_3d <- raster_to_matrix(dtm)
 
-# Initial ray-tracing
+################################################################################
+##### Arguments for preparation
+################################################################################
+
 zscale_value <- 12
+
+# Initial ray-tracing ----------------------------------------------------------
+
 rayshade <- ray_shade(dtm_3d, 
                       zscale = zscale_value,
                       multicore = TRUE)
@@ -53,31 +59,6 @@ rayshade <- ray_shade(dtm_3d,
 ambientshade <- ambient_shade(dtm_3d, 
                               zscale = zscale_value,
                               multicore = TRUE)
-
-# Digital elevation model
-
-dtm_3d %>%
-  height_shade(texture = viridis(256, alpha = 1, begin = 0, end = 1, direction = 1, option = "turbo")) %>%
-  add_shadow(rayshade, 0.5) %>%
-  add_shadow(ambientshade, 0.8) %>%
-  plot_3d(heightmap = dtm_3d,
-          zscale = zscale_value,
-          theta = 143.5, #323
-          phi = 45,
-          fov = 45,
-          windowsize = c(640, 480), #c(6400, 3000), #c(1600, 750), #
-          background = "transparent",
-          solidcolor = "grey20",
-          solidlinecolor = "grey30",
-          zoom = 1, #
-          solid = TRUE)
-render_camera(zoom = 0.65)
-render_snapshot(filename = paste0(outpath, "/DTM_3d.png"), 
-                clear = FALSE, 
-                width = 3480,#round(6400), 
-                height = 2160,#round(3000),
-                software_render = TRUE,
-                parallel = TRUE)
 
 # Stretch function -------------------------------------------------------------
 
@@ -104,12 +85,46 @@ stretch_percentile <- function(raster, percentile = c(0.01, 0.99), values = NULL
   dtm_mask <- !is.na(DTM)
   na_overlap <- is.na(r_stretched) & dtm_mask
   r_stretched[na_overlap] <- 0
-
+  
   return(r_stretched)
   
 }
 
-# RGB plot ---------------------------------------------------------------------
+################################################################################
+##### DTM plot
+################################################################################
+
+dtm_3d %>%
+  height_shade(texture = viridis(256, alpha = 1, begin = 0, end = 1, direction = 1, option = "turbo")) %>%
+  add_shadow(rayshade, 0.5) %>%
+  add_shadow(ambientshade, 0.8) %>%
+  plot_3d(heightmap = dtm_3d,
+          zscale = zscale_value,
+          theta = 143.5, #323
+          phi = 45,
+          fov = 45,
+          windowsize = c(640, 480), #c(6400, 3000), #c(1600, 750), #
+          background = "transparent",
+          solidcolor = "grey20",
+          solidlinecolor = "grey30",
+          zoom = 1, #
+          solid = TRUE)
+render_camera(zoom = 0.65)
+render_snapshot(filename = paste0(outpath, "/DTM_3d2.png"), 
+                clear = FALSE, 
+                width = 3480,#round(6400), 
+                height = 2160,#round(3000),
+                software_render = TRUE,
+                parallel = TRUE,
+                title_text = "Digital Elevation Model",
+                title_font = "Arial",
+                title_color = "grey20",
+                title_size = 100,
+                title_offset = c(800,700))
+
+################################################################################
+##### RGB plot
+################################################################################
 
 refl <- rast(paste0(root_path, "/figures/Maps/Rflec/reflectance.tif"))
 names(refl) <- readRDS("data/EMIT_bands.rds")
@@ -184,7 +199,9 @@ RGB_3d_plot <- function(rgb,
 
 fortyp_3d_plot(fortyp)
 
-# RGB plot ---------------------------------------------------------------------
+################################################################################
+##### MDS plots
+################################################################################
 
 MDS_3d_plot <- function(MDS,
                         dtm_3d = get("dtm_3d", envir = globalenv()), 
