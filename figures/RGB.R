@@ -1,4 +1,6 @@
 # RGB color
+library(stringr)
+
 RGB <- function(X, Y, Z, min_range = -0.5, max_range = 0.5) {
   
   if(is.null(min_range) == TRUE & is.null(max_range) == TRUE) {
