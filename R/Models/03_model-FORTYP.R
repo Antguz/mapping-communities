@@ -30,9 +30,9 @@ source("R/auxiliary/model_fortyp.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 type <- "taxo"
-out_path <- "/media/antonio/Work/MMDB/Models/03_models_fortyp"
+out_path <- "/media/guzman/Work/MMDB/Models/03_models_fortyp"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -91,6 +91,13 @@ ordination <- ordination[ordination_match, ]
 all.equal(fia_meta$PLT_CN, FORTYPCD$PLT_CN)
 all.equal(fia_meta$PLT_CN, ordination$PLT_CN)
 all.equal(ordination$PLT_CN, FORTYPCD$PLT_CN)
+
+# Data for testing occurrence
+FORTYPCD_occurrance <- FORTYPCD
+FORTYPCD_occurrance <- FORTYPCD_occurrance[, value := 1] 
+FORTYPCD_wide <- dcast(FORTYPCD_occurrance, PLT_CN ~ FORTYP, value.var = "value", fill = 0)
+saveRDS(FORTYPCD_wide, paste0(out_path, "/FORTYPCD_occurrance.rds"))
+saveRDS(ordination, paste0(out_path, "/FORTYPCD_variables.rds"))
 
 #-------------------------------------------------------------------------------
 #' @Data-split

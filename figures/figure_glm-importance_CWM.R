@@ -17,7 +17,7 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Categorical 
 data <- fread(paste0(root_path, "/Models/03_model_CWM/func_model-CWM.csv"))

@@ -32,9 +32,9 @@ source("R/auxiliary/model_lineages.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 type <- "phylo"
-out_path <- "/media/antonio/Work/MMDB/Models/03_model_occurrence"
+out_path <- "/media/guzman/Work/MMDB/Models/03_model_occurrence"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -76,6 +76,10 @@ rpresence <- round(presence/nrow(aggregation)*100, 4)
 rpresence <- rpresence > 10.0
 rpresence <- c(TRUE, rpresence)
 aggregation <- aggregation[ , .SD, .SDcols = c(1:ncol(aggregation))[rpresence]]
+
+# Data for testing occurrence
+saveRDS(aggregation, paste0(out_path, "/LINEAGES_occurrance.rds"))
+saveRDS(ordination, paste0(out_path, "/LINEAGES_variables.rds"))
 
 #-------------------------------------------------------------------------------
 #' @Data-split
