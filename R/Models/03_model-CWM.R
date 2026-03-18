@@ -44,7 +44,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/03_model_CWM"
 fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
 # MDS ordination values
-ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_total.csv"))
+ordination <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_", type, "_total.csv"))
 
 # FIA data for aggregation
 inventory <- readRDS(paste0(root_path, "/Diversity/01_beta/master_matched_comm_", type, "_VOL.rds"))
@@ -112,16 +112,50 @@ ordination <- cbind(data.table(PLT_CN = PLT_CN),
 #' @Model
 #-------------------------------------------------------------------------------
 
-# Create model
+# ----------------------------------------------------------
+# Model - just ordination axes as predictors
+
+variables <- "axes"
 model <- model_CWM(fia_meta = fia_meta,
                    ordination = ordination,
                    aggregation = aggregation,
+                   variables = variables,
                    data_split = data_split,
                    iterations = 100,
                    threads = 30)
 
 # Export model
-fwrite(model, paste0(out_path, "/", type, "_model-CWM.csv"))
+fwrite(model, paste0(out_path, "/", type, "_", variables,"_model-CWM.csv"))
+
+# ----------------------------------------------------------
+# Model - just climate and topography information as predictors
+
+variables <- "climate-topography"
+model <- model_CWM(fia_meta = fia_meta,
+                   ordination = ordination,
+                   aggregation = aggregation,
+                   variables = variables,
+                   data_split = data_split,
+                   iterations = 100,
+                   threads = 30)
+
+# Export model
+fwrite(model, paste0(out_path, "/", type, "_", variables,"_model-CWM.csv"))
+
+# ----------------------------------------------------------
+# Model - axes, climate, and topography information as predictors
+
+variables <- "altogether"
+model <- model_CWM(fia_meta = fia_meta,
+                   ordination = ordination,
+                   aggregation = aggregation,
+                   variables = variables,
+                   data_split = data_split,
+                   iterations = 100,
+                   threads = 30)
+
+# Export model
+fwrite(model, paste0(out_path, "/", type, "_", variables,"_model-CWM.csv"))
 
 #-------------------------------------------------------------------------------
 #' @END

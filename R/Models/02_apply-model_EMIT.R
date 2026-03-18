@@ -17,7 +17,7 @@ library(pbmcapply)
 #'------------------------------------------------------------------------------
 #' Source code
 
-#source("R/EMIT-transform.R")
+#source("R/auxiliary/EMIT-transform.R")
 #sourceCpp("src/model-application.cpp")
 
 #'------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ apply_model <- function(X,
   rast_mask <- rast(mask)
   names(rast_mask)<- c("cloud", "cirrus", "water", "spacecraft", "dilated",
                        "AOD550", "H20", "mask")
-  rast_mask$mask <- rast_mask$mask - rast_mask$dilated
+  rast_mask$mask <- rast_mask$mask #- rast_mask$dilated
   
   #---------------------------------------------------------
   # Define mask
@@ -62,8 +62,8 @@ apply_model <- function(X,
   # Mask for NIR
   NIR <- rast_spectra$`805.361755371093`
   with_info <- sum(as.numeric(NIR[]) != 0) 
-  NIR[NIR < 0.3] <- 1
-  NIR[NIR >= 0.3 & NIR <= 0.8] <- 0
+  NIR[NIR < 0.20] <- 1
+  NIR[NIR >= 0.20 & NIR <= 0.8] <- 0
   NIR[NIR > 0.8] <- 1
   
   # Mask for NDVI
@@ -113,7 +113,7 @@ apply_model <- function(X,
                        EMIT_bands = EMIT_bands,
                        cell = cell,
                        new_bands = seq(min(EMIT_bands), max(EMIT_bands), by = 7.5),
-                       threads = 1)
+                       threads = 15)
   
   # Subset bands
   cell <- sw$cell

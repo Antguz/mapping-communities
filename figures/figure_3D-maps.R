@@ -62,7 +62,7 @@ theta_value <- 143.5
 phi_value <- 45
 fov_value <- 45
 windowsize_value <- c(640, 480) 
-background_color <- "black"
+background_color <- "white"
 solidcolor_color <- "grey40"
 solidlinecolor_color <- "grey40"
 shadowcolor_color <- "grey30"

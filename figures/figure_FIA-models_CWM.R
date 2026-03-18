@@ -21,7 +21,27 @@ library(ggh4x)
 root_path <- "/media/antonio/Work/MMDB"
 
 # Model performance results 
-data <- fread(paste0(root_path, "/Models/03_model_CWM/func_model-CWM.csv"))
+climate_topography <- fread(paste0(root_path, "/Models/03_model_CWM/func_climate-topography_model-CWM.csv"))
+axes <- fread(paste0(root_path, "/Models/03_model_CWM/func_axes_model-CWM.csv"))
+altogether <- fread(paste0(root_path, "/Models/03_model_CWM/func_altogether_model-CWM.csv"))
+
+data <- rbindlist(list(climate_topography = climate_topography,
+                       axes = axes,
+                       altogether = altogether),
+                  fill = TRUE,
+                  use.names = TRUE,
+                  idcol = "Model")
+data <- data[, .SD, .SDcols = c("Model", colnames(altogether))]
+
+# Change of model
+data$Model <- as.factor(data$Model)
+data$Model <- factor(data$Model,
+                     levels = c("climate_topography", 
+                                "axes", 
+                                "altogether"),
+                     labels = c("Climate and topography", 
+                                "MDS axes", 
+                                "MDS axes, climate, and topography"))
 
 # Change of names
 data <- data[order(plant),]
@@ -99,7 +119,7 @@ text <- "black"
 
 # Melt dataset
 summary_performance <- melt(data, 
-                            id.vars = c("dataset", "name"),
+                            id.vars = c("Model", "dataset", "name"),
                             measure.vars = c("R2", "BIAS", "RMSE", "perRMSE"),
                             variable.name = "metric",
                             value.name = "performance")
@@ -115,7 +135,7 @@ summary_performance$metric <- factor(summary_performance$metric,
 
 # Summary regardless of trait
 summary_all <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
-                                   by = c("dataset", "metric")]
+                                   by = c("Model", "dataset", "metric")]
 
 # Confidence
 get_ci <- function(x, type, confidence = 0.95) {
@@ -137,7 +157,7 @@ get_ci <- function(x, type, confidence = 0.95) {
 summary_performance <- summary_performance[, .(mean = mean(performance),
                                                lower = get_ci(performance, "lower"),
                                                upper = get_ci(performance, "upper")),
-                                           by = c("dataset", "metric", "name")]
+                                           by = c("Model", "dataset", "metric", "name")]
 # Plot labels
 my_labeller <- as_labeller(c(R2= "italic(R)^2", BIAS ="BIAS", RMSE = "RMSE", perRMSE = "\"%\"*RMSE"),
                            default = label_parsed)
@@ -150,38 +170,41 @@ rects <- data.frame(
   xmax = Inf
 )
 
-p <- ggplot(summary_performance) +
+selection <- "Testing"
+pd <- position_dodge2(width = 0.6, preserve = "single")
+p <- ggplot(summary_performance[dataset == selection,]) +
   geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
             fill = "gray", alpha = 0.2, inherit.aes = FALSE) +  
   geom_linerange(aes(xmin = lower,
                      xmax = upper,
                      y = name,
-                     colour = dataset),
-                 position = position_dodge(width = -0.4),
+                     colour = Model,
+                     group = Model),
+                 position = pd,
                  alpha = 0.75) +
   geom_point(aes(x = mean,
                  y = name,
-                 #colour = dataset,
-                 fill = dataset,
-                 shape = dataset),
+                 shape = Model,
+                 fill = Model),
              size = 2,
-             colour = "grey",
-             position = position_dodge(width = -0.4),
+             # colour = "grey",
+             #shape = 21,
+             position = pd,
              alpha = 0.75) +
-  geom_vline(data = summary_all,
+  geom_vline(data = summary_all[dataset == selection,],
              aes(xintercept = mean, 
-                 colour = dataset,
-                 linetype = dataset)) +
-  scale_shape_manual("Dataset", values = c(24, 25)) +
-  scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99")) +
-  scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99")) +
-  scale_linetype_manual("Dataset", values = c("dotted", "dashed")) +
+                 colour = Model,
+                 linetype = Model)) +
+  scale_shape_manual("Model", values = c(25, 21, 24)) +
+  scale_colour_manual("Model", values = c("#7570b3", "#d95f02", "#1b9e77")) +
+  scale_fill_manual("Model", values = c("#7570b3", "#d95f02", "#1b9e77")) +
+  scale_linetype_manual("Model", values = c("dotted", "dotted", "dotted")) +
   xlab("Values") + ylab("Community-weighted mean of plant traits") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(-0.05, 0.05), breaks = c(-0.04, 0, 0.04)),
                                scale_x_continuous(limits = c(0, 10), breaks = c(0, 5, 10)),
-                               scale_x_continuous(limits = c(10, 20), breaks = c(10, 15, 20)))) +
+                               scale_x_continuous(limits = c(10, 21), breaks = c(10, 15, 20)))) +
   th
 
 p
@@ -197,6 +220,60 @@ jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_CWM.jpg"),
 p
 dev.off()
 
+#-----------------------------------------------------
+# Testing
+
+selection <- "Testing"
+pd <- position_dodge2(width = 0.6, preserve = "single")
+p <- ggplot(summary_performance[dataset == selection,]) +
+  geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+            fill = "gray", alpha = 0.2, inherit.aes = FALSE) +  
+  geom_linerange(aes(xmin = lower,
+                     xmax = upper,
+                     y = name,
+                     colour = Model,
+                     group = Model),
+                 position = pd,
+                 alpha = 0.75) +
+  geom_point(aes(x = mean,
+                 y = name,
+                 shape = Model,
+                 fill = Model),
+             size = 2,
+             # colour = "grey",
+             #shape = 21,
+             position = pd,
+             alpha = 0.75) +
+  geom_vline(data = summary_all[dataset == selection,],
+             aes(xintercept = mean, 
+                 colour = Model,
+                 linetype = Model)) +
+  scale_shape_manual("Dataset", values = c(25, 21, 24)) +
+  scale_colour_manual("Dataset", values = c("#7570b3", "#d95f02", "#1b9e77")) +
+  scale_fill_manual("Dataset", values = c("#7570b3", "#d95f02", "#1b9e77")) +
+  scale_linetype_manual("Dataset", values = c("dotted", "dotted", "dotted")) +
+  xlab("Values") + ylab("Community-weighted mean of plant traits") +
+  facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
+  facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
+                               scale_x_continuous(limits = c(-0.045, 0.045), breaks = c(-0.04, 0, 0.04)),
+                               scale_x_continuous(limits = c(0, 10), breaks = c(0, 5, 10)),
+                               scale_x_continuous(limits = c(10, 21), breaks = c(10, 15, 20)))) +
+  th
+
+p
+
+jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_CWM.jpg"), 
+     width = 210, 
+     height = 150, 
+     units = "mm", 
+     res = 600, 
+     bg = "white",
+     #bg = "transparent", 
+     pointsize = 14)
+p
+dev.off()
+
+# For transparencies
 png(paste0(root_path, "/figures/Manuscript_white/FIA-models_CWM.png"), 
     width = 210, 
     height = 150, 

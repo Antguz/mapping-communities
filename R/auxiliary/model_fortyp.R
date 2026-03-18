@@ -1,6 +1,7 @@
 model_fortyp <- function(forest_type,
                          ordination,
                          data_split,
+                         variables,
                          iterations = 100,
                          threads = 25) {
   
@@ -11,6 +12,7 @@ model_fortyp <- function(forest_type,
   apply_occurrence <- function(X,
                                forest_type,
                                ordination,
+                               variables,
                                iterations = 100,
                                data_split) {
     
@@ -46,6 +48,25 @@ model_fortyp <- function(forest_type,
       data_testing <- frame[as.matrix(data_split)[, X] == 0,]
       fortyp_collector <- data.table()
       
+      #---------------------------------------------------------------------------
+      # Define variables
+      
+      if(variables == "axes") {
+        coi <- c("occurrence", "Axis1", "Axis2", "Axis3")
+        data_training <- data_training[, ..coi] 
+        data_testing <- data_testing[, ..coi]
+        
+      } else if(variables == "climate-topography") {
+        coi <- c("occurrence", "MAT", "TS", "TAR", "MAP", "PS", "DEM", "SL", "CTI")
+        data_training <- data_training[, ..coi] 
+        data_testing <- data_testing[, ..coi]
+        
+      } else if(variables == "altogether") {
+        coi <- c("occurrence", "Axis1", "Axis2", "Axis3", "MAT", "TS", "TAR", "MAP", "PS", "DEM", "SL", "CTI")
+        data_training <- data_training[, ..coi] 
+        data_testing <- data_testing[, ..coi]
+      }
+      
       for(ii in 1:iterations) {
         
         #---------------------------------------------------------------------------
@@ -54,12 +75,9 @@ model_fortyp <- function(forest_type,
         
         #---------------------------------------------------------------------------
         # Class balance
-        down_train <- ROSE(occurrence ~ ., data = data_training[split,])$data
+        down_train <- ROSE(occurrence ~ ., data = data_training[split,], seed = ii)$data
         down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
-        # down_train <- upSample(data_training[split, -1], data_training[split, ]$occurrence)
-        # colnames(down_train)[ncol(down_train)] <- "occurrence"
-        # down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
-        
+
         #---------------------------------------------------------------------------
         # Perform model
         
@@ -71,6 +89,7 @@ model_fortyp <- function(forest_type,
                              seeds = 1:11)
         
         # Model
+        set.seed(ii)
         glmFit <- train(occurrence ~ .,
                         data = down_train,
                         method = "glm",
@@ -158,6 +177,7 @@ model_fortyp <- function(forest_type,
                          forest_type = forest_type,
                          ordination = ordination,
                          data_split = data_split,
+                         variables = variables,
                          iterations = iterations, 
                          mc.preschedule = TRUE, 
                          mc.set.seed = FALSE,

@@ -54,14 +54,15 @@ postprocessing <- function(ordination,
   
   # Rotate
   ord_new <- MDS_rotate(ord, env[, c("MAT", "MAP")], na.rm = TRUE)
-  rm(list = c("ord"))
+  #rm(list = c("ord"))
   gc()
   
   #-----------------------------------------------------------------------------
   # Get community ordinations and goodness of fit
   
   # Get community ordinations
-  comm <- ord_new
+  #comm <- ord_new
+  comm <- ord
   colnames(comm) <- paste0("Axis", 1:ncol(comm))
   comm <- cbind(data.table(PLT_CN = as.integer64(rownames(comm))), comm)
   
@@ -132,11 +133,11 @@ postprocessing <- function(ordination,
   # Get distances from lmdS
   
   # Get distances from lmds
-  lmds_distance <- euclidean_distance(as.matrix(ord_new), n_threads = threads)
-  colnames(lmds_distance) <- rownames(ord_new)
-  rownames(lmds_distance) <- rownames(ord_new)
-  saveRDS(lmds_distance, paste0(out_path, "/lmds_distance_", type, "_total.rds"))
-  gc()
+  # lmds_distance <- euclidean_distance(as.matrix(ord_new), n_threads = threads)
+  # colnames(lmds_distance) <- rownames(ord_new)
+  # rownames(lmds_distance) <- rownames(ord_new)
+  # saveRDS(lmds_distance, paste0(out_path, "/lmds_distance_", type, "_total.rds"))
+  # gc()
   
 }
 

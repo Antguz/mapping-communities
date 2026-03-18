@@ -19,7 +19,29 @@ library(ggh4x)
 root_path <- "/media/antonio/Work/MMDB"
 
 # Categorical 
-data <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_model-FORTYP.csv"))
+climate_topography <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_climate-topography_model-FORTYP.csv"))
+axes <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_axes_model-FORTYP.csv"))
+altogether <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_altogether_model-FORTYP.csv"))
+
+data <- rbindlist(list(climate_topography = climate_topography,
+                       axes = axes,
+                       altogether = altogether),
+                  fill = TRUE,
+                  use.names = TRUE,
+                  idcol = "Model")
+data <- data[, .SD, .SDcols = c("Model", colnames(altogether))]
+
+# Change of model
+data$Model <- as.factor(data$Model)
+data$Model <- factor(data$Model,
+                     levels = c("climate_topography", 
+                                "axes", 
+                                "altogether"),
+                     labels = c("Climate and topography", 
+                                "MDS axes", 
+                                "MDS axes, climate, and topography"))
+
+
 data <- data[order(forty),]
 data$forty <- as.factor(data$forty)
 data$forty <- factor(data$forty, levels = rev(as.character(unique(data$forty))))
@@ -75,7 +97,7 @@ text <- "black"
 
 # Melt dataset
 summary_performance <- melt(data, 
-                            id.vars = c("dataset", "forty"),
+                            id.vars = c("Model", "dataset", "forty"),
                             measure.vars = c("TSS", "Sens", "Spec", "ROC"),
                             variable.name = "metric",
                             value.name = "performance")
@@ -92,7 +114,7 @@ summary_performance$metric <- factor(summary_performance$metric,
 
 # Summary regardless of trait
 summary_all <- summary_performance[, .(mean = mean(performance), sd = sd(performance)),
-                                   by = c("dataset", "metric")]
+                                   by = c("Model", "dataset", "metric")]
 
 # Confidence
 get_ci <- function(x, type, confidence = 0.95) {
@@ -114,7 +136,7 @@ get_ci <- function(x, type, confidence = 0.95) {
 summary_performance <- summary_performance[, .(mean = mean(performance),
                                                lower = get_ci(performance, "lower"),
                                                upper = get_ci(performance, "upper")),
-                                           by = c("dataset", "metric", "forty")]
+                                           by = c("Model", "dataset", "metric", "forty")]
 # Plot labels
 my_labeller <- as_labeller(c(TSS = "TSS", 
                              Sensitivity = "Sensitivity", 
@@ -130,37 +152,40 @@ rects <- data.frame(
   xmax = Inf
 )
 
-p <- ggplot(summary_performance) +
+selection <- "Testing"
+pd <- position_dodge2(width = 0.6, preserve = "single")
+p <- ggplot(summary_performance[dataset == selection,]) +
   geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
             fill = "gray", alpha = 0.2, inherit.aes = FALSE) +  
   geom_linerange(aes(xmin = lower,
                      xmax = upper,
                      y = forty,
-                     colour = dataset),
-                 position = position_dodge(width = -0.4),
+                     colour = Model,
+                     group = Model),
+                 position = pd,
                  alpha = 0.75) +
   geom_point(aes(x = mean, 
                  y = forty,
                  #colour = dataset,
-                 fill = dataset,
-                 shape = dataset),
+                 fill = Model,
+                 shape = Model),
              size = 1.5,
              colour = "grey",
              alpha = 0.75,
-             position = position_dodge(width = -0.4)) +
-  geom_vline(data = summary_all,
+             position = pd) +
+  geom_vline(data = summary_all[dataset == selection,],
              aes(xintercept = mean, 
-                 colour = dataset,
-                 linetype = dataset)) +
-  scale_shape_manual("Dataset", values = c(24, 25)) +
-  scale_colour_manual("Dataset", values = c("#e66101", "#5e3c99")) +
-  scale_fill_manual("Dataset", values = c("#e66101", "#5e3c99")) +
-  scale_linetype_manual("Dataset", values = c("dotted", "dashed")) +
+                 colour = Model,
+                 linetype = Model)) +
+  scale_shape_manual("Model", values = c(25, 21, 24)) +
+  scale_colour_manual("Model", values = c("#7570b3", "#d95f02", "#1b9e77")) +
+  scale_fill_manual("Model", values = c("#7570b3", "#d95f02", "#1b9e77")) +
+  scale_linetype_manual("Model", values = c("dotted", "dotted", "dotted")) +
   xlab("Values") + ylab("Forest type") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
                                scale_x_continuous(limits = c(0.6, 1.0), breaks = c(0.6, 0.8, 1.0)),
-                               scale_x_continuous(limits = c(0.6, 1.0), breaks = c(0.6, 0.8, 1.0)),
+                               scale_x_continuous(limits = c(0.5, 1.0), breaks = c(0.6, 0.8, 1.0)),
                                scale_x_continuous(limits = c(0.6, 1.0), breaks = c(0.6, 0.80, 1.0)))) +
   th
 

@@ -42,7 +42,7 @@ out_path <- "/media/antonio/Work/MMDB/Models/03_models_fortyp"
 fia_meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
 
 # NMDS ordination values
-ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_total.csv"))
+ordination <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_", type, "_total.csv"))
 
 # Get enviromental data
 fia_environment <- fread(paste0(root_path, "/FIA/03_FIA-env/fia-env.csv"))
@@ -136,15 +136,47 @@ ordination <- cbind(data.table(PLT_CN = PLT_CN),
 #' @Model
 #-------------------------------------------------------------------------------
 
-# Create model
+# ----------------------------------------------------------
+# Model - just ordination axes as predictors
+
+variables <- "axes"
 model <- model_fortyp(forest_type = FORTYPCD,
                       ordination = ordination,
                       data_split = data_split,
+                      variables = variables,
                       iterations = 100,
                       threads = 30)
 
 # Export model
-fwrite(model, paste0(out_path, "/", type, "_model-FORTYP.csv"))
+fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
+
+# ----------------------------------------------------------
+# Model - just climate and topography information as predictors
+
+variables <- "climate-topography"
+model <- model_fortyp(forest_type = FORTYPCD,
+                      ordination = ordination,
+                      data_split = data_split,
+                      variables = variables,
+                      iterations = 100,
+                      threads = 30)
+
+# Export model
+fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
+
+# ----------------------------------------------------------
+# Model - axes, climate, and topography information as predictors
+
+variables <- "altogether"
+model <- model_fortyp(forest_type = FORTYPCD,
+                      ordination = ordination,
+                      data_split = data_split,
+                      variables = variables,
+                      iterations = 100,
+                      threads = 30)
+
+# Export model
+fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
 
 #-------------------------------------------------------------------------------
 #' @END

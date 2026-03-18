@@ -73,9 +73,9 @@ RGB <- function(X, Y, Z, min_range = -0.50, max_range = 0.50) {
 root_path <- "/media/antonio/Work/MMDB"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_func_total.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_func_total.csv"))
 
 # Get domains
 domain <- fread(paste0(root_path, "/FIA/00_FIA/", "plot_domain.csv"))
@@ -194,7 +194,7 @@ func <- ggplot() +
 plot <- ggarrange(taxo, phylo, func, ncol = 3)
 
 # Black
-jpeg(paste0(root_path, "/figures/Manuscript_black/", "MDS_spatiala.jpeg"),
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "MDS_spatial.jpeg"),
     width = 210, 
     height = 90, 
     units = "mm",

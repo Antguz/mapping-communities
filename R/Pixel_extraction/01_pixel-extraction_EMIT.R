@@ -40,7 +40,7 @@ source("R/auxiliary/spectral_transform.R")
 root_path <- "/media/antonio/Work/MMDB"
 folder <- "/00_imagery/EMIT"
 scene_path <- paste0(root_path, "/", folder)
-FIA_path <- "/media/antonio/Work/MMDB/00_FIA/plots_eastern_20230427.csv"
+FIA_path <- "/media/antonio/Work/MMDB/FIA/00_FIA/plots_eastern_20230427.csv"
 out_path <- "/media/antonio/Work/MMDB/01_pixel-extraction/EMIT_new"
 
 rast_subst_EMIT(scene_path,

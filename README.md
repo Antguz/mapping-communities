@@ -34,7 +34,11 @@ This integrative approach sets the stage for scalable forest monitoring in suppo
 
 ## Workflow
 
-## Description of files in this repository
+## Description of folders and files in this repository
+
+```
+dir_tree(getwd(), recurse = 2)
+```
 
 ## Requirements
 * R 

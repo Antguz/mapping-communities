@@ -1,6 +1,7 @@
 model_lineages <- function(ordination,
                            aggregation,
                            data_split,
+                           variables,
                            iterations = 100,
                            threads = 4) {
   
@@ -12,6 +13,7 @@ model_lineages <- function(ordination,
                                ordination,
                                aggregation,
                                data_split,
+                               variables,
                                iterations = 100) {
     
     #---------------------------------------------------------------------------
@@ -40,6 +42,25 @@ model_lineages <- function(ordination,
     data_testing <- frame[as.matrix(data_split)[, c(X-1)] == 0,]
     lineages_collector <- data.table()
     
+    #---------------------------------------------------------------------------
+    # Define variables
+    
+    if(variables == "axes") {
+      coi <- c("occurrence", "Axis1", "Axis2", "Axis3")
+      data_training <- data_training[, ..coi] 
+      data_testing <- data_testing[, ..coi]
+      
+    } else if(variables == "climate-topography") {
+      coi <- c("occurrence", "MAT", "TS", "TAR", "MAP", "PS", "DEM", "SL", "CTI")
+      data_training <- data_training[, ..coi] 
+      data_testing <- data_testing[, ..coi]
+      
+    } else if(variables == "altogether") {
+      coi <- c("occurrence", "Axis1", "Axis2", "Axis3", "MAT", "TS", "TAR", "MAP", "PS", "DEM", "SL", "CTI")
+      data_training <- data_training[, ..coi] 
+      data_testing <- data_testing[, ..coi]
+    }
+    
     for(ii in 1:iterations) {
       
       #---------------------------------------------------------------------------
@@ -48,12 +69,8 @@ model_lineages <- function(ordination,
       
       #---------------------------------------------------------------------------
       # Class balance
-      down_train <- ROSE(occurrence ~ ., data = data_training[split,])$data
+      down_train <- ROSE(occurrence ~ ., data = data_training[split,], seed = ii)$data
       down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
-      
-      # down_train <- upSample(data_training[split, -1], data_training[split, ]$occurrence)
-      # colnames(down_train)[ncol(down_train)] <- "occurrence"
-      # down_train$occurrence <- factor(down_train$occurrence, levels = c("presence", "absence"))
       
       #---------------------------------------------------------------------------
       # Perform model
@@ -66,6 +83,7 @@ model_lineages <- function(ordination,
                            seeds = 1:11)
       
       # Model
+      set.seed(ii)
       glmFit <- train(occurrence ~ .,
                       data = down_train,
                       method = "glm",
@@ -152,6 +170,7 @@ model_lineages <- function(ordination,
                          ordination = ordination,
                          aggregation = aggregation,
                          data_split = data_split,
+                         variables = variables,
                          iterations = iterations,
                          mc.preschedule = TRUE, 
                          mc.set.seed = FALSE,
@@ -166,7 +185,6 @@ model_lineages <- function(ordination,
   return(complete)
   
 }
-
 
 split_lineages <- function(occurrence,
                          split = 0.85,

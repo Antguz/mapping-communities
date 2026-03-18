@@ -24,9 +24,9 @@ library(RcppArmadillo)
 root_path <- "/media/antonio/Work/MMDB"
 
 # Communities
-taxo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_taxo_total.csv"))
-phylo_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_phylo_total.csv"))
-func_comm <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_func_total.csv"))
+taxo_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_taxo_total.csv"))
+phylo_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_phylo_total.csv"))
+func_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_func_total.csv"))
 
 # Axis range
 observed_range <- c(-0.6, 0.6)
@@ -247,41 +247,5 @@ par(mfrow=c(1,3), mar = c(0,1.1,1,0), oma = c(0,0,0,0))
 ordination_3d(taxo_comm, title = "Taxonomic", cRGB = TRUE, axis_range = observed_range)
 ordination_3d(phylo_comm, title = "Phylogenetic", cRGB = TRUE, axis_range = observed_range)
 ordination_3d(func_comm, title = "Functional", cRGB = TRUE, axis_range = observed_range)
-
-dev.off()
-
-#-------------------------------------------------------------------------------
-# Proportion of angiosperms
-
-par(mar = c(1,1,1,1))
-par(oma = c(0,0,0,0))
-
-png(paste0(root_path, "/figures/Manuscript_black/", "MDS_angiosperms.png"),
-    width = 210, 
-    height = 80, 
-    units = "mm", 
-    pointsize = 12,
-    bg = "transparent",  
-    res = 600)
-
-par(mfrow=c(1,3))
-ordination_3d(taxo_comm, 
-              cRGB = FALSE,
-              col = carto_pal(n = 100, "Fall"),
-              colvar = proportions$proportion_angiosperm,
-              key = FALSE,
-              clab = "Proportion of angiosperms")
-ordination_3d(phylo_comm, 
-              cRGB = FALSE,
-              col = carto_pal(n = 100, "Fall"),
-              colvar = proportions$proportion_angiosperm,
-              key = TRUE,
-              clab = "Proportion of angiosperms")
-ordination_3d(func_comm, 
-              cRGB = FALSE,
-              col = carto_pal(n = 100, "Fall"),
-              colvar = proportions$proportion_angiosperm,
-              key = FALSE,
-              clab = "Proportion of angiosperms")
 
 dev.off()
