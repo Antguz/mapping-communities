@@ -23,7 +23,7 @@ library(ggpubr)
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 outpath <- paste0(root_path, "/figures/Maps/3d_figures")
   
 #'------------------------------------------------------------------------------
