@@ -18,10 +18,10 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Categorical 
-data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_model-occurrence.csv"))
+data <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_altogether_model-occurrence.csv"))
 data <- data[, .SD, .SDcols = c(1:3, 27:37)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
 colnames(data)[4:14] <- c("Axis 1", "Axis 2", "Axis 3", "MAT", "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTI")

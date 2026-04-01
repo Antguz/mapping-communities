@@ -32,9 +32,9 @@ source("R/auxiliary/model_performance.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 type <- "func"
-out_path <- "/media/antonio/Work/MMDB/Models/03_model_CWM"
+out_path <- "/media/guzman/Work/MMDB/Models/03_model_CWM"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -67,6 +67,10 @@ all.equal(aggregation$PLT_CN, ordination$PLT_CN)
 fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match,]
 all.equal(aggregation$PLT_CN, fia_meta$PLT_CN)
+
+# Data for ploting
+saveRDS(aggregation, paste0(out_path, "/CWM_plant-traits.rds"))
+saveRDS(ordination, paste0(out_path, "/CWM_variables.rds"))
 
 #-------------------------------------------------------------------------------
 #' @Data-split
