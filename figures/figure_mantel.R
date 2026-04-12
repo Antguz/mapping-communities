@@ -21,7 +21,7 @@ library(rTLS)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 #-------------------------------------------------------------------------------
 #' @Plot-details
@@ -171,8 +171,7 @@ mantel_plot <- function(mantel_results,
 # pal <- "cividis"
 pal <- "turbo"
 pal <- "inferno"
-val <- c(829324, 13430, 11526, 769092, 11116, 10469)
-val <- c(2663174, 48882, 25456, 1638026, 27080, 13526)
+val <- c(2663174, 48882, 25456, 1638026, 27080, 13526, 2404258, 40086, 19638)
 
 # DESIS ------------------------------------------------
 sensor <- "DESIS"
@@ -238,6 +237,39 @@ EMIT_func_total_fig <- mantel_plot(mantel_results = EMIT_func_total,
 # rm(EMIT_func_total)
 gc()
 
+# EMITs ------------------------------------------------
+sensor <- "EMITs"
+
+type <- "taxo"
+diversity <- "total"
+EMITs_taxo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMITs_taxo_total_fig <- mantel_plot(mantel_results = EMITs_taxo_total,
+                                   exp = expression(paste("T", beta[total])),
+                                   palette = pal) #1017678
+# rm(EMITs_taxo_total)
+gc()
+
+type <- "phylo"
+diversity <- "total"
+EMITs_phylo_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMITs_phylo_total_fig <- mantel_plot(mantel_results = EMITs_phylo_total,
+                                    exp = expression(paste("P", beta[total])),
+                                    y_lab = " ",
+                                    palette = pal) #87958
+# rm(EMITs_phylo_total)
+gc()
+
+type <- "func"
+diversity <- "total"
+EMITs_func_total <- readRDS(paste0(root_path, "/Diversity/03_Mantel/", sensor, "_", type, "_", diversity, "_mantel.rds"))
+EMITs_func_total_fig <- mantel_plot(mantel_results = EMITs_func_total,
+                                   exp = expression(paste("F", beta[total])),
+                                   y_lab = " ",
+                                   palette = pal) #19058
+# rm(EMITs_func_total)
+gc()
+
+
 # Merge plots
 row1 <- ggarrange(DESIS_taxo_total_fig, DESIS_phylo_total_fig, DESIS_func_total_fig, 
                   ncol=3, nrow=1,
@@ -248,7 +280,7 @@ row1 <- ggarrange(DESIS_taxo_total_fig, DESIS_phylo_total_fig, DESIS_func_total_
                   common.legend = TRUE,
                   legend = "top")
 
-row2 <- ggarrange(EMIT_taxo_total_fig, EMIT_phylo_total_fig, EMIT_func_total_fig, 
+row3 <- ggarrange(EMITs_taxo_total_fig, EMITs_phylo_total_fig, EMITs_func_total_fig, 
                   ncol=3, nrow=1,
                   labels = c("D", "E", "F"),
                   font.label =  list(size = 9, face = "plain", color = text),
@@ -257,12 +289,23 @@ row2 <- ggarrange(EMIT_taxo_total_fig, EMIT_phylo_total_fig, EMIT_func_total_fig
                   common.legend = TRUE,
                   legend = "top")
 
-# Export
-jpeg(paste0(root_path, "/figures/Manuscript_black/", "figure_mantel.jpeg"), width = 230, height = 170, units = "mm", res = 600, bg = "white")
+row2 <- ggarrange(EMIT_taxo_total_fig, EMIT_phylo_total_fig, EMIT_func_total_fig, 
+                  ncol=3, nrow=1,
+                  labels = c("G", "H", "I"),
+                  font.label =  list(size = 9, face = "plain", color = text),
+                  label.x = 0.02,
+                  label.y = 1.05,
+                  common.legend = TRUE,
+                  legend = "top")
 
-annotate_figure(ggarrange(row1, row2, ncol= 1, nrow=2, common.legend = TRUE),
+
+
+# Export
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "figure_mantel2.jpeg"), width = 230, height = 255, units = "mm", res = 600, bg = "white")
+
+annotate_figure(ggarrange(row1, row3, row2, ncol= 1, nrow=3, common.legend = TRUE),
                 top = text_grob("Taxonomic                                  Phylogenetic                                  Functional", face = "bold", color = "black"),
-                right = text_grob("DESIS                                  EMIT", face = "bold", color = text, rot = -90))
+                right = text_grob("DESIS                                  EMIT   EMIT", face = "bold", color = text, rot = -90))
 
 dev.off()
 
