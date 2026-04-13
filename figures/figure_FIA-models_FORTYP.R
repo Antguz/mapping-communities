@@ -16,7 +16,7 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Categorical 
 climate_topography <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_climate-topography_model-FORTYP.csv"))
@@ -170,7 +170,7 @@ p <- ggplot(summary_performance[dataset == selection,]) +
                  fill = Model,
                  shape = Model),
              size = 1.5,
-             colour = "grey",
+             colour = "black",
              alpha = 0.75,
              position = pd) +
   geom_vline(data = summary_all[dataset == selection,],

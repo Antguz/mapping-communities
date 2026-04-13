@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Three-dimensional figure for MDS (Fig 1)
+#' @title Three-dimensional figure for MDS (Fig 8)
 #'------------------------------------------------------------------------------
 
 #'------------------------------------------------------------------------------
@@ -318,8 +318,8 @@ ordination_arrow_3d <- function(ordination_difference,
   alpha_color <- alpha
   side <- 1
   dist <- -0.05
-  arrlength <- 0.03
-  arrwith  <- 0.03
+  arrlength <- 0.05
+  arrangle  <- 20
   null_colkey <- list(plot = FALSE, 
                       side = side, 
                       side.clab = 1,
@@ -348,9 +348,9 @@ ordination_arrow_3d <- function(ordination_difference,
   ylab <- "Axis 2"
   zlab <- "Axis 3"
 
-  scatter3D(x = Axis1_2024,
-            y = Axis2_2024,
-            z = Axis3_2024,
+  scatter3D(x = 0,
+            y = 0,
+            z = 0,
             phi = phi,
             theta = theta,
             bty = "u", 
@@ -364,7 +364,7 @@ ordination_arrow_3d <- function(ordination_difference,
             ylim = axis_range,
             zlim = axis_range,
             nticks = 3,
-            col = shade_color,
+            col = "white",
             colvar = NULL,
             colkey = null_colkey,
             clab = clab,
@@ -386,10 +386,10 @@ ordination_arrow_3d <- function(ordination_difference,
            col = shade_color,
            alpha = 1,
            add = TRUE,
-           arr.length = arrlength,
-           arr.width  = arrwith,
+           length = arrlength,
+           angle  = arrangle,
            lwd = 0.1)
-  
+
   arrows3D(x0 = Axis1_2024, y0 = rep(axis_range[2], length(Axis2_2024)), z0 = Axis3_2024,
            x1 = Axis1_2025, y1 = rep(axis_range[2], length(Axis2_2025)), z1 = Axis3_2025,
            phi = phi,
@@ -397,10 +397,10 @@ ordination_arrow_3d <- function(ordination_difference,
            col = shade_color,
            alpha = 1,
            add = TRUE,
-           arr.length = arrlength,
-           arr.width  = arrwith,
+           length = arrlength,
+           angle  = arrangle,
            lwd = 0.01)
-  
+
   arrows3D(x0 = Axis1_2024, y0 = Axis2_2024, z0 = rep(axis_range[1], length(Axis3_2024)),
            x1 = Axis1_2025, y1 = Axis2_2025, z1 = rep(axis_range[1], length(Axis3_2025)),
            phi = phi,
@@ -408,10 +408,23 @@ ordination_arrow_3d <- function(ordination_difference,
            col = shade_color,
            alpha = 1,
            add = TRUE,
-           arr.length = arrlength,
-           arr.width  = arrwith,
+           length = arrlength,
+           angle  = arrangle,
            lwd = 0.1)
-  
+
+  # Halo pass
+  arrows3D(x0 = Axis1_2024, y0 = Axis2_2024, z0 = Axis3_2024,
+           x1 = Axis1_2025, y1 = Axis2_2025, z1 = Axis3_2025,
+           phi = phi,
+           theta = theta,
+           col = "black",
+           alpha = 0.4,
+           add = TRUE,
+           length = arrlength * 1.2,
+           angle  = arrangle,
+           lwd = point_size + 0.4)
+
+  # Colored pass on top
   arrows3D(x0 = Axis1_2024, y0 = Axis2_2024, z0 = Axis3_2024,
            x1 = Axis1_2025, y1 = Axis2_2025, z1 = Axis3_2025,
            phi = phi,
@@ -419,8 +432,8 @@ ordination_arrow_3d <- function(ordination_difference,
            col = col,
            alpha = 1,
            add = TRUE,
-           arr.length = arrlength,
-           arr.width  = arrwith,
+           length = arrlength,
+           angle  = arrangle,
            lwd = point_size)
   
 }
