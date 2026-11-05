@@ -104,8 +104,8 @@ summary_performance <- melt(data,
 
 summary_performance$dataset <- as.factor(summary_performance$dataset)
 summary_performance$dataset <- factor(summary_performance$dataset, 
-                                      levels = c("training", "testing"),
-                                      labels = c("Training", "Testing"))
+                                      levels = c("training", "spatial_cv"),
+                                      labels = c("Training", "spatial_cv"))
 
 summary_performance$metric <- as.factor(summary_performance$metric)
 summary_performance$metric <- factor(summary_performance$metric, 
@@ -152,7 +152,7 @@ rects <- data.frame(
   xmax = Inf
 )
 
-selection <- "Testing"
+selection <- "spatial_cv"
 pd <- position_dodge2(width = 0.6, preserve = "single")
 p <- ggplot(summary_performance[dataset == selection,]) +
   geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -184,14 +184,14 @@ p <- ggplot(summary_performance[dataset == selection,]) +
   xlab("Values") + ylab("Forest type") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
-                               scale_x_continuous(limits = c(0.6, 1.0), breaks = c(0.6, 0.8, 1.0)),
-                               scale_x_continuous(limits = c(0.5, 1.0), breaks = c(0.6, 0.8, 1.0)),
-                               scale_x_continuous(limits = c(0.6, 1.0), breaks = c(0.6, 0.80, 1.0)))) +
+                               scale_x_continuous(limits = c(0.45, 1.0), breaks = c(0.5, 0.75, 1.0)), #c(0.6, 1.0), breaks = c(0.6, 0.8, 1.0)
+                               scale_x_continuous(limits = c(0.45, 1.0), breaks = c(0.5, 0.75, 1.0)), # c(0.5, 1.0), breaks = c(0.6, 0.8, 1.0)
+                               scale_x_continuous(limits = c(0.45, 1.0), breaks = c(0.5, 0.75, 1.0)))) + # c(0.6, 1.0), breaks = c(0.6, 0.80, 1.0)
   th
 
 p
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_fortype.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_fortype_new.jpeg"), 
      width = 210, 
      height = 240, 
      units = "mm", 

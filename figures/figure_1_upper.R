@@ -21,7 +21,7 @@ library(RcppArmadillo)
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Communities
 taxo_comm <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_taxo_total.csv"))
@@ -33,7 +33,7 @@ observed_range <- c(-0.6, 0.6)
 
 # Get domains
 domain <- fread(paste0(root_path, "/FIA/00_FIA/", "plot_domain.csv"))
-mat <- match.integer64(taxo_comm$PLT_CN, domain$PLT_CN)
+mat <- match(taxo_comm$PLT_CN, domain$PLT_CN)
 domain <- domain[mat, ]
 all.equal(domain$PLT_CN, taxo_comm$PLT_CN)
 

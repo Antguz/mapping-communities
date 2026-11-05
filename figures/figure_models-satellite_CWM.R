@@ -16,7 +16,7 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Read files 
 data <- fread(paste0(root_path, "/Models/04_CWM_performance/performance_summary_CWM.csv"))
@@ -176,14 +176,14 @@ p <- ggplot(summary_performance) +
   xlab("Values") + ylab("Community-weighted mean of plant traits") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
-                               scale_x_continuous(limits = c(-0.04, 0.04), breaks = c(-0.03, 0, 0.03)),
-                               scale_x_continuous(limits = c(0, 2.5), breaks = c(0, 1, 2)),
-                               scale_x_continuous(limits = c(5, 25), breaks = c(5, 15, 25)))) +
+                               scale_x_continuous(limits = c(-0.05, 0.05), breaks = c(-0.04, 0, 0.04)),
+                               scale_x_continuous(limits = c(0, 2.2), breaks = c(0, 1, 2)),
+                               scale_x_continuous(limits = c(10, 25), breaks = c(10, 17.5, 25)))) +
   th
 
 p 
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_CWM-models.jpg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_CWM-models_new.jpg"), 
      width = 210, 
      height = 150, 
      units = "mm", 

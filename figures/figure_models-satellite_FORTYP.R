@@ -16,7 +16,7 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Categorical 
 data <- fread(paste0(root_path, "/Models/04_fortyp_performance/performance_summary_fortyp.csv"))
@@ -157,14 +157,14 @@ p <- ggplot(summary_performance) +
   xlab("Values") + ylab("Forest type") +
   facet_grid(. ~ metric, scales = "free", labeller = my_labeller) +
   facetted_pos_scales(x = list(scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1.0)),
-                               scale_x_continuous(limits = c(-0.12, 0.12), breaks = c(-0.10, 0.0, 0.10)),
+                               scale_x_continuous(limits = c(-0.11, 0.11), breaks = c(-0.10, 0.0, 0.10)),
                                scale_x_continuous(limits = c(0, 0.32), breaks = c(0, 0.15, 0.3)),
                                scale_x_continuous(limits = c(5, 35), breaks = c(5, 20, 35)))) +
   th
 
 p 
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_FORTYP-models.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/satellite_FORTYP-models_new.jpeg"), 
      width = 210, 
      height = 240, 
      units = "mm", 

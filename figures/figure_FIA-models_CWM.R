@@ -18,7 +18,7 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Model performance results 
 climate_topography <- fread(paste0(root_path, "/Models/03_model_CWM/func_climate-topography_model-CWM.csv"))
@@ -126,8 +126,8 @@ summary_performance <- melt(data,
 
 summary_performance$dataset <- as.factor(summary_performance$dataset)
 summary_performance$dataset <- factor(summary_performance$dataset, 
-                                      levels = c("training", "testing"),
-                                      labels = c("Training", "Testing"))
+                                      levels = c("training", "spatial_cv"),
+                                      labels = c("Training", "spatial_cv"))
 
 summary_performance$metric <- as.factor(summary_performance$metric)
 summary_performance$metric <- factor(summary_performance$metric, 
@@ -170,7 +170,7 @@ rects <- data.frame(
   xmax = Inf
 )
 
-selection <- "Testing"
+selection <- "spatial_cv"
 pd <- position_dodge2(width = 0.6, preserve = "single")
 p <- ggplot(summary_performance[dataset == selection,]) +
   geom_rect(data = rects, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -209,7 +209,7 @@ p <- ggplot(summary_performance[dataset == selection,]) +
 
 p
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_CWM.jpg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/FIA-models_CWM_new.jpg"), 
      width = 210, 
      height = 150, 
      units = "mm", 

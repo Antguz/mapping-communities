@@ -17,7 +17,7 @@ library(viridis)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 sensor <- "EMIT"
 folder <- paste0(root_path, "/Models/01_model_beta/", sensor)
 
