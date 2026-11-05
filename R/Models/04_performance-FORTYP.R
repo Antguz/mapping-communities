@@ -28,8 +28,8 @@ source("R/auxiliary/performance_batch_FORTYR.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
-out_path <- "/media/antonio/Work/MMDB/Models/04_fortyp_performance"
+root_path <- "/media/guzman/Work/MMDB"
+out_path <- "/media/guzman/Work/MMDB/Models/04_fortyp_performance"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -39,7 +39,7 @@ sensor <- "EMIT" #or DESIS
 type <- "taxo"
 
 # Get glm coefficients
-coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/", type, "_model-FORTYP.csv"))
+coefficients <- fread(paste0(root_path, "/Models/03_models_fortyp/taxo_altogether_model-FORTYP.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 15:26)]
 

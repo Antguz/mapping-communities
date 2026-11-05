@@ -28,7 +28,7 @@ data_split_fortyp <- function(forest_type,
     
     # Merge
     spl <- rbind(presence, absence)
-    spl_match <- match.integer64(PLT_CN, spl$PLT_CN)
+    spl_match <- match(PLT_CN, spl$PLT_CN)
     spl <- spl[spl_match,]
     data_split[, i] <- spl$split
     

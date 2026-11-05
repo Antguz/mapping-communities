@@ -5,65 +5,111 @@
 #include <RcppArmadillo.h>
 #include <progress.hpp>
 #include <progress_bar.hpp>
-#include <algorithm> // for std::random_shuffle
-#include <numeric>   // for std::iota
+#include <cmath>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
-// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp17)]]
 // [[Rcpp::depends(RcppProgress)]]
 
-// [[Rcpp::depends(RcppArmadillo)]]
+// Sum of mat1(i, j) * mat2(perm[i], perm[j]) over the upper triangle (i < j)
+double cross_sum(const arma::mat& mat1,
+                 const arma::mat& mat2,
+                 const arma::uvec& perm) {
 
-// Function to compute the Mantel statistic (Pearson correlation)
-// between two distance matrices
-double mantel_stat(const arma::mat& mat1, const arma::mat& mat2) {
-  arma::uvec upper_tri_idx = arma::trimatu_ind(arma::size(mat1), 1);
-  arma::vec vec1 = mat1(upper_tri_idx);
-  arma::vec vec2 = mat2(upper_tri_idx);
-  return arma::as_scalar(arma::cor(vec1, vec2));
+  int n = mat1.n_rows;
+  double s = 0;
+
+  for (int j = 1; j < n; ++j) {
+    const double* b = mat2.colptr(perm[j]);
+    const double* a = mat1.colptr(j);
+    for (int i = 0; i < j; ++i) {
+      s += a[i] * b[perm[i]];
+    }
+  }
+
+  return s;
 }
 
-// Function to perform the Mantel test with permutations
+// Function to perform the Mantel test with permutations of mat2.
+// The Mantel statistic is the Pearson correlation between the upper triangles.
+// Permutations are drawn with the R random number generator (reproducible with
+// set.seed), or given in perms (n x nperm, 1-based as in vegan).
 // [[Rcpp::export]]
-Rcpp::List mantel_rcpp(const arma::mat& mat1, 
-                       const arma::mat& mat2, 
+Rcpp::List mantel_rcpp(const arma::mat& mat1,
+                       const arma::mat& mat2,
                        int nperm = 999,
-                       int threads = 1, 
-                       bool progress = true) {
-  
-  // Compute the observed Mantel statistic
-  double observed_stat = mantel_stat(mat1, mat2);
-  
-  // Create a vector to store permutation results
-  arma::vec perm_stats(nperm);
-  
-  // Vector for indices to shuffle
-  arma::uvec idx(mat1.n_rows);
-  std::iota(idx.begin(), idx.end(), 0);  // Fill with 0, 1, 2, ..., n-1
-  
-  //create progress
-  Progress p(nperm, progress);
-  
+                       int threads = 1,
+                       bool progress = true,
+                       Rcpp::Nullable<Rcpp::IntegerMatrix> perms = R_NilValue) {
+
+  int n = mat1.n_rows;
+  double N = 0.5 * (double)n * (double)(n - 1);
+
+  // Permutations
+  arma::umat P;
+  if (perms.isNotNull()) {
+    Rcpp::IntegerMatrix pm(perms);
+    nperm = pm.ncol();
+    P.set_size(n, nperm);
+    for (int k = 0; k < nperm; ++k) {
+      for (int i = 0; i < n; ++i) {
+        P(i, k) = pm(i, k) - 1;
+      }
+    }
+  } else {
+    P.set_size(n, nperm);
+    for (int k = 0; k < nperm; ++k) {
+      arma::uvec idx = arma::regspace<arma::uvec>(0, n - 1);
+      for (int i = n - 1; i > 0; --i) {
+        int j = (int)(R::unif_rand() * (i + 1)); // Fisher-Yates
+        std::swap(idx[i], idx[j]);
+      }
+      P.col(k) = idx;
+    }
+  }
+
   // Parallel for speed
 #ifdef _OPENMP
   if ( threads > 1 ) {
     omp_set_num_threads( threads );
   }
-#endif 
+#endif
 
-#pragma omp parallel for
-  for (int i = 0; i < nperm; i++) {
-    
+  // Sums that do not change with the permutations
+  double s1 = 0, s11 = 0, s2 = 0, s22 = 0;
+
+#pragma omp parallel for reduction(+:s1,s11,s2,s22) schedule(dynamic, 64)
+  for (int j = 1; j < n; ++j) {
+    for (int i = 0; i < j; ++i) {
+      s1 += mat1(i, j); s11 += mat1(i, j) * mat1(i, j);
+      s2 += mat2(i, j); s22 += mat2(i, j) * mat2(i, j);
+    }
+  }
+
+  double den = std::sqrt((s11 - s1 * s1 / N) * (s22 - s2 * s2 / N));
+
+  // Observed Mantel statistic
+  arma::uvec id = arma::regspace<arma::uvec>(0, n - 1);
+  double observed_stat = (cross_sum(mat1, mat2, id) - s1 * s2 / N) / den;
+
+  // Create a vector to store permutation results
+  arma::vec perm_stats(nperm);
+
+  //create progress
+  Progress p(nperm, progress);
+
+#pragma omp parallel for schedule(dynamic, 1)
+  for (int k = 0; k < nperm; ++k) {
+
     if (! Progress::check_abort() ) {
       p.increment(); // update progress
-    } 
-    
-    std::random_shuffle(idx.begin(), idx.end());
-    arma::mat permuted_mat2 = mat2(idx, idx);  // Permute the rows and columns
-    perm_stats[i] = mantel_stat(mat1, permuted_mat2);
-    
+    }
+
+    arma::uvec perm = P.col(k);
+    perm_stats[k] = (cross_sum(mat1, mat2, perm) - s1 * s2 / N) / den;
+
   }
-  
+
   return Rcpp::List::create(
     Rcpp::Named("observed_stat") = observed_stat,
     Rcpp::Named("perm_stats") = perm_stats

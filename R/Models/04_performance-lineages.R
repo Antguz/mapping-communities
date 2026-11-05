@@ -28,8 +28,8 @@ source("R/auxiliary/performance_batch_lineages.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
-out_path <- "/media/antonio/Work/MMDB/Models/04_occurence_performance"
+root_path <- "/media/guzman/Work/MMDB"
+out_path <- "/media/guzman/Work/MMDB/Models/04_occurence_performance"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
@@ -39,8 +39,7 @@ sensor <- "EMIT"
 type <- "phylo"
 
 # Get glm coefficients
-coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/", 
-                             type, "_model-occurrence.csv"))
+coefficients <- fread(paste0(root_path, "/Models/03_model_occurrence/phylo_altogether_model-occurrence.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 15:26)]
 

@@ -7,7 +7,7 @@
 #include <progress_bar.hpp>
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
-// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp17)]]
 // [[Rcpp::depends(RcppProgress)]]
 using namespace arma;
 
@@ -20,8 +20,8 @@ double spectral_angle_mapper_cpp(const arma::vec& spectrum1, const arma::vec& sp
   // Compute dot product
   double dot_product = arma::dot(norm_spectrum1, norm_spectrum2);
   
-  // Compute spectral angle
-  double spectral_angle = (std::acos(dot_product) * 180/3.141593)/180;
+  // Compute spectral angle (degrees), rescaled to 0-1 (0-90 degrees for non-negative spectra)
+  double spectral_angle = (std::acos(dot_product) * 180/3.141593)/90;
   
   //return sam_value;
   return spectral_angle;

@@ -28,19 +28,18 @@ source("R/auxiliary/performance_batch_CWM.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
-out_path <- "/media/antonio/Work/MMDB/Models/04_CWM_performance"
+root_path <- "/media/guzman/Work/MMDB"
+out_path <- "/media/guzman/Work/MMDB/Models/04_CWM_performance"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-sensor <- "EMIT"
+sensor <- "DESIS"
 type <- "func"
 
 # Get glm coefficients
-coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/", 
-                             type, "_model-CWM.csv"))
+coefficients <- fread(paste0(root_path, "/Models/03_model_CWM/func_altogether_model-CWM.csv"))
 coefficients <- subset(coefficients, dataset == "training")
 coefficients <- coefficients[, .SD, .SDcols = c(1, 11:22)]
 
