@@ -1,5 +1,5 @@
 #'------------------------------------------------------------------------------
-#' @title Model occurrence probabilities of forest types based on MDS
+#' @title Model occurrence probabilities of forest types based on MDS - spatial CV
 #'------------------------------------------------------------------------------
 
 #' @description It models the occurrence probability of forest types based on 
@@ -14,17 +14,17 @@ library(bit64)
 library(parallel)
 library(pbmcapply)
 library(caret)
-library(Rcpp)
-library(vegan)
 library(ROSE)
-library(scales)
+library(sf)
+library(blockCV)
+library(MLmetrics)
 
 #'------------------------------------------------------------------------------
 #' @Source_code
 #-------------------------------------------------------------------------------
 
 source("R/auxiliary/data_split_fortyp.R")
-source("R/auxiliary/model_fortyp.R")
+source("R/auxiliary/model_fortyp_spatial.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
@@ -50,7 +50,7 @@ ordination <- merge(ordination, fia_environment, by = "PLT_CN", all.x = FALSE, a
 ordination <- na.exclude(ordination)
 
 # Test for match
-fia_meta_match <- match.integer64(ordination$PLT_CN, fia_meta$PLT_CN)
+fia_meta_match <- match(ordination$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match,]
 all.equal(ordination$PLT_CN, fia_meta$PLT_CN)
 
@@ -78,44 +78,59 @@ FORTYPCD <- FORTYPCD[to_remove == FALSE,]
 FORTYPCD <- FORTYPCD[, .(PLT_CN, FORTYP)]
 
 # Match plot order
-FORTYP_match <- match.integer64(fia_meta$PLT_CN, FORTYPCD$PLT_CN)
+FORTYP_match <- match(fia_meta$PLT_CN, FORTYPCD$PLT_CN)
 FORTYPCD <- FORTYPCD[FORTYP_match, ]
 FORTYPCD <- na.exclude(FORTYPCD)
 
 # Match meta, NMDS, and forest type
-fia_meta_match <- match.integer64(FORTYPCD$PLT_CN, fia_meta$PLT_CN)
+fia_meta_match <- match(FORTYPCD$PLT_CN, fia_meta$PLT_CN)
 fia_meta <- fia_meta[fia_meta_match, ]
-ordination_match <- match.integer64(FORTYPCD$PLT_CN, ordination$PLT_CN)
+ordination_match <- match(FORTYPCD$PLT_CN, ordination$PLT_CN)
 ordination <- ordination[ordination_match, ]
 
 all.equal(fia_meta$PLT_CN, FORTYPCD$PLT_CN)
 all.equal(fia_meta$PLT_CN, ordination$PLT_CN)
 all.equal(ordination$PLT_CN, FORTYPCD$PLT_CN)
 
-# Data for testing occurrence
-FORTYPCD_occurrance <- FORTYPCD
-FORTYPCD_occurrance <- FORTYPCD_occurrance[, value := 1] 
-FORTYPCD_wide <- dcast(FORTYPCD_occurrance, PLT_CN ~ FORTYP, value.var = "value", fill = 0)
-saveRDS(FORTYPCD_wide, paste0(out_path, "/FORTYPCD_occurrance.rds"))
-saveRDS(ordination, paste0(out_path, "/FORTYPCD_variables.rds"))
-
 #-------------------------------------------------------------------------------
 #' @Data-split
 #-------------------------------------------------------------------------------
 
-# Applies just with one time using taxo data as reference
-if(type == "taxo") {
-  
-  # Data-split based on State-County ID
-  data_split <- data_split_fortyp(FORTYPCD,
-                                  split = 0.60)
-  
-  # Export split and cross-validation
-  saveRDS(data_split, paste0(out_path, "/split_fortyp.rds"))
-  
-}
+# No data split
+data_split <- NULL
 
-data_split <- readRDS(paste0(out_path, "/split_fortyp.rds"))
+#-------------------------------------------------------------------------------
+#' @Spatial-blocks
+#-------------------------------------------------------------------------------
+
+# Residuals of the full models (axes, climate, and topography) per forest type.
+fortyp_residuals <- residuals_fortyp(forest_type = FORTYPCD,
+                                     ordination = ordination,
+                                     variables = "altogether")
+saveRDS(fortyp_residuals, paste0(out_path, "/residuals_fortyp.rds"))
+
+# Plot coordinates projected to CONUS Albers (meters)
+plots <- st_as_sf(cbind(fia_meta[, .(LON, LAT)], fortyp_residuals[, -1]),
+                  coords = c("LON", "LAT"), 
+                  crs = 4326)
+plots <- st_transform(plots, 5070)
+
+# Block size based on the spatial autocorrelation range of the residuals
+autocorrelation <- autocor_fortyp(x = plots,
+                                  columns = colnames(fortyp_residuals)[-1],
+                                  num_sample = 5000,
+                                  threads = 30)
+autocorrelation$range_table
+block_size <- autocorrelation$range
+block_size <- 200000
+saveRDS(autocorrelation, paste0(out_path, "/autocorrelation_fortyp.rds"))
+
+# Square blocks of block_size
+coordinates <- st_coordinates(plots)
+blocks <- paste0(floor(coordinates[, 1]/block_size), "_", 
+                 floor(coordinates[, 2]/block_size))
+length(unique(blocks)) # Number of blocks
+saveRDS(blocks, paste0(out_path, "/blocks_fortyp.rds"))
 
 #-------------------------------------------------------------------------------
 #' @Scale-ordination
@@ -147,12 +162,15 @@ ordination <- cbind(data.table(PLT_CN = PLT_CN),
 # Model - just ordination axes as predictors
 
 variables <- "axes"
-model <- model_fortyp(forest_type = FORTYPCD,
-                      ordination = ordination,
-                      data_split = data_split,
-                      variables = variables,
-                      iterations = 100,
-                      threads = 30)
+model <- model_fortyp_spatial(forest_type = FORTYPCD,
+                              ordination = ordination,
+                              data_split = data_split,
+                              blocks = blocks,
+                              variables = variables,
+                              k = 5,
+                              n_tries = 100,
+                              iterations = 100,
+                              threads = 30)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
@@ -161,12 +179,15 @@ fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
 # Model - just climate and topography information as predictors
 
 variables <- "climate-topography"
-model <- model_fortyp(forest_type = FORTYPCD,
-                      ordination = ordination,
-                      data_split = data_split,
-                      variables = variables,
-                      iterations = 100,
-                      threads = 30)
+model <- model_fortyp_spatial(forest_type = FORTYPCD,
+                              ordination = ordination,
+                              data_split = data_split,
+                              blocks = blocks,
+                              variables = variables,
+                              k = 5,
+                              n_tries = 100,
+                              iterations = 100,
+                              threads = 30)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
@@ -175,12 +196,15 @@ fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
 # Model - axes, climate, and topography information as predictors
 
 variables <- "altogether"
-model <- model_fortyp(forest_type = FORTYPCD,
-                      ordination = ordination,
-                      data_split = data_split,
-                      variables = variables,
-                      iterations = 100,
-                      threads = 30)
+model <- model_fortyp_spatial(forest_type = FORTYPCD,
+                              ordination = ordination,
+                              data_split = data_split,
+                              blocks = blocks,
+                              variables = variables,
+                              k = 5,
+                              n_tries = 100,
+                              iterations = 100,
+                              threads = 30)
 
 # Export model
 fwrite(model, paste0(out_path, "/", type, "_", variables, "_model-FORTYP.csv"))
