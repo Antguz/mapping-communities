@@ -4,12 +4,12 @@
 
 #' @description It estimates beta functional diversity between communities and its
 #' partition between replacement and richness. Values are scaled to 10000 to reduce
-#' the side of the files and keep significant digits.
+#' the size of the files and keep significant digits.
 
 #' @return Return a list of distance matrices (Btotal, Brepl, Brich) as .rds files
 
 ################################################################################
-#' @warming If you have to many communities, you need to run it using using HPC
+#' @warning If you have too many communities, you need to run it using HPC
 ################################################################################
 
 #'------------------------------------------------------------------------------

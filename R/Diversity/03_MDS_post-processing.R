@@ -4,8 +4,12 @@
 
 #' @description It rotates ordinations according to environmental gradients to 
 #' then extract information associated with the projection of species, traits, and
-#' environments. It also extract the goodness of fit the communities in the ordinations 
-#' and the data for the stressplot.
+#' environments. It also estimates the Euclidean distances between communities
+#' in the ordination for the goodness-of-fit (03_MDS_goodness_of_fit.R).
+
+#' @return .csv files with the rotated community scores and the weighted-average
+#' scores of species, lineages, traits, and environment, and a .rds file with the
+#' distances between communities in the ordination per diversity.
 
 #'------------------------------------------------------------------------------
 #' Library

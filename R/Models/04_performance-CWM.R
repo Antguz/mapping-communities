@@ -2,8 +2,12 @@
 #' @title Performance of CWM models based predicted axes
 #'------------------------------------------------------------------------------
 
-#' @description It evaluate the performance of models that predict CWM based on 
-#' the predicted axes using spaceborne spectroscopy.
+#' @description It evaluates the performance of the CWM models (03_model-CWM.R)
+#' when the MDS axes are predicted using spaceborne spectroscopy
+#' (01_model_beta.R) in training and testing data.
+
+#' @return .rds files with the performance per sensor, diversity, and dataset,
+#' and a .csv file with the summary of performance (performance_summary_CWM.csv).
 
 #'------------------------------------------------------------------------------
 #' @Libraries

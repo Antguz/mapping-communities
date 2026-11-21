@@ -2,7 +2,14 @@
 #' @title Integration of spectra with ordination through machine learning models
 #'------------------------------------------------------------------------------
 
-#' @description It tune, model, and predict the ordinations based on spectra.
+#' @description It tunes, builds, and evaluates Partial Least Squares Regression
+#' (PLSR) models to predict the MDS axes of beta diversity based on spectra,
+#' using an iterative spatial cross-validation strategy. The optimal number of
+#' components requires a manual inspection.
+
+#' @return .rds and .csv files per sensor and diversity with the data split,
+#' cross-validation strategy, optimal components, performance, predicted values
+#' and 3D residuals (training and testing), PLSR coefficients, and VIP.
 
 #'------------------------------------------------------------------------------
 #' @Libraries

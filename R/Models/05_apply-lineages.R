@@ -2,8 +2,16 @@
 #' @title Apply occurrence of plant groups to scenes
 #'------------------------------------------------------------------------------
 
-#' @description It apply the occurrence (i.e., probability) of plant groups to the
-#' predicted axes within scenes
+#' @description It applies the occurrence models (i.e., probability) of plant
+#' lineages (03_model-lineages.R) to the predicted MDS axes of phylogenetic
+#' composition within scenes.
+
+#' @return GeoTIFF files per scene (L4B) with the mean occurrence probability
+#' per lineage (_plant-occurrence_mean.tif) and the width of its 95% confidence
+#' interval among models (_plant-occurrence_error.tif), and a .txt file with the
+#' list of processed scenes.
+
+#' @Note This script was not implemented in the manuscript.
 
 #'------------------------------------------------------------------------------
 #' Library

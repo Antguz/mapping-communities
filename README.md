@@ -89,7 +89,7 @@ mapping-communities/
 
 If you use the code from this repository, please cite the manuscript and the code:
 
-> Guzmán J.A., Knott J., Pinto-Ledezma J.N., Townsend P.A., and Cavender-Bares J. (pending). Mapping multiple dimensions of forest diversity using spaceborne spectroscopy. *Journal pending*. https://doi.org/pending
+> Guzmán J.A., Knott J., Pinto-Ledezma J.N., Townsend P.A., and Cavender-Bares J. (pending). Mapping multiple dimensions of forest diversity using spaceborne spectroscopy. *In review*. https://doi.org/pending
 
 > Guzmán J.A., Knott J., Pinto-Ledezma J.N., Townsend P.A., and Cavender-Bares J. (pending). Mapping multiple dimensions of forest diversity using spaceborne spectroscopy (v1.0). *Zenodo*. https://doi.org/10.5281/zenodo.pending
 
@@ -99,7 +99,7 @@ If you use the code from this repository, please cite the manuscript and the cod
 
 ```bibtex
 @article{guzman_mapping_manuscript,
-  author    = {Guzmán, J. Antonio and Knott, Jonathan and Pinto-Ledezma, Jesús N. and Townsend, Philip A. and Cavender-Bares, Jeannine},
+  author    = {Guzmán, J. A. and Knott, J. and Pinto-Ledezma, J. N. and Townsend, P. A. and Cavender-Bares, J.},
   title     = {Mapping multiple dimensions of forest diversity using spaceborne spectroscopy},
   journal   = {pending},
   year      = {pending},
@@ -113,7 +113,7 @@ If you use the code from this repository, please cite the manuscript and the cod
 
 ```bibtex
 @software{guzman_mapping_code,
-  author    = {Guzmán, J. Antonio and Knott, Jonathan and Pinto-Ledezma, Jesús N. and Townsend, Philip A. and Cavender-Bares, Jeannine},
+  author    = {Guzmán, J. A. and Knott, J. and Pinto-Ledezma, J. N. and Townsend, P. A. and Cavender-Bares, J.},
   title     = {Mapping multiple dimensions of forest diversity using spaceborne spectroscopy},
   year      = {pending},
   version   = {v1.0},

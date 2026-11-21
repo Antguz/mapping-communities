@@ -2,7 +2,16 @@
 #' @title Model occurrence probabilities of plant lineages based on MDS - spatial CV
 #'------------------------------------------------------------------------------
 
-#' @description It models the probability of occurrence based on MDS ordination 
+#' @description It models the occurrence probability of plant lineages (species,
+#' genera, and families present in more than 10% of the plots) using binomial
+#' GLMs based on three sets of predictors: MDS axes, climate and topography, and
+#' altogether. Class imbalance is handled with ROSE within training folds, and
+#' models are evaluated with repeated k-fold spatial block cross-validation
+#' (200 km blocks).
+
+#' @return .rds files with the presence/absence of lineages per plot, residuals,
+#' spatial autocorrelation, and blocks, and .csv files with the scaling values
+#' and the GLM coefficients and performance per set of predictors.
 
 #'------------------------------------------------------------------------------
 #' @Libraries

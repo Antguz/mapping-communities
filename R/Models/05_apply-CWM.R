@@ -2,8 +2,14 @@
 #' @title Apply predictions of CWM to scenes
 #'------------------------------------------------------------------------------
 
-#' @description It apply CWM predictions of plant traits to the predicted axes 
-#' within scenes
+#' @description It applies the CWM models of plant traits (03_model-CWM.R) to
+#' the predicted MDS axes of functional composition (L3C) within scenes.
+
+#' @return GeoTIFF files per scene (L4C) with the mean CWM per plant trait
+#' (_CWM_mean.tif) and the width of its 95% confidence interval among models
+#' (_CWM_error.tif), and a .txt file with the list of processed scenes.
+
+#' @Note This script was not implemented in the manuscript.
 
 #'------------------------------------------------------------------------------
 #' Library

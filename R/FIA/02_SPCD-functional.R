@@ -2,10 +2,13 @@
 #' @title A script to get functional species attributes
 #'------------------------------------------------------------------------------
 
-#' @description It compile a series of functional attributes of species from 
-#' different sources
-#' 
-#' @return Return a frame as a .csv file
+#' @description It compiles functional attributes of species from different
+#' sources (FIA database, Niinemets & Valladares, and BIEN), and imputes
+#' missing traits using phylogenetic information (V.PhyloMaker2, PVR, and
+#' missForest). Some steps require a manual cleaning of the observations.
+#'
+#' @return .csv files with the functional traits per species (SPCD) after each
+#' step of the compilation, being 06_fia-traits.csv the final imputed traits.
 
 #'------------------------------------------------------------------------------
 #' @Library

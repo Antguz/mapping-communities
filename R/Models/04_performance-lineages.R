@@ -2,8 +2,13 @@
 #' @title Performance of model probabilities based predicted axes
 #'------------------------------------------------------------------------------
 
-#' @description It evaluate the performance of models based on the probability 
-#' predicted from MDS axes using spaceborne spectroscopy.
+#' @description It evaluates the performance of the plant lineage models
+#' (03_model-lineages.R) when the MDS axes are predicted using spaceborne
+#' spectroscopy (01_model_beta.R) in training and testing data.
+
+#' @return .rds files with the performance per sensor, diversity, and dataset,
+#' and a .csv file with the summary of performance
+#' (performance_summary_lineages.csv).
 
 #'------------------------------------------------------------------------------
 #' @Libraries

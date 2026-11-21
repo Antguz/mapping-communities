@@ -2,7 +2,14 @@
 #' @title Apply PLS model to EMIT scenes
 #'------------------------------------------------------------------------------
 
-#' @description It applies the model to EMIT scenes.
+#' @description It applies the PLSR models (coefficients of 01_model_beta.R) to
+#' EMIT scenes to predict the MDS axes of taxonomic, phylogenetic, and
+#' functional composition.
+
+#' @return GeoTIFF files per scene (L3A taxonomic, L3B phylogenetic, L3C
+#' functional) with the mean predicted axes (Axis1-3), the width of their 95%
+#' confidence interval among models (amp-Axis1-3), and its sum (amp-total).
+#' A .txt file with the list of processed scenes.
 
 #'------------------------------------------------------------------------------
 #' Library

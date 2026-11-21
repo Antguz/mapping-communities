@@ -2,8 +2,16 @@
 #' @title Apply the occurrence probability of forest type to scenes
 #'------------------------------------------------------------------------------
 
-#' @description It apply the occurrence (i.e., probability) of forest types to the
-#' predicted axes within scenes
+#' @description It applies the occurrence models (i.e., probability) of forest
+#' types (03_model-FORTYP.R) to the predicted MDS axes of taxonomic composition
+#' within scenes.
+
+#' @return GeoTIFF files per scene (L4A) with the mean occurrence probability
+#' per forest type (_FORTYP_mean.tif) and the width of its 95% confidence
+#' interval among models (_FORTYP_error.tif), and a .txt file with the list of
+#' processed scenes.
+
+#' @Note This script was not implemented in the manuscript.
 
 #'------------------------------------------------------------------------------
 #' Library

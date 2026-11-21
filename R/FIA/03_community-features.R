@@ -2,10 +2,12 @@
 #' @title Get relative abundance or CWM of community features
 #'------------------------------------------------------------------------------
 
-#' @description It estimates the relative abundance or community weighted mean of
-#' community features per inventory
-#
-#' @return .csv file with the estimations
+#' @description It estimates the relative abundance (categorical features) or
+#' the community-weighted mean (continuous features) of species features per
+#' inventory plot, using wood volume (VOL_TPA) as weights.
+#'
+#' @return A .csv file (proportions.csv) with the relative abundances and CWMs
+#' per plot (PLT_CN).
 
 #'------------------------------------------------------------------------------
 #' @Library

@@ -2,8 +2,15 @@
 #' @title Model occurrence probabilities of forest types based on MDS - spatial CV
 #'------------------------------------------------------------------------------
 
-#' @description It models the occurrence probability of forest types based on 
-#' MDS ordination.
+#' @description It models the occurrence probability of forest types (FIA
+#' FORTYPCD) using binomial GLMs based on three sets of predictors: MDS axes,
+#' climate and topography, and altogether. Class imbalance is handled with ROSE
+#' within training folds, and models are evaluated with repeated k-fold spatial
+#' block cross-validation (200 km blocks).
+
+#' @return .rds files with the residuals, spatial autocorrelation, and blocks,
+#' and .csv files with the scaling values and the GLM coefficients and
+#' performance per set of predictors.
 
 #'------------------------------------------------------------------------------
 #' @Libraries

@@ -2,9 +2,12 @@
 #' @title Get correlations between MDS axes and attributes
 #'------------------------------------------------------------------------------
 
-#' @description It derive correlations between MDS axes and attribues associated
-#' with climate, topography, plant community traits and abundance of plant 
+#' @description It derives correlations between MDS axes and attributes associated
+#' with climate, topography, plant community traits and abundance of plant
 #' lineages.
+
+#' @return .csv files with the correlations between MDS axes and species,
+#' lineages, traits, and environment per diversity.
 
 #'------------------------------------------------------------------------------
 #' Library

@@ -2,10 +2,11 @@
 #' @title Extract environmental data from WorldClim and HYDRO1k
 #'------------------------------------------------------------------------------
 
-#' @description It extract environmental data from layers of WorlClim and NASA
-#' HYDRO1k based on plot locations.
-#' 
-#' @return A .csv file with the PLT_CD and columns of environmental information.
+#' @description It extracts climatic (WorldClim: MAT, TS, TAR, MAP, PS) and
+#' topographic (HYDRO1k: DEM, SL, CTI) data based on plot locations.
+#'
+#' @return A .csv file (fia-env.csv) with the PLT_CN and columns of
+#' environmental information.
 
 #'------------------------------------------------------------------------------
 #' @Library

@@ -12,6 +12,11 @@
 #' are tested in one pass (same replicates). Results do not overwrite existing
 #' files.
 
+#' @return A .rds file per sensor and diversity (<sensor>_<diversity>_mantel_msr.rds)
+#' with a data.table of the Mantel statistic, its significance, and the MSR
+#' replicates per beta type. It also exports the dbMEMs per sensor as .rds files
+#' (<sensor>_dbMEM.rds).
+
 #'------------------------------------------------------------------------------
 #' Library
 

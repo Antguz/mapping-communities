@@ -2,8 +2,13 @@
 #' @title A script for getting the goodness-of-fit MDS ordinations
 #'------------------------------------------------------------------------------
 
-#' @description The function helps to get the goodnness of fit from MDS ordinations
-#' based on the correlation of distances.
+#' @description It estimates the goodness-of-fit of MDS ordinations based on the
+#' correlation between the distances of the ordination and the beta diversity
+#' (Btotal), and the data for the stressplot.
+
+#' @return A .csv file with the goodness-of-fit (r, R², F, and p-value) and a
+#' .rds file with the data for the stressplot (voxels and linear fit) per
+#' diversity.
 
 #'------------------------------------------------------------------------------
 #' Library

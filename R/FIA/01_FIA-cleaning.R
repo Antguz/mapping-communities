@@ -2,10 +2,14 @@
 #' @title Cleaning and reshaping FIA data
 #'------------------------------------------------------------------------------
 
-#' @description It clean and reshape FIA to estimate multiple dimensions of beta
-#' diversity
-#' 
-#' @return Return a frame as a .rds file
+#' @description It cleans and reshapes FIA tree records to estimate multiple
+#' dimensions of beta diversity. It selects live trees from inventories since
+#' 2018, removes plots with incomplete volume or species identification, and
+#' summarizes the number of trees, basal area, aboveground biomass, and wood
+#' volume per species and plot.
+#'
+#' @return A .rds file (fia_reshape.rds) with a data.table of the species
+#' abundances (ntrees, BA_TPA, DRYBIO_AG_TPA, VOL_TPA) per plot (PLT_CN).
 
 #'------------------------------------------------------------------------------
 #' @Library

@@ -2,7 +2,11 @@
 #' @title Perform Landmark Multi-Dimensional Scaling
 #'------------------------------------------------------------------------------
 
-#' Perform Landmark Multi-Dimensional Scaling on communities previously selected
+#' @description Perform Landmark Multi-Dimensional Scaling (three dimensions) on
+#' the matrices of beta diversity (Btotal) between communities.
+
+#' @return A .rds file with the community scores of the three MDS axes per
+#' diversity (taxonomic, phylogenetic, and functional).
 
 #'------------------------------------------------------------------------------
 #' @Library

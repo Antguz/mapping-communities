@@ -2,7 +2,14 @@
 #' @title Model the community weighted mean of plant traits - spatial CV
 #'------------------------------------------------------------------------------
 
-#' @description It models the CWM of plant traits based on MDS ordination
+#' @description It models the community-weighted mean (CWM) of plant traits
+#' using GLMs based on three sets of predictors: MDS axes, climate and
+#' topography, and altogether. Models are evaluated with repeated k-fold
+#' spatial block cross-validation (200 km blocks).
+
+#' @return .rds files with the CWM per plot, residuals, spatial autocorrelation,
+#' and blocks, and .csv files with the scaling values and the GLM coefficients
+#' and performance per set of predictors.
 
 #'------------------------------------------------------------------------------
 #' @Libraries
