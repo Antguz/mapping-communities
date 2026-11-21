@@ -27,7 +27,7 @@ library(RcppArmadillo)
 
 sourceCpp("src/probability_rcpp.cpp")
 source("R/auxiliary/model_performance.R")
-source("R/auxiliary/performance_batch_FORTYR.R")
+source("R/auxiliary/performance_batch_FORTYP.R")
 
 #'------------------------------------------------------------------------------
 #' @Working_directory

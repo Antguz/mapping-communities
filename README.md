@@ -123,7 +123,19 @@ If you use the code from this repository, please cite the manuscript and the cod
 }
 ```
 
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For questions about the code or the manuscript, please open an [issue](https://github.com/Antguz/mapping-communities/issues) or contact:
+
+* J. Antonio Guzmán Q. (aguzman@fas.harvard.edu)
+* Jeannine Cavender-Bares (jcavender@fas.harvard.edu)
+
 ## Acknowledgments 
+
 We thank the German Aerospace Center (DLR) and the National Aeronautics and Space 
 Administration (NASA) for providing access to DESIS and EMIT imagery for scientific 
 research, respectively. We thank the numerous field crews and information management 

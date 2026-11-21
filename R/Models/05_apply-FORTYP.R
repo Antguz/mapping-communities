@@ -282,7 +282,7 @@ apply_model_occurence <- function(X,
 # 
 # # Export report
 # complete <- do.call(rbind, run)
-# fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYR_", Sys.time(), ".txt"))
+# fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYP_", Sys.time(), ".txt"))
 
 
 ################################################################################
@@ -375,7 +375,7 @@ run <- pbmclapply(X = 1:length(taxonomic_composition),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYR_", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYP_", Sys.time(), ".txt"))
 
 #-------------------------------------------------------------------------------
 #' @DESIS
@@ -412,4 +412,4 @@ run <- pbmclapply(X = 1:length(taxonomic_composition),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYR_", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_", sensor, "_FORTYP_", Sys.time(), ".txt"))

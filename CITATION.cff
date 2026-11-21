@@ -1,0 +1,55 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it as below, together with the manuscript."
+title: "Mapping multiple dimensions of forest diversity using spaceborne spectroscopy"
+type: software
+version: "v1.0"
+license: AGPL-3.0-only
+repository-code: "https://github.com/Antguz/mapping-communities"
+keywords:
+  - imaging spectroscopy
+  - beta diversity
+  - forest diversity
+  - DESIS
+  - EMIT
+  - Forest Inventory and Analysis
+authors:
+  - family-names: "Guzmán"
+    given-names: "J.A."
+    orcid: "https://orcid.org/0000-0002-0721-148X"
+    affiliation: "Department of Organismic and Evolutionary Biology, Harvard University"
+  - family-names: "Knott"
+    given-names: "Jonathan"
+    orcid: "https://orcid.org/0000-0003-3856-8454"
+    affiliation: "USDA Forest Service"
+  - family-names: "Pinto-Ledezma"
+    given-names: "Jesús N."
+    orcid: "https://orcid.org/0000-0001-6668-9670"
+    affiliation: "Department of Ecology, Evolution, and Behavior, University of Minnesota"
+  - family-names: "Townsend"
+    given-names: "Philip A."
+    orcid: "https://orcid.org/0000-0001-7003-8774"
+    affiliation: "Department of Forest and Wildlife Ecology, University of Wisconsin-Madison"
+  - family-names: "Cavender-Bares"
+    given-names: "Jeannine"
+    orcid: "https://orcid.org/0000-0003-3375-9630"
+    affiliation: "Department of Organismic and Evolutionary Biology, Harvard University"
+preferred-citation:
+  type: article
+  title: "Mapping multiple dimensions of forest diversity using spaceborne spectroscopy"
+  doi: "10.32942/X24H1D"
+  authors:
+    - family-names: "Guzmán"
+      given-names: "J.A."
+      orcid: "https://orcid.org/0000-0002-0721-148X"
+    - family-names: "Knott"
+      given-names: "Jonathan"
+      orcid: "https://orcid.org/0000-0003-3856-8454"
+    - family-names: "Pinto-Ledezma"
+      given-names: "Jesús N."
+      orcid: "https://orcid.org/0000-0001-6668-9670"
+    - family-names: "Townsend"
+      given-names: "Philip A."
+      orcid: "https://orcid.org/0000-0001-7003-8774"
+    - family-names: "Cavender-Bares"
+      given-names: "Jeannine"
+      orcid: "https://orcid.org/0000-0003-3375-9630"

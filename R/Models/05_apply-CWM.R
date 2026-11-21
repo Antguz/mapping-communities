@@ -286,7 +286,7 @@ apply_model_CWM <- function(X,
 # 
 # # Export report
 # complete <- do.call(rbind, run)
-# fwrite(complete, paste0(output_path, "/files_", sensor, "_CWN_", " ", Sys.time(), ".txt"))
+# fwrite(complete, paste0(output_path, "/files_", sensor, "_CWM_", " ", Sys.time(), ".txt"))
 
 ################################################################################
 #' @MSI predictions
@@ -378,7 +378,7 @@ run <- pbmclapply(X = 1:length(functional_composition),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files_", sensor, "_CWN_", " ", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_", sensor, "_CWM_", " ", Sys.time(), ".txt"))
 
 #-------------------------------------------------------------------------------
 #' @DESIS
@@ -415,4 +415,4 @@ run <- pbmclapply(X = 1:length(functional_composition),
 
 # Export report
 complete <- do.call(rbind, run)
-fwrite(complete, paste0(output_path, "/files_", sensor, "_CWN_", " ", Sys.time(), ".txt"))
+fwrite(complete, paste0(output_path, "/files_", sensor, "_CWM_", " ", Sys.time(), ".txt"))
