@@ -17,7 +17,7 @@ library(ggh4x)
 #' @Read-performance files
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 # Forest type
 data <- fread(paste0(root_path, "/Models/04_fortyp_performance/performance_summary_fortyp.csv"))
@@ -205,7 +205,7 @@ p <- ggplot(summary_performance) +
 
 p 
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/Figure_5.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/Figure_6_new.jpeg"), 
      width = 150, 
      height = 120, 
      units = "mm", 

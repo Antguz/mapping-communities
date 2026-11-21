@@ -35,17 +35,17 @@ source("R/auxiliary/pls_coefficients.R")
 #' @Working_directory
 #-------------------------------------------------------------------------------
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 sensor <- "EMIT"
 
 #'------------------------------------------------------------------------------
 #' @Read-Information
 #-------------------------------------------------------------------------------
 
-type <- "func"
+type <- "phylo"
 diversity <- "total"
 meta <- fread(paste0(root_path, "/FIA/00_FIA/plots_eastern_20230427.csv"))
-ordination <- fread(paste0(root_path, "/Diversity/02_LMDS/MDS_scores_comm_", type, "_", diversity,".csv"))
+ordination <- fread(paste0(root_path, "/Diversity/03_MDS-post/MDS_scores_comm_", type, "_", diversity,".csv"))
 ncol_ordination <- ncol(ordination) - 1
 match_meta <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_match_usefull.csv"))
 spectra <- fread(paste0(root_path, "/Pixel_extraction/03_match-spectra/", sensor, "/", sensor,"_spectra_SW.csv"))
@@ -107,9 +107,9 @@ if(type == "taxo") {
   
 }
 
-# # Outliers
-outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
-data <- data[outliers$remove != TRUE, ]
+# Outliers
+#outliers <- fread(paste0(out_path, "/", sensor, "_outliers.csv"))
+#data <- data[outliers$remove != TRUE, ]
 
 # Create frames
 if(sensor == "DESIS") {
@@ -140,10 +140,10 @@ if(sensor == "DESIS") {
 if(type == "taxo") {
   
   if(sensor == "DESIS") {
-    p <- 0.648
+    p <- 0.648 #Compensate for the county
     
   } else if(sensor == "EMIT") {
-    p  <- 0.65
+    p  <- 0.65 #Compensate for the county
   }
   
   # Data-split based on State-County ID
@@ -218,12 +218,12 @@ optimal_figure(models, rAxes = axis, rMetric = "PRESS", rEstimate = "PRESS")
 # Functional c(12, 3, 6)
 
 ### EMIT
-# Taxonomic c(20, 9, 13)
+# Taxonomic c(20, 9, 13) (8, 9, 9)
 # Phylogenetic c(8, 3, 7)
 # Functional c(13, 6, 8)
 
 # Manual checked
-tune_optimal <- c(13, 6, 8)
+tune_optimal <- c(8, 9, 9)
 
 #-------------------------------------------------------------------------------
 #' @Final_model for prediction

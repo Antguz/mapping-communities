@@ -16,6 +16,8 @@ library(geometry)
 library(ggplot2)
 library(ggpubr)
 library(ggrepel)
+library(vegan)
+library(pbmcapply)
 
 #'------------------------------------------------------------------------------
 #' @Working_directory
@@ -227,9 +229,10 @@ A <- ggplot(fortyp_axes) +
                 colour = "darkred",
                 alpha = 0.6) +
   geom_point(aes(x = hull_vol, y = axes_mean), 
-             shape = 20, 
+             shape = 21, 
              size = 3,
-             colour = "darkred") +
+             fill = "darkred",
+             colour = "white") +
   geom_text_repel(aes(x = hull_vol, y = axes_mean, label = group),
                   size = 3,
                   colour = "grey25",
@@ -253,7 +256,6 @@ A <- ggplot(fortyp_axes) +
   xlab(" ")
   #ylab("Relative importance of MDS β-diversity axes")
 
-
 B <- ggplot(families_axes) +
   geom_errorbar(aes(x = hull_vol,
                     ymin = axes_mean - axes_sd,
@@ -262,9 +264,10 @@ B <- ggplot(families_axes) +
                 colour = "darkred",
                 alpha = 0.6) +
   geom_point(aes(x = hull_vol, y = axes_mean), 
-             shape = 20, 
+             shape = 21, 
              size = 3,
-             colour = "darkred") +
+             fill = "darkred",
+             colour = "white") +
   geom_text_repel(aes(x = hull_vol, y = axes_mean, label = group),
                   size = 3,
                   colour = "grey25",
@@ -296,9 +299,10 @@ C <- ggplot(genus_axes) +
                 colour = "darkred",
                 alpha = 0.6) +
   geom_point(aes(x = hull_vol, y = axes_mean), 
-             shape = 20, 
+             shape = 21, 
              size = 3,
-             colour = "darkred") +
+             fill = "darkred",
+             colour = "white") +
   geom_text_repel(aes(x = hull_vol, y = axes_mean, label = group),
                   size = 3,
                   colour = "grey25",
@@ -323,9 +327,9 @@ C <- ggplot(genus_axes) +
 
 plot <- ggarrange(A, B, C, ncol = 1)
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/importance_hypervolume.jpg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/importance_hypervolume_new.jpg"), 
      width = 150, 
-     height = 200, 
+     height = 230, 
      units = "mm", 
      res = 600, 
      bg = "white",

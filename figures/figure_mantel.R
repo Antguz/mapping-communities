@@ -126,7 +126,7 @@ mantel_plot <- function(mantel_results,
   # Count estimations
   
   # Stored SAM is angle/180; x2 gives angle/90 (0-1) as in src/sam.cpp
-  vox <- voxels(cbind(dissimilarities[, 4], spectral = dissimilarities$spectral*2, z = 1),
+  vox <- voxels(cbind(dissimilarities[, 4], spectral = dissimilarities$spectral, z = 1),
                 edge_length = c(0.001, 0.002, 0.001),
                 threads = 16, 
                 obj.voxels = FALSE)
@@ -157,8 +157,8 @@ mantel_plot <- function(mantel_results,
     scale_fill_viridis_c(name = "Count",
                          option = palette, #palette
                          trans = "log10",
-                         limits = c(1, 10000),
-                         breaks = c(1, 100, 10000),
+                         limits = c(1, 10^6.5), 
+                         breaks = c(1, 10^2, 10^4, 10^6),
                          begin = 0.0,
                          end = 1.0,
                          labels = trans_format("log10", math_format(10^.x)),
@@ -186,7 +186,7 @@ mantel_plot <- function(mantel_results,
 
 # pal <- "cividis"
 pal <- "inferno"
-val <- c(5278242, 97058, 50408, 3245520, 53954, 26812, 4699276, 80050, 38016)
+val <- c(2663174, 48882, 25456, 1638026, 27080, 13526, 2404258, 40086, 19638)
 
 # DESIS ------------------------------------------------
 sensor <- "DESIS"

@@ -132,19 +132,18 @@ postprocessing <- function(ordination,
   # ----------------------------------------------------------------------------
   # Get distances from lmdS
   
-  # Get distances from lmds
-  # lmds_distance <- euclidean_distance(as.matrix(ord_new), n_threads = threads)
-  # colnames(lmds_distance) <- rownames(ord_new)
-  # rownames(lmds_distance) <- rownames(ord_new)
-  # saveRDS(lmds_distance, paste0(out_path, "/lmds_distance_", type, "_total.rds"))
-  # gc()
+  lmds_distance <- euclidean_distance(as.matrix(ord), n_threads = threads)
+  colnames(lmds_distance) <- rownames(ord)
+  rownames(lmds_distance) <- rownames(ord)
+  saveRDS(lmds_distance, paste0(out_path, "/lmds_distance_", type, "_total.rds"))
+  gc()
   
 }
 
 #'------------------------------------------------------------------------------
 #' @example
 
-root_path <- "/media/antonio/Work/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 #root_path <- "/n/netscratch/jcavender_lab/Everyone/guzman/MMDB"
 threads <- 25
 

@@ -20,7 +20,7 @@ library(ggh4x)
 root_path <- "/media/guzman/Work/MMDB"
 
 # Categorical 
-data <- fread(paste0(root_path, "/Models/03_model_CWM/func_model-CWM.csv"))
+data <- fread(paste0(root_path, "/Models/03_model_CWM/func_altogether_model-CWM.csv"))
 data <- data[, .SD, .SDcols = c(1:3, 23:33)]
 colnames(data)[4:14] <- gsub("imp_","", colnames(data)[4:14])
 colnames(data)[4:14] <- c("Axis 1", "Axis 2", "Axis 3", "MAT", "TS", "TAR", "MAP", "PS", "ELE", "SLO", "CTI")
@@ -173,7 +173,7 @@ p <- ggplot(summary_importance, aes(x = mean,
   th
 p
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_CWM.jpg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/glm-models_CWM_new.jpg"), 
      width = 270, 
      height = 150, 
      units = "mm", 

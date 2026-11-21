@@ -18,8 +18,7 @@ library(ggpubr)
 #'------------------------------------------------------------------------------
 #' Working directory
 
-root_path <- "/media/antonio/Work/MMDB"
-root_path <- "E:/MMDB"
+root_path <- "/media/guzman/Work/MMDB"
 
 #-------------------------------------------------------------------------------
 #' @Plot-details
@@ -69,19 +68,40 @@ phylo_st <- fread(paste0(root_path, "/Diversity/03_MDS-post/goodness_of_fit_phyl
 func_st <- fread(paste0(root_path, "/Diversity/03_MDS-post/goodness_of_fit_func_total.csv"))
 
 #'------------------------------------------------------------------------------
+#' @Rescale
+#' X (beta) is sqrt(Btotal/10000) binned at 0.001, but Y (LMDS distances)
+#' comes x10000 from euclidean_distance.cpp, so Y is re-binned at 0.001 and
+#' the SMA elevation and slope are divided by 10000.
+
+rescale_goodness <- function(data) {
+
+  data$vox <- data$vox[, .(N = sum(N)), by = .(X = round(X, 4), Y = (floor(Y/10) + 0.5)/1000)]
+  data$linear$elevation <- data$linear$elevation/10000
+  data$linear$slope <- data$linear$slope/10000
+  data$max <- max(data$vox$N)
+
+  return(data)
+
+}
+
+taxo <- rescale_goodness(taxo)
+phylo <- rescale_goodness(phylo)
+func <- rescale_goodness(func)
+
+#'------------------------------------------------------------------------------
 #' @Plot
 
 palette <- "viridis"
 
 ptaxo <- ggplot() +
   geom_raster(data = taxo$vox, 
-              aes(x = (X-5)/10000, y = (Y-5)/10000, fill = N)) +
+              aes(x = X, y = Y, fill = N)) +
   geom_abline(intercept = 0, slope = 1, colour = "black", linetype = "dotted") +
   geom_abline(data = taxo$linear, 
-              aes(intercept = mean(elevation-5)/10000, 
+              aes(intercept = mean(elevation), 
                   slope = mean(slope)),
               colour = line) +
-  scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(0, 1.0), breaks = sqrt(c(0, 0.25, 1)), labels = c(0, 0.25, 1), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 1.119), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
   scale_fill_viridis_c(name = "Count",
                        option = palette,
@@ -95,7 +115,7 @@ ptaxo <- ggplot() +
   xlab(expression(paste("T", beta[total]))) +
   ylab("Ordination distances") + 
   guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
-  geom_text(mapping = aes(label = paste0("Intercept = ", round(mean((taxo$linear$elevation-5)/10000), 2), " ± ", round(sd((taxo$linear$elevation-5)/10000), 2), "\n",
+  geom_text(mapping = aes(label = paste0("Intercept = ", round(mean(taxo$linear$elevation), 2), " ± ", round(sd(taxo$linear$elevation), 2), "\n",
                                          "Slope = ", round(mean(taxo$linear$slope), 2), " ± ", round(sd(taxo$linear$slope), 2), "\n",
                                          "Goodness-of-fit = ", round(taxo_st$rsquared, 2)),
                 x = 0.03, #0.03
@@ -110,13 +130,13 @@ ptaxo
   
 pphylo <- ggplot() +
   geom_raster(data = phylo$vox, 
-              aes(x = (X-5)/10000, y = (Y-5)/10000, fill = N)) +
+              aes(x = X, y = Y, fill = N)) +
   geom_abline(intercept = 0, slope = 1, colour = "black", linetype = "dotted") +
   geom_abline(data = phylo$linear, 
-              aes(intercept = mean(elevation-5)/10000, 
+              aes(intercept = mean(elevation), 
                   slope = mean(slope)),
               colour = line) +
-  scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(0, 1.0), breaks = sqrt(c(0, 0.25, 1)), labels = c(0, 0.25, 1), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 1.119), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
   scale_fill_viridis_c(name = "Count",
                        option = palette,
@@ -130,7 +150,7 @@ pphylo <- ggplot() +
   xlab(expression(paste("P", beta[total]))) +
   ylab(" ") + 
   guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
-  geom_text(mapping = aes(label = paste0("Intercept = ", round(mean((phylo$linear$elevation-5)/10000), 2), " ± ", round(sd((phylo$linear$elevation-5)/10000), 2), "\n",
+  geom_text(mapping = aes(label = paste0("Intercept = ", round(mean(phylo$linear$elevation), 2), " ± ", round(sd(phylo$linear$elevation), 2), "\n",
                                          "Slope = ", round(mean(phylo$linear$slope), 2), " ± ", round(sd(phylo$linear$slope), 2), "\n",
                                          "Goodness-of-fit = ", round(phylo_st$rsquared, 2)),
                           x = 0.03, #0.03
@@ -145,13 +165,13 @@ pphylo
 
 pfunc <- ggplot() +
   geom_raster(data = func$vox, 
-              aes(x = (X-5)/10000, y = (Y-5)/10000, fill = N)) +
+              aes(x = X, y = Y, fill = N)) +
   geom_abline(intercept = 0, slope = 1, colour = "black", linetype = "dotted") +
   geom_abline(data = func$linear, 
-              aes(intercept = mean(elevation-5)/10000, 
+              aes(intercept = mean(elevation), 
                   slope = mean(slope)),
               colour = line) +
-  scale_x_continuous(limits = c(0, 1.0), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
+  scale_x_continuous(limits = c(0, 1.0), breaks = sqrt(c(0, 0.25, 1)), labels = c(0, 0.25, 1), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0, 1.119), breaks = c(0, 0.5, 1), expand = c(0, 0)) +
   scale_fill_viridis_c(name = "Count",
                        option = palette,
@@ -165,7 +185,7 @@ pfunc <- ggplot() +
   xlab(expression(paste("F", beta[total]))) +
   ylab(" ") + 
   guides(fill = guide_colourbar(barwidth = 15, barheight = 0.7, title.position = "top")) +
-  geom_text(mapping = aes(label = paste0("Intercept = ", round(mean((func$linear$elevation-5)/10000), 2), " ± ", round(sd((func$linear$elevation-5)/10000), 2), "\n",
+  geom_text(mapping = aes(label = paste0("Intercept = ", round(mean(func$linear$elevation), 2), " ± ", round(sd(func$linear$elevation), 2), "\n",
                                          "Slope = ", round(mean(func$linear$slope), 2), " ± ", round(sd(func$linear$slope), 2), "\n",
                                          "Goodness-of-fit = ", round(func_st$rsquared, 2)),
                           x = 0.03, #0.03
@@ -188,7 +208,7 @@ row1 <- ggarrange(ptaxo, pphylo, pfunc,
                   common.legend = TRUE,
                   legend = "bottom")
 
-jpeg(paste0(root_path, "/figures/Manuscript_black/", "figure_goodness-of-fit.jpeg"), 
+jpeg(paste0(root_path, "/figures/Manuscript_black/", "figure_goodness-of-fit_new.jpeg"), 
      width = 210, 
      height = 85, 
      units = "mm", 
