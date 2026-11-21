@@ -80,7 +80,7 @@ mapping-communities/
 ├── slurm/                                     # SLURM job scripts for HPC clusters
 ├── data/                                      # Auxiliary data
 ├── static/                                    # Images for this README
-├── mapping-species.Rproj                      # RStudio project
+├── mapping-communities.Rproj                  # RStudio project
 ├── LICENSE                                    # GNU AGPL-3.0 License
 └── README.md                                  # This file
 ```
